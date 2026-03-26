@@ -192,6 +192,15 @@
     </repositories>
 
     <build>
+
+        <!-- 🔥 CORREÇÃO DO ERRO -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
 
             <!-- SPRING BOOT -->
