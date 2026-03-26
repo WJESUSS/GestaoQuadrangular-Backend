@@ -3,13 +3,13 @@ FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
-# Copia pom.xml primeiro (cache)
+# Copia pom.xml
 COPY pom.xml .
 
 RUN mvn dependency:go-offline
 
-# Copia código
-COPY backend/src ./src
+# 🔥 CORREÇÃO AQUI
+COPY . .
 
 # Build
 RUN mvn clean package -DskipTests
@@ -24,4 +24,5 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java","-jar","app.jar"]
+# 🔥 PORTA DO RENDER
+ENTRYPOINT ["sh","-c","java -Dserver.port=$PORT -jar app.jar"]
