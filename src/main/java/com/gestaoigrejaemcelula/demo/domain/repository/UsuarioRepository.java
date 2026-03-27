@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
-    Optional<Usuario> findByEmailIgnoreCase(String email);
+    Optional<Usuario> findByEmail(String email);
 
     List<Usuario> findByPerfilIn(List<Perfil> pastor);
 }

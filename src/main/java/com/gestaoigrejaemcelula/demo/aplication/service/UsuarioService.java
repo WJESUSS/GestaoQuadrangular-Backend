@@ -130,13 +130,13 @@ public class UsuarioService {
 
         String email = authentication.getName();
 
-        return usuarioRepository.findByEmailIgnoreCase(email)
+        return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
     @Transactional(readOnly = true)
     public List<FichaEncontroResponseDTO> findByUsuarioLogado(String username) {
-
-        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(username)
+        // username aqui é o email (padrão Spring Security)
+        Usuario usuario = usuarioRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
 
         List<FichaEncontro> fichas = fichaEncontroRepository
