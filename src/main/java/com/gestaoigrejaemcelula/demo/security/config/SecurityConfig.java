@@ -57,8 +57,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> req
                         // Públicas
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers("/api/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR","TESOUREIRO")  // POST/PUT/DELETE só admins/secretarios
                                 .requestMatchers("/api/discipulado/**").hasAnyAuthority("SECRETARIO", "PASTOR", "ADMIN")
