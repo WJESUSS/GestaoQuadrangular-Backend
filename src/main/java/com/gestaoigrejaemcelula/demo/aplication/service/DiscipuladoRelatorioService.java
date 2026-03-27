@@ -112,10 +112,9 @@ public class DiscipuladoRelatorioService {
                 .getAuthentication()
                 .getName();
 
-        return usuarioRepository.findByEmail(email)
+        return usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado: " + email));
     }
-
     /**
      * Lista todos os relatórios agrupados para visualização da Secretaria / Pastor
      */

@@ -144,7 +144,7 @@ public class RelatorioService {
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> listarHistoricoDaMinhaCelula(String email) {
 
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         Celula celula = celulaRepository.findByLider_Id(usuario.getId())
@@ -155,7 +155,6 @@ public class RelatorioService {
                 .map(this::converterParaDTO)
                 .toList();
     }
-
     /* =========================
        RESUMO SEMANAL CORRIGIDO
        ========================= */

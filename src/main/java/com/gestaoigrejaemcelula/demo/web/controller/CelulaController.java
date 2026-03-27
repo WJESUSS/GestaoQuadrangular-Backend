@@ -40,7 +40,7 @@ public class CelulaController {
     @GetMapping("/minha-celula")
     public ResponseEntity<CelulaResponseDTO> minhaCelula(Authentication authentication) {
         String email = authentication.getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         // Busca célula **com membros carregados**
