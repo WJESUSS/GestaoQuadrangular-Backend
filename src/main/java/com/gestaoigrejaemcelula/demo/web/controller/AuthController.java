@@ -5,29 +5,19 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.TokenDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<TokenDTO> login(@RequestBody @Valid LoginDTO dto) {
         var token = authService.login(dto);
         return ResponseEntity.ok(token);
-    }
-    @RestController
-    @RequestMapping("/test")
-    public class TestController {
-
-        @GetMapping
-        public String ok() {
-            return "API funcionando 🚀";
-        }
     }
 }

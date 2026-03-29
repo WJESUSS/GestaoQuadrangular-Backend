@@ -2,9 +2,7 @@ package com.gestaoigrejaemcelula.demo.security.jwt;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 @Service
 public class JwtService {
@@ -23,57 +20,64 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    // 🔑 Converte a string secreta em SecretKey
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
+
+    // 🔑 CORRIGIDO (SEM BASE64)
     private SecretKey getSignKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    // 📦 Método para extrair todas as claims de um token
+    // 📦 Extrai claims com segurança
     private Claims extractAllClaims(String jwt) {
-        Jws<Claims> jwsClaims = Jwts.parser()
-                .verifyWith(getSignKey())        // define chave para verificar assinatura
-                .build()                         // constrói o parser
-                .parseSignedClaims(jwt);         // lê e valida o JWT
-
-        return jwsClaims.getPayload();         // extrai o payload (Claims)
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSignKey())
+                    .build()
+                    .parseSignedClaims(jwt)
+                    .getPayload();
+        } catch (Exception e) {
+            throw new RuntimeException("Token JWT inválido ou expirado");
+        }
     }
 
-    // 🔍 Método genérico para extrair qualquer claim
-    public <T> T extractClaim(String jwt, Function<Claims, T> resolver) {
-        return resolver.apply(extractAllClaims(jwt));
-    }
-
-    // 🔑 Extrai o username (subject)
+    // 🔑 Username
     public String extractUsername(String jwt) {
-        return extractClaim(jwt, Claims::getSubject);
+        return extractAllClaims(jwt).getSubject();
     }
 
-    // ⏳ Verifica se o token expirou
+    // ⏳ Expiração
+    public Date extractExpiration(String jwt) {
+        return extractAllClaims(jwt).getExpiration();
+    }
+
+    // ⛔ Verifica expiração
     private boolean isTokenExpired(String jwt) {
-        return extractClaim(jwt, Claims::getExpiration).before(new Date());
+        return extractExpiration(jwt).before(new Date());
     }
 
-    // ✅ Valida o token
+    // ✅ Validação
     public boolean isTokenValid(String jwt, UserDetails userDetails) {
-        String username = extractUsername(jwt);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(jwt);
+        try {
+            String username = extractUsername(jwt);
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(jwt);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    // 🔐 Gera um novo JWT
-    // 🔐 Gera um novo JWT corrigido para o Frontend
+    // 🔐 Geração de token
     public String gerarToken(Usuario usuario) {
         Map<String, Object> claims = new HashMap<>();
-
-        // Mudamos de "role" para "perfil" para bater com o jwtDecode(token).perfil do React
-        // E pegamos o nome do perfil (Ex: ADMIN, PASTOR...)
         claims.put("perfil", usuario.getPerfil().name());
         claims.put("id", usuario.getId());
+
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(usuario.getEmail()) // Usando email como subject
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24)) // 24h
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .claims(claims)
+                .subject(usuario.getEmail())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignKey())
                 .compact();
     }
 }

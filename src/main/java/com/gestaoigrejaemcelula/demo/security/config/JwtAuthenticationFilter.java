@@ -30,26 +30,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String email;
+        String path = request.getServletPath();
 
-        // 🔒 Verifica se tem token
+        // 🔥 IGNORA LOGIN
+        if (path.equals("/api/auth/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        final String authHeader = request.getHeader("Authorization");
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        email = jwtService.extractUsername(jwt);
+        String jwt = authHeader.substring(7);
+        String email;
 
-        // 🔐 Autentica o usuário
+        try {
+            email = jwtService.extractUsername(jwt);
+        } catch (Exception e) {
+            System.out.println("JWT inválido: " + jwt);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            System.out.println("Tentando autenticar: " + email);
-            UserDetails user = userDetailsService.loadUserByUsername(email);
-            System.out.println("Autoridades encontradas para este user: " + user.getAuthorities());
+
             if (jwtService.isTokenValid(jwt, userDetails)) {
 
                 UsernamePasswordAuthenticationToken authToken =
@@ -69,7 +79,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
-
 }
-
