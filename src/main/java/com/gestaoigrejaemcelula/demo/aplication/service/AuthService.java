@@ -22,9 +22,11 @@ public class AuthService {
     public TokenDTO login(LoginDTO dto) {
         // 1. Autentica e já recupera o objeto de autenticação
         var authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.email(), dto.senha())
+                new UsernamePasswordAuthenticationToken(
+                        dto.email().toLowerCase(), // 🔥 CORREÇÃO AQUI
+                        dto.senha()
+                )
         );
-
         // 2. Extrai o usuário (Principal) que o Spring Security carregou do banco
         // Isso assume que sua classe Usuario implementa UserDetails
         Usuario usuario = (Usuario) authentication.getPrincipal();

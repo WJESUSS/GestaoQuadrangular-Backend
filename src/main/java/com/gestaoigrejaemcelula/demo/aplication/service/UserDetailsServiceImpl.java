@@ -22,16 +22,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return repository.findByEmail(username)
+
+        return repository.findByEmail(username.toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
     }
 
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_ADMIN")); // <- precisa do "ROLE_" prefix
+    private Collection<? extends GrantedAuthority> getAuthorities(String role) {
+
+        if (role.startsWith("ROLE_")) {
+            return List.of(new SimpleGrantedAuthority(role));
+        }
+
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
     }
-
-
 }
-
-
-
