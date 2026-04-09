@@ -7,7 +7,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,9 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,107 +34,107 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+
+                // 🔥 CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 🔥 CSRF OFF (API REST)
                 .csrf(csrf -> csrf.disable())
+
+                // 🔥 SEM SESSÃO (JWT)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                // 🔥 TRATAMENTO DE ERROS
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"status\":401,\"error\":\"Não autorizado\",\"message\":\"" + authException.getMessage() + "\"}");
+                            response.getWriter().write("{\"status\":401,\"error\":\"Não autorizado\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write("{\"status\":403,\"error\":\"Acesso negado\",\"message\":\"" + accessDeniedException.getMessage() + "\"}");
+                            response.getWriter().write("{\"status\":403,\"error\":\"Acesso negado\"}");
                         })
                 )
 
+                // 🔥 AUTORIZAÇÃO
                 .authorizeHttpRequests(req -> req
-                        // Públicas
+
+                        // ✅ ROTAS PÚBLICAS
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                                .requestMatchers("/test").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                .requestMatchers("/api/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR","TESOUREIRO")  // POST/PUT/DELETE só admins/secretarios
-                                .requestMatchers("/api/discipulado/**").hasAnyAuthority("SECRETARIO", "PASTOR", "ADMIN")
-                                .requestMatchers(HttpMethod.PUT, "/api/membros/*/vincular-celula/*").hasAnyRole("LIDER_CELULA", "ADMIN", "SECRETARIA","PASTOR")
-                        .requestMatchers("/api/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA", "PASTOR")
-                        .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA", "PASTOR")
-                        .requestMatchers("/visitantes/**").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA", "PASTOR")
-                        .requestMatchers(HttpMethod.GET, "/membros/sem-celula").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA","PASTOR")
-                        .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
-// Se existir isso, mude para:
-                                .requestMatchers("/api/alertas-celulas/**").permitAll()
 
-                                .requestMatchers("/api/discipulado/**").hasAnyAuthority("SECRETARIO", "ADMIN", "PASTOR")
-                                .requestMatchers("/api/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
-                                .requestMatchers("/api/relatorios/**")
-                                .hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA", "PASTOR")
-                                .requestMatchers("/api/tesouraria/**").hasAnyAuthority("TESOUREIRO", "ADMIN","PASTOR")// Adicione esta linha!
-                                .requestMatchers("/api/discipulado/todos-relatorios").hasAnyAuthority("SECRETARIO", "ADMIN","PASTOR")
-                                .requestMatchers("/api/discipulado/**").hasAnyAuthority("ADMIN", "LIDER_CELULA", "PASTOR", "SECRETARIO")
-                                .requestMatchers(HttpMethod.GET,"/api/discipulado").hasAnyAuthority("ADMIN","LIDER_CELULA","PASTOR")
-                                .requestMatchers(HttpMethod.GET, "/api/membros/celula/**").hasAnyRole("ADMIN", "USER", "LIDER_CELULA","PASTOR")
-                                .requestMatchers("/api/celulas/minha-celula").hasRole("LIDER_CELULA")
-                                .requestMatchers("/api/celulas/**").hasAnyRole("ADMIN", "SECRETARIO","PASTOR")
-                        .requestMatchers(HttpMethod.GET, "/resumo").hasAnyAuthority("LIDER_CELULA")
-                        .requestMatchers(HttpMethod.POST, "/celulas/*/visitantes").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA","PASTOR")
-                        .requestMatchers(HttpMethod.POST, "/celulas/*/membros/*").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA","PASTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/celulas/*/visitantes").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA","PASTOR")
-                                .requestMatchers(HttpMethod.POST, "/api/celulas/*/membros/*").hasAnyAuthority("ADMIN", "SECRETARIO", "LIDER_CELULA","PASTOR")
+                        // ✅ EXEMPLOS DE ROTAS
+                        .requestMatchers("/api/membros/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
 
-                        // Tudo o mais exige autenticação (mas como é JWT, sem token = 401)
+                        .requestMatchers("/api/discipulado/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        .requestMatchers("/api/relatorios/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        .requestMatchers("/api/tesouraria/**")
+                        .hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
+
+                        .requestMatchers("/api/celulas/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        // 🔒 QUALQUER OUTRA → TOKEN OBRIGATÓRIO
                         .anyRequest().authenticated()
                 )
 
+                // 🔥 JWT FILTER
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
                 .build();
     }
 
-
+    // 🔐 AUTH MANAGER
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    // 🔐 PROVIDER
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+                                                         PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
+    // 🔐 CRIPTOGRAFIA
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // 🌐 CORS (CORRIGIDO PRA PRODUÇÃO)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Define as origens permitidas (seu React)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        // 🔥 LIBERA LOCAL + VERCEL
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
-        // Define os métodos HTTP permitidos
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+        ));
 
-        // Define os Headers permitidos
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        configuration.setAllowedHeaders(List.of("*"));
 
-        // Permite o envio de cookies/autenticação se necessário
         configuration.setAllowCredentials(true);
 
-        // Expõe headers específicos se o seu frontend precisar ler o Token do Header (opcional)
         configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
-
 }
