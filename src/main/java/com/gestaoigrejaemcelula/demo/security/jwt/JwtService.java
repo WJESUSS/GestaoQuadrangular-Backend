@@ -4,6 +4,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -79,5 +80,10 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSignKey())
                 .compact();
+    }
+    @PostConstruct
+    public void init() {
+        System.out.println("🔑 JWT Secret carregado: [" + secretKey + "]");
+        System.out.println("🔑 Tamanho do secret: " + secretKey.length() + " chars");
     }
 }
