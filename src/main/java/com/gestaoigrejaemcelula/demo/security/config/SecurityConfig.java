@@ -16,7 +16,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.*;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,22 +36,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-
-                // 🔥 CORS
+                // CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 🔥 CSRF OFF (API REST)
+                // CSRF desabilitado (API REST)
                 .csrf(csrf -> csrf.disable())
-
-                // 🔥 SEM SESSÃO (JWT)
+                // Stateless (JWT)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔥 TRATAMENTO DE ERROS
+                // Tratamento de erros
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"status\":401,\"error\":\"Não autorizado\"}");
+                            response.getWriter().write(
+                                    "{\"status\":401,\"error\":\"Não autorizado\",\"message\":\"Token ausente, inválido ou expirado\"}"
+                            );
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json;charset=UTF-8");
@@ -58,47 +59,41 @@ public class SecurityConfig {
                         })
                 )
 
-                // 🔥 AUTORIZAÇÃO
+                // Autorização de rotas
                 .authorizeHttpRequests(req -> req
-
-                        // ✅ ROTAS PÚBLICAS
+                        // ==================== ROTAS PÚBLICAS ====================
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/actuator/health", "/health", "/status").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ EXEMPLOS DE ROTAS
+                        // ==================== ROTAS PROTEGIDAS POR ROLE ====================
                         .requestMatchers("/api/membros/**")
                         .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
-
                         .requestMatchers("/api/discipulado/**")
                         .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-
                         .requestMatchers("/api/relatorios/**")
                         .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-
                         .requestMatchers("/api/tesouraria/**")
                         .hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
-
                         .requestMatchers("/api/celulas/**")
                         .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
 
-                        // 🔒 QUALQUER OUTRA → TOKEN OBRIGATÓRIO
+                        // Qualquer outra rota exige autenticação
                         .anyRequest().authenticated()
                 )
 
-                // 🔥 JWT FILTER
+                // Adiciona o filtro JWT
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-
                 .build();
     }
 
-    // 🔐 AUTH MANAGER
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // 🔐 PROVIDER
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
                                                          PasswordEncoder passwordEncoder) {
@@ -108,33 +103,30 @@ public class SecurityConfig {
         return provider;
     }
 
-    // 🔐 CRIPTOGRAFIA
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 🌐 CORS (CORRIGIDO PRA PRODUÇÃO)
+    // ==================== CORS CONFIG ====================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 🔥 LIBERA LOCAL + VERCEL
-        configuration.setAllowedOriginPatterns(List.of("*"));
-
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+        // 🔥 Use allowedOriginPatterns apenas com origens específicas em produção
+        configuration.setAllowedOriginPatterns(List.of(
+                "https://gestaoquadrangularpituacubr.vercel.app",
+                "http://localhost:5173",
+                "http://localhost:3000"
         ));
 
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-
-        configuration.setAllowCredentials(true);
-
         configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);   // importante se usar cookies ou auth header
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 }
