@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @PreAuthorize("hasRole('ADMIN')")
 @CrossOrigin(origins = "http://localhost:5173")
-@RequestMapping("/usuarios")
+@RequestMapping("api/usuarios")
 public class UsuarioController {
 
     private final UsuarioService service;
