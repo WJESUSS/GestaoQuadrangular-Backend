@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.security.config;
 
+
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,34 +59,27 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(req -> req
-                        // Permitir preflight (CORS)
+                        // Preflight CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Rotas públicas
+                        // Rotas totalmente públicas
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/actuator/health", "/health", "/status").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // Rotas protegidas com ROLE
-                        .requestMatchers("/api/membros/**")
-                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        // Rotas protegidas por ROLE
+                        .requestMatchers("/api/membros/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        .requestMatchers("/api/discipulado/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/relatorios/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/tesouraria/**").hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
+                        .requestMatchers("/api/celulas/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
 
-                        .requestMatchers("/api/discipulado/**")
-                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-
-                        .requestMatchers("/api/relatorios/**")
-                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-
-                        .requestMatchers("/api/tesouraria/**")
-                        .hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
-
-                        .requestMatchers("/api/celulas/**")
-                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-
+                        // Qualquer outra rota exige autenticação
                         .anyRequest().authenticated()
                 )
 
+                // Adiciona o filtro JWT ANTES do filtro padrão do Spring Security
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -112,24 +106,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
         configuration.setAllowedOrigins(List.of(
                 "https://gestaoquadrangularpituacubr.vercel.app",
                 "http://localhost:5173",
                 "http://localhost:3000"
         ));
-
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
-        ));
-
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 }
