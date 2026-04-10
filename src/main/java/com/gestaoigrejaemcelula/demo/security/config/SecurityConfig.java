@@ -41,6 +41,14 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
+
+                            String origin = request.getHeader("Origin");
+
+                            response.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "*");
+                            response.setHeader("Access-Control-Allow-Headers", "*");
+                            response.setHeader("Access-Control-Allow-Methods", "*");
+                            response.setHeader("Access-Control-Allow-Credentials", "true");
+
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write(
@@ -48,10 +56,19 @@ public class SecurityConfig {
                             );
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
+
+                            String origin = request.getHeader("Origin");
+
+                            response.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "*");
+                            response.setHeader("Access-Control-Allow-Headers", "*");
+                            response.setHeader("Access-Control-Allow-Methods", "*");
+                            response.setHeader("Access-Control-Allow-Credentials", "true");
+
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.getWriter().write("{\"status\":403,\"error\":\"Acesso negado\"}");
                         })
+
                 )
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
