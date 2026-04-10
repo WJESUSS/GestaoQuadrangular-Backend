@@ -39,16 +39,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-
-                            String origin = request.getHeader("Origin");
-
-                            response.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "*");
-                            response.setHeader("Access-Control-Allow-Headers", "*");
-                            response.setHeader("Access-Control-Allow-Methods", "*");
-                            response.setHeader("Access-Control-Allow-Credentials", "true");
-
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write(
@@ -56,33 +49,43 @@ public class SecurityConfig {
                             );
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-
-                            String origin = request.getHeader("Origin");
-
-                            response.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "*");
-                            response.setHeader("Access-Control-Allow-Headers", "*");
-                            response.setHeader("Access-Control-Allow-Methods", "*");
-                            response.setHeader("Access-Control-Allow-Credentials", "true");
-
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write("{\"status\":403,\"error\":\"Acesso negado\"}");
+                            response.getWriter().write(
+                                    "{\"status\":403,\"error\":\"Acesso negado\"}"
+                            );
                         })
-
                 )
+
                 .authorizeHttpRequests(req -> req
+                        // Permitir preflight (CORS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Rotas públicas
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/actuator/health", "/health", "/status").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
-                        .requestMatchers("/api/discipulado/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
-                        .requestMatchers("/api/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        // Rotas protegidas com ROLE
+                        .requestMatchers("/api/membros/**")
+                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+
+                        .requestMatchers("/api/discipulado/**")
+                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        .requestMatchers("/api/relatorios/**")
+                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        .requestMatchers("/api/tesouraria/**")
+                        .hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
+
+                        .requestMatchers("/api/celulas/**")
+                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
                         .anyRequest().authenticated()
                 )
+
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -116,7 +119,10 @@ public class SecurityConfig {
                 "http://localhost:3000"
         ));
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
