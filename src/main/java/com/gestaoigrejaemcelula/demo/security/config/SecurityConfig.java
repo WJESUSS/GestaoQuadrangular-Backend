@@ -69,11 +69,11 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         // === ROTAS PROTEGIDAS ===
-                        .requestMatchers("/api/membros/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
-                        .requestMatchers("/api/discipulado/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/relatorios/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/tesouraria/**").hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
-                        .requestMatchers("/api/celulas/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/membros/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        .requestMatchers("/discipulado/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/relatorios/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/tesouraria/**").hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
+                        .requestMatchers("/celulas/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
 
                         .anyRequest().authenticated()
                 )
