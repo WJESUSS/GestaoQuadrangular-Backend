@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.List;
-
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -21,19 +20,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         var usuario = repository.findByEmail(username.toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-        return new org.springframework.security.core.userdetails.User(
-                usuario.getEmail(),
-                usuario.getSenha(),
-                getAuthorities(usuario.getPerfil().name())
-        );
+        return usuario;
     }
 
+    // 🔥 Pode até remover esse método, não está mais sendo usado
     private Collection<? extends GrantedAuthority> getAuthorities(String role) {
 
         if (role.startsWith("ROLE_")) {
