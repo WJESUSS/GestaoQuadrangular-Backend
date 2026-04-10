@@ -25,22 +25,16 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration:86400000}") // 24 horas por padrão (em milissegundos)
+    @Value("${jwt.expiration:86400000}") // 24 horas padrão
     private long jwtExpiration;
 
-    /**
-     * Gera a chave de assinatura a partir do secret
-     */
     private SecretKey getSignKey() {
         if (secretKey == null || secretKey.length() < 32) {
-            throw new IllegalStateException("JWT Secret deve ter no mínimo 32 caracteres");
+            throw new IllegalStateException("JWT Secret deve ter pelo menos 32 caracteres!");
         }
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * Extrai todos os claims do token
-     */
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSignKey())
@@ -53,29 +47,23 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
-    public Date extractExpiration(String token) {
-        return extractAllClaims(token).getExpiration();
-    }
-
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    /**
-     * Valida se o token é válido para o usuário
-     */
+    public Date extractExpiration(String token) {
+        return extractAllClaims(token).getExpiration();
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
-            final String username = extractUsername(token);
-            return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+            String username = extractUsername(token);
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
         } catch (Exception e) {
             return false;
         }
     }
 
-    /**
-     * Gera token JWT com claims customizados
-     */
     public String gerarToken(Usuario usuario) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("perfil", usuario.getPerfil().name());
@@ -90,13 +78,9 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * Apenas para debug em desenvolvimento - NUNCA logar o secret completo em produção
-     */
     @PostConstruct
     public void init() {
         logger.info("✅ JWT Service inicializado com sucesso");
-        logger.info("🔑 Tamanho do secret: {} caracteres", secretKey.length());
-        // logger.debug("Secret: {}", secretKey);  ← descomente só se estiver debugando localmente
+        logger.info("🔑 Tamanho do secret configurado: {} caracteres", secretKey != null ? secretKey.length() : 0);
     }
 }
