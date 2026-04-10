@@ -69,7 +69,7 @@ public class SecurityConfig {
 
                         // Rotas protegidas com ROLE
                         .requestMatchers("/api/membros/**")
-                        .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        .hasAnyRole("ADMIN", "ROLE_SECRETARIO", "PASTOR", "TESOUREIRO")
 
                         .requestMatchers("/api/discipulado/**")
                         .hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
