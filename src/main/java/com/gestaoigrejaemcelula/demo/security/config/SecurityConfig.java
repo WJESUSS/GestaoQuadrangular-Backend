@@ -36,14 +36,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // CSRF desabilitado (API REST)
                 .csrf(csrf -> csrf.disable())
-                // Stateless (JWT)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Tratamento de erros
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
@@ -58,33 +53,19 @@ public class SecurityConfig {
                             response.getWriter().write("{\"status\":403,\"error\":\"Acesso negado\"}");
                         })
                 )
-
-                // Autorização de rotas
                 .authorizeHttpRequests(req -> req
-                        // ==================== ROTAS PÚBLICAS ====================
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/actuator/health", "/health", "/status").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ==================== ROTAS PROTEGIDAS POR ROLE ====================
-                        .requestMatchers("/api/membros/**")
-                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
-                        .requestMatchers("/api/discipulado/**")
-                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/relatorios/**")
-                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/tesouraria/**")
-                        .hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
-                        .requestMatchers("/api/celulas/**")
-                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-
-                        // Qualquer outra rota exige autenticação
+                        .requestMatchers("/api/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        .requestMatchers("/api/discipulado/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
+                        .requestMatchers("/api/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .anyRequest().authenticated()
                 )
-
-                // Adiciona o filtro JWT
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -108,13 +89,11 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // ==================== CORS CONFIG ====================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 🔥 Use allowedOriginPatterns apenas com origens específicas em produção
-        configuration.setAllowedOriginPatterns(List.of(
+        configuration.setAllowedOrigins(List.of(
                 "https://gestaoquadrangularpituacubr.vercel.app",
                 "http://localhost:5173",
                 "http://localhost:3000"
@@ -123,10 +102,11 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);   // importante se usar cookies ou auth header
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }
