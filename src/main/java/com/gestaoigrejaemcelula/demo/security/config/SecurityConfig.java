@@ -1,6 +1,6 @@
 package com.gestaoigrejaemcelula.demo.security.config;
 
-
+import com.gestaoigrejaemcelula.demo.security.filter.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +30,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Construtor mantido (injeção)
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -59,31 +60,31 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(req -> req
-                        // Preflight CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Rotas totalmente públicas
+                        // === ROTAS PÚBLICAS ===
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/actuator/health", "/health", "/status").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // Rotas protegidas por ROLE
+                        // === ROTAS PROTEGIDAS ===
                         .requestMatchers("/api/membros/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
                         .requestMatchers("/api/discipulado/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/api/relatorios/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/api/tesouraria/**").hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
                         .requestMatchers("/api/celulas/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
 
-                        // Qualquer outra rota exige autenticação
                         .anyRequest().authenticated()
                 )
 
-                // Adiciona o filtro JWT ANTES do filtro padrão do Spring Security
+                // Forma correta de adicionar o filtro
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
                 .build();
     }
 
+    // Restante da classe permanece igual
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
