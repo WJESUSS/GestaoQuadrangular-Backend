@@ -1,6 +1,6 @@
 package com.gestaoigrejaemcelula.demo.security.config;
 
-import com.gestaoigrejaemcelula.demo.security.filter.JwtAuthenticationFilter;
+
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
