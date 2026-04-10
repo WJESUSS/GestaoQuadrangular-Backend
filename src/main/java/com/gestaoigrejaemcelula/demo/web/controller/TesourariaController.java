@@ -8,26 +8,26 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.security.PrivilegedAction;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
-@RequestMapping("/tesouraria")
+@RequestMapping("/api/tesouraria")
 @CrossOrigin(origins = "http://localhost:5173")
+@PreAuthorize("hasAnyRole('ADMIN', 'TESOUREIRO', 'PASTOR')")
 public class TesourariaController {
 
     private final TesourariaService service;
     private final MembroRepository membroRepository;
     private final LancamentoTesourariaRepository lancamentoTesourariaRepository;
 
-    public TesourariaController(TesourariaService service, MembroRepository membroRepository, LancamentoTesourariaRepository lancamentoTesourariaRepository) {
+    public TesourariaController(TesourariaService service,
+                                MembroRepository membroRepository,
+                                LancamentoTesourariaRepository lancamentoTesourariaRepository) {
         this.service = service;
         this.membroRepository = membroRepository;
         this.lancamentoTesourariaRepository = lancamentoTesourariaRepository;
@@ -43,10 +43,12 @@ public class TesourariaController {
     public ResponseEntity<List<LancamentoTesouraria>> listar() {
         return ResponseEntity.ok(service.listar());
     }
+
     @GetMapping("/resumo")
     public Map<String, Object> resumo() {
         return service.getResumo();
     }
+
     @GetMapping("/membros-resumo")
     public List<Map<String, Object>> membrosResumo() {
         return service.getResumoPorMembro();
@@ -56,22 +58,23 @@ public class TesourariaController {
     public ResponseEntity<List<MembroSelectDTO>> listarParaSelect() {
         return ResponseEntity.ok(service.listarParaSelect());
     }
+
     @GetMapping("/select-nome")
     public ResponseEntity<List<MembroSelectDTO>> listarNomesParaSelect() {
         return ResponseEntity.ok(service.listarNomesParaSelect());
     }
+
     @GetMapping("/relatorio-tesouraria")
     public ResponseEntity<Map<String, Object>> relatorioMensal(
             @RequestParam(required = false) Integer mes,
             @RequestParam(required = false) Integer ano) {
 
-        // Se não passar, pega mês/ano atual
-        java.time.LocalDate hoje = java.time.LocalDate.now();
+        LocalDate hoje = LocalDate.now();
         int mesAtual = mes != null ? mes : hoje.getMonthValue();
         int anoAtual = ano != null ? ano : hoje.getYear();
 
         List<LancamentoTesouraria> registros = service.listarPorMesAno(mesAtual, anoAtual);
-        Map<String, java.math.BigDecimal> resumo = service.resumoMensal(mesAtual, anoAtual);
+        Map<String, BigDecimal> resumo = service.resumoMensal(mesAtual, anoAtual);
 
         Map<String, Object> resposta = new HashMap<>();
         resposta.put("registros", registros);
@@ -81,14 +84,14 @@ public class TesourariaController {
 
         return ResponseEntity.ok(resposta);
     }
+
     @GetMapping("/comparativo-anual")
     public ResponseEntity<Map<String, Object>> comparativoAnual(
             @RequestParam(required = false) Integer ano) {
 
-        java.time.LocalDate hoje = java.time.LocalDate.now();
+        LocalDate hoje = LocalDate.now();
         int anoAtual = (ano != null) ? ano : hoje.getYear();
 
-        // Lista com 12 meses, cada mês com total de dizimo e oferta
         List<Map<String, Object>> comparativo = new ArrayList<>();
 
         for (int m = 1; m <= 12; m++) {
@@ -109,6 +112,7 @@ public class TesourariaController {
 
         return ResponseEntity.ok(resposta);
     }
+
     @GetMapping("/fieis-infieis-mes")
     public ResponseEntity<Map<String, List<Membro>>> fieisInfieisMes(
             @RequestParam(required = false) Integer mes,
@@ -123,7 +127,6 @@ public class TesourariaController {
         List<Membro> fieis = new ArrayList<>();
 
         for (Membro m : todosMembros) {
-            // conta lançamentos do membro no mês
             long lancamentos = lancamentoTesourariaRepository
                     .countByMembroAndMesAno(m.getNome(), mesAtual, anoAtual);
 
@@ -140,5 +143,4 @@ public class TesourariaController {
 
         return ResponseEntity.ok(resultado);
     }
-
 }

@@ -17,9 +17,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/relatorios")
-@PreAuthorize("hasAnyAuthority('ADMIN', 'SECRETARIO', 'LIDER_CELULA')")
+@PreAuthorize("hasAnyRole('LIDER_CELULA', 'ADMIN', 'SECRETARIO')")
 public class RelatorioController {
-
 
     private final RelatorioService service;
     private final RelatorioPdfService pdfService;
@@ -30,41 +29,42 @@ public class RelatorioController {
         this.pdfService = pdfService;
     }
 
-
-
+    // Criar relatório
     @PostMapping
-    @PreAuthorize("hasAuthority('LIDER_CELULA')")
+    @PreAuthorize("hasRole('LIDER_CELULA')")
     public ResponseEntity<String> criar(@RequestBody @Valid RelatorioRequestDTO dto) {
         try {
             service.salvarRelatorio(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Relatório criado com sucesso!");
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("Relatório criado com sucesso!");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Erro ao criar relatório: " + e.getMessage());
         }
     }
 
-
-
+    // Listar relatórios da semana atual
     @GetMapping("/semana-atual")
     public ResponseEntity<List<RelatorioResponseDTO>> listarRelatoriosDaSemana() {
-        // Chamamos o service para garantir que a conversão para DTO aconteça
         List<RelatorioResponseDTO> dtos = service.listarRelatoriosUltimosSeteDias();
         return ResponseEntity.ok(dtos);
     }
+
+    // Listar todos os relatórios
     @GetMapping
     public ResponseEntity<List<RelatorioResponseDTO>> listarTodos() {
-        // Nunca retorne a Entity bruta se ela tiver relacionamentos Lazy
         List<RelatorioResponseDTO> dtos = service.listarTodosComoDTO();
         return ResponseEntity.ok(dtos);
     }
 
-    @PreAuthorize("hasAnyAuthority('LIDER_CELULA', 'ADMIN', 'SECRETARIO')")
+    // Listar por célula
+    @PreAuthorize("hasAnyRole('LIDER_CELULA', 'ADMIN', 'SECRETARIO')")
     @GetMapping("/celulas/{id}")
     public ResponseEntity<List<RelatorioResponseDTO>> listarPorCelula(@PathVariable Long id) {
         return ResponseEntity.ok(service.listarPorCelula(id));
     }
 
+    // Gerar PDF
     @GetMapping("/pdf")
     public ResponseEntity<byte[]> gerarPdf() {
 
@@ -77,7 +77,9 @@ public class RelatorioController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'PASTOR', 'SECRETARIO')")
+
+    // Buscar resumo por semana
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'SECRETARIO')")
     @GetMapping("/semana")
     public ResponseEntity<RelatorioResumoDTO> buscarPorSemana(
             @RequestParam("inicio") String inicioStr,
@@ -87,7 +89,6 @@ public class RelatorioController {
             LocalDate inicio = LocalDate.parse(inicioStr);
             LocalDate fim = LocalDate.parse(fimStr);
 
-            // Busca no serviço usando o intervalo exato vindo do Front-end
             RelatorioResumoDTO resumo = service.buscarResumoSemana(inicio, fim);
             return ResponseEntity.ok(resumo);
         } catch (Exception e) {
@@ -95,4 +96,3 @@ public class RelatorioController {
         }
     }
 }
-

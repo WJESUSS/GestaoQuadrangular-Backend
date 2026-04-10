@@ -36,7 +36,7 @@ public class CelulaController {
 
     // --- ROTAS DO LÍDER DE CÉLULA ---
 
-    @PreAuthorize("hasAuthority('LIDER_CELULA')")
+    @PreAuthorize("hasAnyRole('LIDER_CELULA')")
     @GetMapping("/minha-celula")
     public ResponseEntity<CelulaResponseDTO> minhaCelula(Authentication authentication) {
         String email = authentication.getName();

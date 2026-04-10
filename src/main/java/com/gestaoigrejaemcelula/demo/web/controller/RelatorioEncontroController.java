@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/relatorios/encontro")
 @CrossOrigin(origins = "http://localhost:5173")
-@PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA','PASTOR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA', 'PASTOR')")
 public class RelatorioEncontroController {
 
     private final RelatorioEncontroService service;
@@ -23,17 +23,21 @@ public class RelatorioEncontroController {
         this.service = service;
     }
 
+    // Resumo geral
     @GetMapping("/resumo")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA','PASTOR')")
     public ResponseEntity<RelatorioEncontroResumoDTO> resumo() {
         return ResponseEntity.ok(service.gerarResumo());
     }
+
+    // Buscar por período
     @GetMapping("/periodo")
     public ResponseEntity<List<FichaEncontro>> buscarPorPeriodo(
-            @RequestParam(value = "inicio", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
-            @RequestParam(value = "fim", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+            @RequestParam(value = "inicio", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
 
-        // Lógica de segurança: se as datas vierem nulas, define um padrão (ex: últimos 30 dias)
+            @RequestParam(value = "fim", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
+
         LocalDate dataInicioBusca = (inicio != null) ? inicio : LocalDate.now().minusDays(30);
         LocalDate dataFimBusca = (fim != null) ? fim : LocalDate.now();
 

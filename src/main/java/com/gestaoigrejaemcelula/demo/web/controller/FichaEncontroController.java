@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/fichas-encontro")
-@PreAuthorize("hasRole('ADMIN') or hasRole('SECRETARIO') or hasRole('LIDER_CELULA') or hasRole('PASTOR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA', 'PASTOR')")
 @CrossOrigin(origins = "http://localhost:5173")
 public class FichaEncontroController {
 

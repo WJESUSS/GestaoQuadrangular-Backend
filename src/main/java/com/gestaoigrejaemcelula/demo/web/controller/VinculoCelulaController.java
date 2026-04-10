@@ -17,7 +17,7 @@ public class VinculoCelulaController {
     }
 
     // vincular membro à célula
-    @PreAuthorize("hasAnyAuthority('LIDER_CELULA')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA', 'PASTOR')")
     @PostMapping("/{celulaId}/membros/{membroId}")
     public ResponseEntity<Void> vincular(
             @PathVariable Long celulaId,

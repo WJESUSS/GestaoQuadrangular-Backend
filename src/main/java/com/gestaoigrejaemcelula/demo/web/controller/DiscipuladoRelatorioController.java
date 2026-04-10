@@ -17,17 +17,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/discipulado")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('LIDER_CELULA', 'SECRETARIO', 'ADMIN', 'PASTOR')")
 public class DiscipuladoRelatorioController {
-
 
     private final DiscipuladoRelatorioService service;
 
-    /**
-     * Enviar relatório semanal de discipulado
-     * (líder envia)
-     */
+    // Enviar relatório semanal
     @PostMapping("/relatorio-semanal")
-    @PreAuthorize("hasAnyAuthority('LIDER_CELULA', 'SECRETARIO', 'ADMIN', 'PASTOR')")
     public ResponseEntity<Void> enviarRelatorioSemanal(
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -43,12 +39,9 @@ public class DiscipuladoRelatorioController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    /**
-     * Listar relatório da semana
-     * (pastor / secretaria)
-     */
+    // Listar relatório da semana
+    @PreAuthorize("hasAnyRole('PASTOR', 'SECRETARIO', 'ADMIN')")
     @GetMapping("/relatorio-semanal")
-    @PreAuthorize("hasAnyAuthority('PASTOR', 'SECRETARIO', 'ADMIN')")
     public ResponseEntity<List<DiscipuladoRelatorio>> listarSemana(
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -60,7 +53,9 @@ public class DiscipuladoRelatorioController {
     ) {
         return ResponseEntity.ok(service.listarSemana(inicio, fim));
     }
-    @PostMapping("/discipulado/semana")
+
+    // Alternativo (corrigido o path)
+    @PostMapping("/semana")
     public ResponseEntity<Void> salvarSemana(
             @RequestBody List<DiscipuladoRequestDTO> lista,
             @RequestParam LocalDate inicio,
@@ -69,9 +64,11 @@ public class DiscipuladoRelatorioController {
         service.salvarRelatorioSemanal(lista, inicio, fim);
         return ResponseEntity.ok().build();
     }
+
+    // Listar todos os relatórios
+    @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
     @GetMapping("/todos-relatorios")
     public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
-        // Retorna a lista para a secretaria
         return ResponseEntity.ok(service.listarTodosOsRelatorios());
     }
 }
