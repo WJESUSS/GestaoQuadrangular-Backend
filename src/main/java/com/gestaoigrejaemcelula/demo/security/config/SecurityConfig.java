@@ -70,11 +70,11 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                         // === ROTAS PROTEGIDAS ===
-                        .requestMatchers("/membros/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
-                        .requestMatchers("/discipulado/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/relatorios/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/tesouraria/**").hasAnyRole("ADMIN", "TESOUREIRO", "PASTOR")
-                        .requestMatchers("/celulas/**").hasAnyRole("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        .requestMatchers("/discipulado/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
+                        .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
+                        .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
 
                         .anyRequest().authenticated()
                 )
