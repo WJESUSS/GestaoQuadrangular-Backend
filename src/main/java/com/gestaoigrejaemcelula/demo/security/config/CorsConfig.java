@@ -17,7 +17,7 @@ import java.util.List;
 public class CorsConfig {
 
 
-    @Value("${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}")
+    @Value("${CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,https://gestaoquadrangularpituacubr.vercel.app}")
 
     private String allowedOriginsRaw;
 
