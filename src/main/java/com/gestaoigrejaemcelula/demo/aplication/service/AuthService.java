@@ -20,21 +20,21 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
 
     public TokenDTO login(LoginDTO dto) {
-        // 1. Autentica e já recupera o objeto de autenticação
-        var authentication = authenticationManager.authenticate(
+        // 1. Autentica — lança exceção automaticamente se credenciais inválidas
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        dto.email().toLowerCase(), // 🔥 CORREÇÃO AQUI
+                        dto.email().toLowerCase(),
                         dto.senha()
                 )
         );
-        // 2. Extrai o usuário (Principal) que o Spring Security carregou do banco
-        // Isso assume que sua classe Usuario implementa UserDetails
-        Usuario usuario = (Usuario) authentication.getPrincipal();
+
+        // 2. Busca o usuário no banco diretamente (evita problema de cast)
+        Usuario usuario = usuarioRepository.findByEmail(dto.email().toLowerCase())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
         // 3. Gera o token
         String token = jwtService.gerarToken(usuario);
 
         return new TokenDTO(token);
     }
-
 }
