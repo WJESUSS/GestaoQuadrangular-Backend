@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -31,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 🔥 LIBERA PREFLIGHT (CORS) — ESSENCIAL
+        // 🔥 CORS preflight
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
@@ -39,15 +38,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        // 🔥 IGNORA ROTAS PÚBLICAS
-        if (path.startsWith("/api/auth")) {
+        // 🔥 ROTAS PÚBLICAS (CORRIGIDO)
+        if (path.startsWith("/auth") || path.startsWith("/api/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final String authHeader = request.getHeader("Authorization");
 
-        // 🔥 SE NÃO TEM TOKEN → SEGUE NORMAL (NÃO BLOQUEIA)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -59,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             email = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            System.out.println("JWT inválido: " + jwt);
+            System.out.println("JWT inválido");
             filterChain.doFilter(request, response);
             return;
         }
