@@ -1,6 +1,5 @@
 package com.gestaoigrejaemcelula.demo.security.config;
 
-
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +29,6 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // Construtor mantido (injeção)
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -40,7 +38,10 @@ public class SecurityConfig {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -60,66 +61,91 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(req -> req
+
+                        // 🔓 LIBERA OPTIONS (CORS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // === ROTAS PÚBLICAS ===
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // 🔓 ROTAS PÚBLICAS (LOGIN / AUTH)
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // 🔓 OUTROS PÚBLICOS
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/actuator/health", "/health", "/status").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // === ROTAS PROTEGIDAS ===
-                        .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
-                        .requestMatchers("/discipulado/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
-                        .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
-                        .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
+                        // 🔐 ROTAS PROTEGIDAS
+                        .requestMatchers("/membros/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+
+                        .requestMatchers("/discipulado/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
+                        .requestMatchers("/relatorios/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
+
+                        .requestMatchers("/tesouraria/**")
+                        .hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
+
+                        .requestMatchers("/celulas/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
 
                         .anyRequest().authenticated()
                 )
 
-                // Forma correta de adicionar o filtro
+                // 🚨 IMPORTANTE: filtro JWT
+                // agora ele NÃO vai quebrar login porque vamos ignorar no próprio filtro
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
     }
 
-    // Restante da classe permanece igual
+    // 🔥 AUTH MANAGER
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    // 🔥 PROVIDER
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
-                                                         PasswordEncoder passwordEncoder) {
+    public AuthenticationProvider authenticationProvider(
+            UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder
+    ) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
+    // 🔥 PASSWORD ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // 🔥 CORS CORRIGIDO
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
         configuration.setAllowedOrigins(List.of(
                 "https://gestaoquadrangularpituacubr.vercel.app",
                 "http://localhost:5173",
                 "http://localhost:3000"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }
