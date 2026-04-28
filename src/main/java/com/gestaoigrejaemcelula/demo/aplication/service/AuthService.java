@@ -20,19 +20,23 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
 
     public TokenDTO login(LoginDTO dto) {
-        // 1. Autentica — lança exceção automaticamente se credenciais inválidas
+
+        // ✅ NORMALIZAÇÃO COMPLETA (ESSENCIAL)
+        String email = dto.email().trim().toLowerCase();
+
+        // 1. Autentica
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        dto.email().toLowerCase(),
+                        email,
                         dto.senha()
                 )
         );
 
-        // 2. Busca o usuário no banco diretamente (evita problema de cast)
-        Usuario usuario = usuarioRepository.findByEmail(dto.email().toLowerCase())
+        // 2. Busca usuário
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.email())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-        // 3. Gera o token
+        // 3. Gera token
         String token = jwtService.gerarToken(usuario);
 
         return new TokenDTO(token);

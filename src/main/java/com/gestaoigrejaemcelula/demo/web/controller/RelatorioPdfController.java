@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA', 'PASTOR')")
-@RequestMapping("/api/relatorios")
+@RequestMapping("/relatorios")
 public class RelatorioPdfController {
 
     private final RelatorioPdfService pdfService;

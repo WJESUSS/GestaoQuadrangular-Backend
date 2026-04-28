@@ -36,7 +36,7 @@ public class FichaEncontroService {
     public FichaEncontroResponseDTO criar(FichaEncontroRequestDTO dto) {
         // 1. Busca o usuário logado
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario usuario = usuarioRepository.findByEmail(username)
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("Usuário logado não encontrado: " + username));
 
         // 2. CONVERSÃO MANUAL: DTO -> ENTITY

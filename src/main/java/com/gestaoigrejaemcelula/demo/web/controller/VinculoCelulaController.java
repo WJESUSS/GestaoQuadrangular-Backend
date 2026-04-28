@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/celulas")
-@CrossOrigin(origins = "http://localhost:5173")
 public class VinculoCelulaController {
 
     private final VinculoCelulaService service;

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+
 @RequestMapping("/celulas")
 public class CelulaController {
 
@@ -36,11 +36,11 @@ public class CelulaController {
 
     // --- ROTAS DO LÍDER DE CÉLULA ---
 
-    @PreAuthorize("hasAnyRole('LIDER_CELULA')")
+    @PreAuthorize("hasRole('LIDER_CELULA')")
     @GetMapping("/minha-celula")
     public ResponseEntity<CelulaResponseDTO> minhaCelula(Authentication authentication) {
         String email = authentication.getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         // Busca célula **com membros carregados**

@@ -17,7 +17,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<TokenDTO> login(@RequestBody @Valid LoginDTO dto) {
-        var token = authService.login(dto);
+
+        // 🔥 normaliza email (resolve seu erro de login)
+        String emailNormalizado = dto.email().trim().toLowerCase();
+
+        // cria novo DTO com email corrigido
+        LoginDTO novoDto = new LoginDTO(emailNormalizado, dto.senha());
+
+        var token = authService.login(novoDto);
+
         return ResponseEntity.ok(token);
     }
 }

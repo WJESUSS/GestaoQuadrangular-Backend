@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
 @RequestMapping("/visitantes")
-@CrossOrigin(origins = "http://localhost:5173")
 // 💡 Mudamos para hasAnyAuthority e usamos os nomes EXATOS do seu banco (SECRETARIO masculino)
 @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA', 'PASTOR')")
 public class VisitanteController {

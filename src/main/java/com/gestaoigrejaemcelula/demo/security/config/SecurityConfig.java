@@ -1,6 +1,7 @@
 package com.gestaoigrejaemcelula.demo.security.config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.catalina.filters.CorsFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -62,19 +63,31 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(req -> req
 
-                        // 🔓 LIBERA OPTIONS (CORS)
+                        // 🔓 CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 🔓 ROTAS PÚBLICAS (LOGIN / AUTH)
+                        // 🔓 PUBLICO
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // 🔓 OUTROS PÚBLICOS
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/actuator/health", "/health", "/status").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // 🔓 DOCS
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
-                        // 🔐 ROTAS PROTEGIDAS
+
+                        // 🔐 REGRA ESPECÍFICA PRIMEIRO (🔥 CORREÇÃO)
+                        .requestMatchers("/celulas/minha-celula")
+                        .hasAnyAuthority("LIDER_CELULA")
+
+                        // 🔐 OUTRAS CELULAS
+                        .requestMatchers("/celulas/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/membros/sem-celula")
+                        .hasAnyAuthority("LIDER_CELULA", "PASTOR")
+
+
+
+
+                        // 🔐 OUTRAS ROTAS
                         .requestMatchers("/membros/**")
                         .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
 
@@ -83,22 +96,19 @@ public class SecurityConfig {
 
                         .requestMatchers("/relatorios/**")
                         .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
-
+                        .requestMatchers("/api/pastor/**")
+                        .hasAnyAuthority("PASTOR")
                         .requestMatchers("/tesouraria/**")
                         .hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
-
-                        .requestMatchers("/celulas/**")
-                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR")
 
                         .anyRequest().authenticated()
                 )
 
-                // 🚨 IMPORTANTE: filtro JWT
-                // agora ele NÃO vai quebrar login porque vamos ignorar no próprio filtro
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
     }
+
 
     // 🔥 AUTH MANAGER
     @Bean
@@ -127,24 +137,22 @@ public class SecurityConfig {
     // 🔥 CORS CORRIGIDO
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
-                "https://gestaoquadrangularpituacubr.vercel.app",
-                "http://localhost:5173",
-                "http://localhost:3000"
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173", // Vite
+                "http://localhost:4200"  // Angular
         ));
 
-        configuration.setAllowedMethods(Arrays.asList(
+        config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
 
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
 
         return source;
     }

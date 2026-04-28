@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/membros")
-@CrossOrigin(origins = "http://localhost:5173")
+
 @PreAuthorize("hasAnyRole('ADMIN','PASTOR','LIDER_CELULA','SECRETARIO','TESOUREIRO')")
 public class MembroController {
 

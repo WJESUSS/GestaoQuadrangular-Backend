@@ -22,7 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        var usuario = repository.findByEmail(username.toLowerCase())
+        var usuario = repository.findByEmailIgnoreCase(username.toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
         return usuario;

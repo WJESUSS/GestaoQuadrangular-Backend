@@ -13,8 +13,7 @@ import java.util.List;
 
 @RestController
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "http://localhost:5173")
-@RequestMapping("/api/usuarios") // ✅ corrigido
+@RequestMapping("/usuarios") // ✅ corrigido
 public class UsuarioController {
 
     private final UsuarioService service;

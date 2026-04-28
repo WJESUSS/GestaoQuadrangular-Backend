@@ -21,7 +21,7 @@ public class DataSeeder implements CommandLineRunner {
         String emailAdmin = "admin@gmail.com";
 
         // verifica se já existe
-        if (usuarioRepository.findByEmail(emailAdmin).isEmpty()) {
+        if (usuarioRepository.findByEmailIgnoreCase(emailAdmin).isEmpty()) {
 
             Usuario admin = new Usuario();
             admin.setEmail(emailAdmin.toLowerCase());

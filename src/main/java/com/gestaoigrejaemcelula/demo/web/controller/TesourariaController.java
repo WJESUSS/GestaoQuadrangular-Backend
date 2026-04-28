@@ -16,8 +16,8 @@ import java.time.LocalDate;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/tesouraria")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/tesouraria")
+
 @PreAuthorize("hasAnyRole('ADMIN', 'TESOUREIRO', 'PASTOR')")
 public class TesourariaController {
 

@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/relatorios/encontro")
-@CrossOrigin(origins = "http://localhost:5173")
 @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA', 'PASTOR')")
 public class RelatorioEncontroController {
 
