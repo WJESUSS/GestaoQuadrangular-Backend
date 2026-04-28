@@ -140,9 +140,10 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173", // Vite
-                "http://localhost:4200"  // Angular
-        ));
+                "http://localhost:5173",
+                "http://localhost:4200",
+                "https://gestaoquadrangularpituacubr.vercel.app"
+        ));;
 
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
