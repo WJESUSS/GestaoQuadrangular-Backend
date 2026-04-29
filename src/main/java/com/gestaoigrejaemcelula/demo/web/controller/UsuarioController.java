@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/usuarios") // ✅ corrigido
 public class UsuarioController {
 

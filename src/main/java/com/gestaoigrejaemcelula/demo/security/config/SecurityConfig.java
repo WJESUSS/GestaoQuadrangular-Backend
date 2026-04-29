@@ -141,10 +141,13 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:4200",
-                "https://gestaoquadrangularpituacubr.vercel.app",
-                "https://gestaoquadrangular-backend-dad1.onrender.com"
+                config.setAllowedOrigins(List.of(
+                        "http://localhost:5173",
+                        "http://localhost:4200",
+                        "https://gestaoquadrangularpituacubr.vercel.app",
+                        "https://gestao-quadrangular-frontend.vercel.app",  // ← adicione esta
+                        "https://gestaoquadrangular-backend-dad1.onrender.com"
+                ));
         ));
 
         config.setAllowedMethods(List.of(
