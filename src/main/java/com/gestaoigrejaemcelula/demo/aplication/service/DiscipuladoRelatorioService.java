@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
+import com.gestaoigrejaemcelula.demo.aplication.dto.AlertaDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.DiscipuladoRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.PresencaMembroDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioDiscipuladoDTO;
@@ -16,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -167,6 +169,41 @@ public class DiscipuladoRelatorioService {
                             primeiro.getSemanaInicio(),
                             primeiro.getSemanaFim(),
                             presencas
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+    public List<AlertaDTO> obterAlertasCriticos() {
+        LocalDate hoje = LocalDate.now();
+        LocalDate inicioSemana = hoje.with(DayOfWeek.MONDAY);
+        LocalDate fimSemana = hoje.with(DayOfWeek.SUNDAY);
+
+        List<DiscipuladoRelatorio> relatorios =
+                repository.findBySemanaInicioAndSemanaFim(inicioSemana, fimSemana);
+
+        return relatorios.stream()
+                .map(r -> {
+                    int faltas = 0;
+
+                    if (!r.isEscolaBiblica()) faltas++;
+                    if (!r.isQuartaNoite()) faltas++;
+                    if (!r.isQuintaNoite()) faltas++;
+                    if (!r.isDomingoManha()) faltas++;
+                    if (!r.isDomingoNoite()) faltas++;
+
+                    return new Object[]{r, faltas};
+                })
+                .filter(obj -> (int) obj[1] >= 2)
+                .map(obj -> {
+                    DiscipuladoRelatorio r = (DiscipuladoRelatorio) obj[0];
+                    int faltas = (int) obj[1];
+
+                    return new AlertaDTO(
+                            r.getMembro().getId(),
+                            r.getMembro().getNome(),
+                            r.getMembro().getTelefone(),
+                            r.getCelula() != null ? r.getCelula().getNome() : "Sem célula",
+                            faltas
                     );
                 })
                 .collect(Collectors.toList());

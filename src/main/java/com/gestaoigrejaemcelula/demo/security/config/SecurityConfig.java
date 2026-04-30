@@ -72,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
 
 
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -60,4 +60,30 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             "JOIN FETCH r.membro m")
     List<DiscipuladoRelatorio> findAllWithEagerRelationships();
 
+    @Query(value = """
+        SELECT 
+            m.id, 
+            m.nome, 
+            m.telefone, 
+            COALESCE(c.nome, 'Sem Célula') as nome_celula,
+            COUNT(dr.id) as total_faltas
+        FROM discipulado_relatorio dr
+        JOIN membros m ON m.id = dr.membro_id
+        LEFT JOIN celulas c ON m.celula_id = c.id
+        WHERE (dr.domingo_manha = false AND dr.domingo_noite = false)
+          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
+          AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano
+          AND m.id NOT IN (
+              SELECT da.membro_id FROM discipulado_acompanhamento da 
+              WHERE da.mes_referencia = :mesRef
+          )
+        GROUP BY m.id, m.nome, m.telefone, c.nome
+        HAVING COUNT(dr.id) >= 2
+    """, nativeQuery = true)
+    List<Object[]> buscarAlertasDetalhados(
+            @Param("mes") int mes,
+            @Param("ano") int ano,
+            @Param("mesRef") String mesRef
+    );
+
 }

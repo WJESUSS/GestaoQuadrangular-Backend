@@ -17,4 +17,12 @@ public class AlertaDTO {
     private String telefone;
     private String nomeCelula;
     private Integer totalFaltas;
+
+    public AlertaDTO(Long id, String nome, String telefone, String nomeCelula, Long totalFaltas) {
+        this.id = id;
+        this.nome = nome;
+        this.telefone = telefone;
+        this.nomeCelula = nomeCelula;
+        this.totalFaltas = totalFaltas.intValue(); // Converte aqui
+    }
 }

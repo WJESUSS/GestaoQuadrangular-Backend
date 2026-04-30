@@ -8,8 +8,10 @@ import com.gestaoigrejaemcelula.demo.domain.enums.Perfil;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.hibernate.Hibernate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -124,7 +126,7 @@ public class CelulaService {
     @Transactional(readOnly = true)
     public Celula buscarCelulaDoLider(Long liderId) {
         return celulaRepository.findByLider_IdAndAtivaTrue(liderId)
-                .orElseThrow(() -> new RuntimeException("Líder não possui célula ativa"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Líder não possui célula ativa"));
     }
 
     // =========================
@@ -149,17 +151,24 @@ public class CelulaService {
 
     @Transactional
     public void removerMembro(Long celulaId, Long membroId) {
-
         Membro membro = membroRepository.findById(membroId)
                 .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
 
-        if (membro.getCelula() == null ||
-                !membro.getCelula().getId().equals(celulaId)) {
+        if (membro.getCelula() == null || !membro.getCelula().getId().equals(celulaId)) {
             throw new RuntimeException("Membro não pertence a esta célula");
         }
 
+        Celula celula = membro.getCelula();
         membro.setCelula(null);
         membroRepository.save(membro);
+
+        // --- NOVA LÓGICA DE RESET ---
+        // Se após a remoção a célula tiver menos de 8 membros,
+        // resetamos o status para permitir um novo ciclo no futuro.
+        if (celula.getQuantidadeMembrosAtivos() < 8) {
+            celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.NORMAL);
+            celulaRepository.save(celula);
+        }
     }
 
     @Transactional
@@ -240,13 +249,19 @@ public class CelulaService {
             celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now());
             celulaRepository.save(celula);
 
-            // Notifica apenas o líder
+            // 1. Criamos o título
+            String titulo = "Sugestão de Multiplicação";
+
+            // 2. Preparamos a mensagem (removi o parabéns daqui para não ficar repetitivo com o título)
+            String mensagem = "🎉 Parabéns, líder! Sua célula **" + celula.getNome() +
+                    "** atingiu **" + qtdMembros + "** membros ativos.\n" +
+                    "Chegou a hora de pensar na multiplicação! Clique em 'Solicitar Multiplicação' no seu painel.";
+
+            // 3. Chamada corrigida com os 4 parâmetros
             notificacaoService.enviarNotificacao(
                     celula.getLider().getId(),
-                    "🎉 Parabéns, líder!\n\n" +
-                            "Sua célula **" + celula.getNome() + "** atingiu **" + qtdMembros + "** membros ativos.\n" +
-                            "Chegou a hora de pensar na multiplicação!\n\n" +
-                            "Clique em 'Solicitar Multiplicação' no dashboard da célula.",
+                    titulo, // <-- O parâmetro que faltava
+                    mensagem,
                     Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
             );
         }
@@ -256,63 +271,73 @@ public class CelulaService {
      * O líder solicita oficialmente a multiplicação da célula.
      * Muda o status para EM_ANALISE e notifica pastor + secretário (se existirem).
      */
+    /**
+     * O líder solicita oficialmente a multiplicação da célula.
+     * Muda o status para EM_ANALISE e notifica a liderança superior.
+     */
     @Transactional
     public void solicitarMultiplicacao(Long celulaId, String motivo, Long usuarioSolicitanteId) {
+        // 1. Busca a célula ou lança erro 404
         Celula celula = celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + celulaId));
 
-        // --- CORREÇÃO AQUI ---
-        // Aceitamos NORMAL (manual) ou SOLICITADO (automático)
-        // Bloqueamos apenas se já estiver em análise ou já resolvido
+        // 2. Validação de Status: Bloqueia apenas se já houver um processo pendente
         if (celula.getStatusMultiplicacao() == Celula.StatusMultiplicacao.EM_ANALISE) {
-            throw new IllegalStateException("Esta célula já possui uma solicitação em análise.");
+            throw new IllegalStateException("Esta célula já possui uma solicitação em análise pela secretaria.");
         }
 
-        if (celula.getStatusMultiplicacao() == Celula.StatusMultiplicacao.APROVADO) {
-            throw new IllegalStateException("Esta célula já teve a multiplicação aprovada.");
-        }
-        // ---------------------
-
-        // Só o líder pode solicitar
+        // 3. Segurança: Verifica se quem está tentando é de fato o líder da célula
         if (!celula.getLider().getId().equals(usuarioSolicitanteId)) {
-            throw new SecurityException("Apenas o líder da célula pode solicitar a multiplicação.");
+            throw new SecurityException("Apenas o líder responsável pela célula pode solicitar a multiplicação.");
         }
 
-        // Atualiza status para que apareça na lista da Secretaria/Pastor
+        // 4. Atualização dos Dados da Célula
         celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.EM_ANALISE);
-        celula.setMotivoSolicitacao(motivo != null && !motivo.trim().isEmpty() ? motivo.trim() : "Solicitação sem motivo informado");
+        celula.setMotivoSolicitacao(motivo != null && !motivo.trim().isEmpty() ? motivo.trim() : "Plano de multiplicação enviado pelo líder.");
+        celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now()); // Registra o momento do pedido
+
         celulaRepository.save(celula);
 
-        // Prepara mensagem para as notificações
-        String mensagem = "📢 NOVA SOLICITAÇÃO DE MULTIPLICAÇÃO\n\n" +
-                "Célula: " + celula.getNome() + "\n" +
-                "Líder: " + celula.getLider().getNome() + "\n" +
-                "Membros ativos: " + celula.getQuantidadeMembrosAtivos() + "\n" +
-                "Motivo: " + celula.getMotivoSolicitacao() + "\n\n" +
-                "Acesse o painel para analisar.";
+        // 5. Preparação das Notificações
+        String tituloAdm = "Nova Solicitação de Multiplicação";
+        String mensagemAdm = String.format(
+                "📢 SOLICITAÇÃO DE MULTIPLICAÇÃO\n\n" +
+                        "Célula: %s\n" +
+                        "Líder: %s\n" +
+                        "Membros Ativos: %d\n" +
+                        "Motivo: %s\n\n" +
+                        "Por favor, analise a viabilidade no painel administrativo.",
+                celula.getNome(),
+                celula.getLider().getNome(),
+                celula.getQuantidadeMembrosAtivos(),
+                celula.getMotivoSolicitacao()
+        );
 
-        // Notifica Pastor
+        // 6. Envio para Pastor (se vinculado)
         if (celula.getPastor() != null) {
             notificacaoService.enviarNotificacao(
                     celula.getPastor().getId(),
-                    mensagem,
+                    tituloAdm,
+                    mensagemAdm,
                     Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
             );
         }
 
-        // Notifica Secretário
+        // 7. Envio para Secretário (se vinculado)
         if (celula.getSecretario() != null) {
             notificacaoService.enviarNotificacao(
                     celula.getSecretario().getId(),
-                    mensagem,
+                    tituloAdm,
+                    mensagemAdm,
                     Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
             );
         }
 
-        // Notifica o Líder (Confirmação)
+        // 8. Confirmação para o Líder (Feedback visual de sucesso)
         notificacaoService.enviarNotificacao(
                 usuarioSolicitanteId,
-                "Sua solicitação da célula " + celula.getNome() + " foi enviada! Aguarde a análise.",
+                "Solicitação Enviada",
+                "Sua solicitação para a célula **" + celula.getNome() + "** foi encaminhada para a secretaria. Aguarde o retorno!",
                 Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
         );
     }
@@ -389,12 +414,39 @@ public class CelulaService {
 
         celulaRepository.save(celula);
 
-        // Notifica o Líder sobre a decisão
-        String msg = aprovado ? "🎉 Sua solicitação de multiplicação foi APROVADA!"
-                : "⚠️ Sua solicitação de multiplicação foi indeferida no momento.";
+        // 1. Criamos um título dinâmico
+        String titulo = aprovado ? "Multiplicação APROVADA" : "Solicitação Indeferida";
 
-        notificacaoService.enviarNotificacao(celula.getLider().getId(), msg,
-                Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA);
+        // 2. Ajustamos a mensagem
+        String msg = aprovado
+                ? "🎉 Parabéns! Sua solicitação de multiplicação para a célula " + celula.getNome() + " foi APROVADA!"
+                : "⚠️ Olá líder, sua solicitação de multiplicação para a célula " + celula.getNome() + " foi indeferida no momento.";
+
+        // 3. Chamada corrigida com os 4 parâmetros: ID, Título, Mensagem, Tipo
+        notificacaoService.enviarNotificacao(
+                celula.getLider().getId(),
+                titulo,
+                msg,
+                Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
+        );
     }
+    @Transactional
+    public CelulaStatusMultiplicacaoDTO atualizarStatusMultiplicacao(Long id, boolean aprovado) {
 
+        Celula celula = celulaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+
+        celula.setStatusMultiplicacao(
+                aprovado
+                        ? Celula.StatusMultiplicacao.APROVADO
+                        : Celula.StatusMultiplicacao.REJEITADO
+        );
+
+        celulaRepository.save(celula);
+
+        return new CelulaStatusMultiplicacaoDTO(
+                celula.getId(),
+                celula.getStatusMultiplicacao().name()
+        );
+    }
 }

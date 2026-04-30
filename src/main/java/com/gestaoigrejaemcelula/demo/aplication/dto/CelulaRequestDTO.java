@@ -11,7 +11,7 @@ public record CelulaRequestDTO(
         @NotBlank String nome,
         String anfitriao,
         String endereco,
-        @NotBlank String bairro,
+        @NotBlank(message = "O bairro é obrigatório") String bairro,
         @NotNull DayOfWeek diaSemana,
         @NotNull LocalTime horario,
         @NotNull(message = "O ID do líder é obrigatório") Long liderId

@@ -148,5 +148,17 @@ public class CelulaController {
         service.decidirMultiplicacao(id, decisao.aprovado());
         return ResponseEntity.ok().build();
     }
+    @PatchMapping("/{id}/atualizar-multiplicacao")
+    public ResponseEntity<CelulaStatusMultiplicacaoDTO> atualizarStatusMultiplicacao(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> payload) {
 
+        Boolean aprovado = payload.get("aprovado");
+        if (aprovado == null) return ResponseEntity.badRequest().build();
+
+        CelulaStatusMultiplicacaoDTO celulaAtualizada =
+                service.atualizarStatusMultiplicacao(id, aprovado);
+
+        return ResponseEntity.ok(celulaAtualizada);
+    }
 }

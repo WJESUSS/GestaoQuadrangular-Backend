@@ -1,6 +1,7 @@
 package com.gestaoigrejaemcelula.demo.domain.repository;
 
 
+import com.gestaoigrejaemcelula.demo.aplication.dto.AlertaDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.MembroSelectDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
@@ -60,5 +61,9 @@ public interface MembroRepository extends JpaRepository<Membro, Long> {
             @Param("mes") int mes,
             @Param("dia") int dia
     );
-
+    @Query("SELECT new com.gestaoigrejaemcelula.demo.aplication.dto.AlertaDTO(" +
+            "m.id, m.nome, m.telefone, m.celula.nome, " +
+            "(SELECT count(p) FROM Presenca p WHERE p.membro = m AND p.status = 'FALTA' AND p.data >= :dataLimite)) " +
+            "FROM Membro m WHERE m.status = com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro.ATIVO")
+    List<AlertaDTO> findAlertasMembros(@Param("dataLimite") LocalDate dataLimite);
 }

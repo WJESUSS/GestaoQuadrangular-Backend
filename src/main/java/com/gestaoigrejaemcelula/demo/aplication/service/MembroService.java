@@ -12,6 +12,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.VisitanteRepository; // I
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -196,5 +197,13 @@ public class MembroService {
 
         historicoRepository.save(historico);
     }
+    public List<AlertaDTO> obterAlertasCriticos() {
+        // Define o período de análise (últimos 21 dias para capturar até 3 domingos)
+        LocalDate dataLimite = LocalDate.now().minusDays(21);
 
+        // Usamos 'repository' que é o seu MembroRepository injetado no construtor
+        return repository.findAlertasMembros(dataLimite).stream()
+                .filter(alerta -> alerta.getTotalFaltas() != null && alerta.getTotalFaltas() >= 2)
+                .collect(Collectors.toList());
+    }
 }

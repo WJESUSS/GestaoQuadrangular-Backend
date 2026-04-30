@@ -19,7 +19,7 @@ public class DiscipuladoController {
     private DiscipuladoService service;
 
     // Rota: GET /api/discipulado/alertas?mes=2026-01
-    @GetMapping("/alertas")
+    @GetMapping("/alertas/critico")
     public ResponseEntity<List<AlertaDTO>> getAlertas(@RequestParam("mes") String mes) {
         // O Service agora cuida de quebrar a String e converter para DTO
         List<AlertaDTO> alertas = service.buscarAlertas(mes);
@@ -44,5 +44,17 @@ public class DiscipuladoController {
     public ResponseEntity<List<DiscipuladoRelatorioResponseDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosParaSecretaria());
     }
+    @Autowired
+    private DiscipuladoService discipuladoService;
 
+    @GetMapping("/alertas")
+    public ResponseEntity<List<AlertaDTO>> obterAlertas(@RequestParam(value = "mes", required = false) String mesRef) {
+        // Se o mês não for enviado, usa o mês atual como padrão
+        if (mesRef == null || mesRef.isEmpty()) {
+            mesRef = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+        }
+
+        List<AlertaDTO> alertas = discipuladoService.obterAlertasCriticosPorMes(mesRef);
+        return ResponseEntity.ok(alertas);
+    }
 }

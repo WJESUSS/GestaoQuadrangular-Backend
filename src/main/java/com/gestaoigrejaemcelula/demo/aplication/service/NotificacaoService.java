@@ -23,13 +23,18 @@ public class NotificacaoService {
      * Envia uma notificação interna para um usuário específico.
      * A notificação é salva no banco e ficará visível no dashboard/app do usuário.
      */
+    /**
+     * Envia uma notificação interna para um usuário específico.
+     * Adicionado o parâmetro 'titulo' para evitar erro de constraint no banco.
+     */
     @Transactional
-    public void enviarNotificacao(Long usuarioId, String mensagem, Notificacao.TipoNotificacao tipo) {
+    public void enviarNotificacao(Long usuarioId, String titulo, String mensagem, Notificacao.TipoNotificacao tipo) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado: " + usuarioId));
 
         Notificacao notificacao = new Notificacao();
         notificacao.setUsuario(usuario);
+        notificacao.setTitulo(titulo); // <-- Faltava esta linha!
         notificacao.setMensagem(mensagem);
         notificacao.setTipo(tipo);
         notificacao.setDataEnvio(LocalDateTime.now());
@@ -39,12 +44,12 @@ public class NotificacaoService {
     }
 
     /**
-     * Envia notificação para múltiplos usuários (ex: pastor + secretário)
+     * Envia notificação para múltiplos usuários
      */
     @Transactional
-    public void enviarNotificacaoParaVarios(List<Long> usuarioIds, String mensagem, Notificacao.TipoNotificacao tipo) {
+    public void enviarNotificacaoParaVarios(List<Long> usuarioIds, String titulo, String mensagem, Notificacao.TipoNotificacao tipo) {
         for (Long id : usuarioIds) {
-            enviarNotificacao(id, mensagem, tipo);
+            enviarNotificacao(id, titulo, mensagem, tipo); // Repassa o título aqui também
         }
     }
 
