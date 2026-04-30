@@ -2,12 +2,11 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 public record DiscipuladoRequestDTO(
         Long membroId,
-        Long celulaId, // <--- ADICIONE AQUI! O Jackson vai preencher isso automaticamente.
+        Long celulaId,
         boolean escolaBiblica,
-        boolean cultoSemana,
+        boolean quartaNoite,
+        boolean quintaNoite,
         boolean domingoManha,
         boolean domingoNoite
 ) {
-    // Não precisa escrever nada aqui dentro.
-    // O Java já cria automaticamente o método public Long celulaId()
 }

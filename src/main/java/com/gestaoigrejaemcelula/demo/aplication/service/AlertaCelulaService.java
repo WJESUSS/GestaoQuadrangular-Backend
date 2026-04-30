@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 import com.gestaoigrejaemcelula.demo.aplication.dto.CelulaAlertaDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Relatorio;
 import com.gestaoigrejaemcelula.demo.domain.repository.RelatorioRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ public class AlertaCelulaService {
 
     private final RelatorioRepository repository;
 
+    @Transactional
     public List<CelulaAlertaDTO> gerarAlertas() {
 
         LocalDate hoje = LocalDate.now();

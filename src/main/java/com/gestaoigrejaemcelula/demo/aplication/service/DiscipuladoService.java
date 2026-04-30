@@ -68,7 +68,8 @@ public class DiscipuladoService {
                 rel.getSemanaInicio(),
                 rel.getSemanaFim(),
                 rel.isEscolaBiblica(),
-                rel.isCultoSemana(),
+                rel.isQuartaNoite(),
+                rel.isQuintaNoite(),
                 rel.isDomingoManha(),
                 rel.isDomingoNoite()
         )).collect(Collectors.toList());

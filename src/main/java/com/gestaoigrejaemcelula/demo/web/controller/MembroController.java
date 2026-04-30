@@ -29,7 +29,7 @@ public class MembroController {
         return ResponseEntity.ok(service.criar(dto));
     }
 
-    @PreAuthorize("hasRole('LIDER_CELULA')")
+
     @GetMapping("/sem-celula")
     public ResponseEntity<List<MembroResumoDTO>> listarSemCelula() {
         return ResponseEntity.ok(service.listarSemCelula());

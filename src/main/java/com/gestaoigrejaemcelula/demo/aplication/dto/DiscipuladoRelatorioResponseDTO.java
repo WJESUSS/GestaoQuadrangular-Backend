@@ -12,8 +12,8 @@ public record DiscipuladoRelatorioResponseDTO(
         boolean escolaBiblica,
         boolean cultoSemana,
         boolean domingoManha,
-        boolean domingoNoite
+        boolean domingoNoite,
 
-) {
+        boolean noite) {
 
 }

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/alertas-celulas")
+@RequestMapping("/api/alertas-celulas")
 @RequiredArgsConstructor
 public class AlertaCelulaController {
 

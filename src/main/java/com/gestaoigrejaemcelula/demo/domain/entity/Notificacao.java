@@ -37,11 +37,16 @@ public class Notificacao {
 
     private LocalDateTime dataLida;
 
+    @Column(nullable = false)
+    private String titulo;
+
+    private String link;
+
     public enum TipoNotificacao {
         MULTIPLICACAO_CELULA,
         APROVACAO_SOLICITACAO,
         REJEICAO_SOLICITACAO,
         AVISO_GERAL,
-        LEMBRETE_REUNIAO
+        RELATORIO_PENDENTE, LEMBRETE_REUNIAO
     }
 }

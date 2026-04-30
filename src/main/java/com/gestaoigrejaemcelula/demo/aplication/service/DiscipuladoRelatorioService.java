@@ -78,9 +78,9 @@ public class DiscipuladoRelatorioService {
                 relatorio.setCelula(membro.getCelula());
             }
             // =================================================================================
-
             relatorio.setEscolaBiblica(dto.escolaBiblica());
-            relatorio.setCultoSemana(dto.cultoSemana());
+            relatorio.setQuartaNoite(dto.quartaNoite());
+            relatorio.setQuintaNoite(dto.quintaNoite());
             relatorio.setDomingoManha(dto.domingoManha());
             relatorio.setDomingoNoite(dto.domingoNoite());
 
@@ -152,7 +152,8 @@ public class DiscipuladoRelatorioService {
                                     r.getId(),
                                     r.getMembro().getNome(),
                                     r.isEscolaBiblica(),
-                                    r.isCultoSemana(),
+                                    r.isQuartaNoite(),
+                                    r.isQuintaNoite(),
                                     r.isDomingoManha(),
                                     r.isDomingoNoite()
                             ))

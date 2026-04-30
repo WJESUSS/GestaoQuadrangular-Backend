@@ -37,6 +37,7 @@ public class MembroService {
      * MÉTODO UNIFICADO: Busca Membros e Visitantes da mesma célula
      * Isso resolve o erro de duplicidade e traz todos para a chamada.
      */
+
     public List<MembroCelulaDTO> listarMembrosPorCelula(Long celulaId) {
         return repository.findByCelulaId(celulaId)
                 .stream()
@@ -58,7 +59,7 @@ public class MembroService {
         copiarDtoParaEntidade(dto, membro);
         return new MembroResponseDTO(repository.save(membro));
     }
-
+    @Transactional
     public MembroResponseDTO atualizar(Long id, MembroRequestDTO dto) {
         Membro membro = buscarEntidadePorId(id);
         copiarDtoParaEntidade(dto, membro);
@@ -80,7 +81,7 @@ public class MembroService {
                 })
                 .collect(Collectors.toList());
     }
-
+    @Transactional(readOnly = true)
     public List<MembroResponseDTO> listarTodos() {
         return repository.findAll().stream().map(MembroResponseDTO::new).toList();
     }

@@ -23,7 +23,8 @@ public class DiscipuladoRelatorio {
     private Membro membro;
 
     private boolean escolaBiblica;
-    private boolean cultoSemana; // quarta ou quinta
+    private boolean quartaNoite;
+    private boolean quintaNoite;
     private boolean domingoManha;
     private boolean domingoNoite;
 
@@ -77,13 +78,7 @@ public class DiscipuladoRelatorio {
         this.escolaBiblica = escolaBiblica;
     }
 
-    public boolean isCultoSemana() {
-        return cultoSemana;
-    }
 
-    public void setCultoSemana(boolean cultoSemana) {
-        this.cultoSemana = cultoSemana;
-    }
 
     public boolean isDomingoManha() {
         return domingoManha;
@@ -133,10 +128,25 @@ public class DiscipuladoRelatorio {
     public void calcularPresenca() {
         int total = 0;
         if (escolaBiblica) total++;
-        if (cultoSemana) total++;
+        if (quartaNoite) total++;
+        if (quintaNoite) total++;
         if (domingoManha) total++;
         if (domingoNoite) total++;
         this.totalPresencas = total;
     }
+    public boolean isQuartaNoite() {
+        return quartaNoite;
+    }
 
+    public void setQuartaNoite(boolean quartaNoite) {
+        this.quartaNoite = quartaNoite;
+    }
+
+    public boolean isQuintaNoite() {
+        return quintaNoite;
+    }
+
+    public void setQuintaNoite(boolean quintaNoite) {
+        this.quintaNoite = quintaNoite;
+    }
 }

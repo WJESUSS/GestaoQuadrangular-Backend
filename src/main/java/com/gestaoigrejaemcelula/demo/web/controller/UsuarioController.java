@@ -78,4 +78,5 @@ public class UsuarioController {
         service.alternarStatus(id);
         return ResponseEntity.noContent().build();
     }
+
 }

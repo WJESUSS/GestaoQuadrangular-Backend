@@ -1,12 +1,14 @@
 package com.gestaoigrejaemcelula.demo.domain.repository;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Relatorio;
+import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -57,5 +59,7 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
     WHERE r.dataReuniao BETWEEN :inicio AND :fim
 """)
     List<Relatorio> findByDataBetween(LocalDate inicio, LocalDate fim);
+
+
 
 }

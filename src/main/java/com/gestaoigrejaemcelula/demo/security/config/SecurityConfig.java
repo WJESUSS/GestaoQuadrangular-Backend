@@ -59,6 +59,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/membros/sem-celula").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/celulas/minha-celula").hasAnyAuthority("LIDER_CELULA")
@@ -69,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR","LIDER_CELULA")
                         .requestMatchers("/api/pastor/**").hasAnyAuthority("PASTOR")
                         .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
+
 
                         .anyRequest().authenticated()
                 )
