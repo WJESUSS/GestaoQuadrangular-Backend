@@ -110,7 +110,9 @@ public class SecurityConfig {
                 "http://localhost:4200",
                 "https://gestaoquadrangularpituacubr.vercel.app",
                 "https://gestao-quadrangular-frontend.vercel.app",
-                "https://gestaoquadrangular-backend-dad1.onrender.com"
+                "https://gestaoquadrangular-backend-dad1.onrender.com",
+                "https://portalieqpituacu.com.br",
+                "https://www.portalieqpituacu.com.br"
         ));
 
         config.setAllowedMethods(List.of(
