@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -94,5 +96,10 @@ public class RelatorioController {
         } catch (Exception e) {
             throw new IllegalArgumentException("Formato de data inválido. Use YYYY-MM-DD");
         }
+    }
+    @GetMapping("/historico")
+    public List<RelatorioResponseDTO> listarHistorico(Authentication authentication) {
+        String email = authentication.getName();
+        return service.listarHistoricoDaMinhaCelula(email);
     }
 }
