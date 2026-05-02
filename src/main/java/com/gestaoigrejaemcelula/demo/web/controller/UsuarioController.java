@@ -1,6 +1,7 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.CadastroUsuarioDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.UsuarioRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.UsuarioResponseDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import com.gestaoigrejaemcelula.demo.aplication.service.UsuarioService;
@@ -49,9 +50,10 @@ public class UsuarioController {
 
     // 4️⃣ Atualizar usuário
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> atualizar(@PathVariable Long id, @RequestBody CadastroUsuarioDTO dto) {
-        Usuario usuarioAtualizado = service.atualizar(id, dto);
-        return ResponseEntity.ok(usuarioAtualizado);
+    public ResponseEntity<UsuarioResponseDTO> atualizar(@PathVariable Long id, @RequestBody UsuarioRequestDTO dto) {
+        // O Service já devolve o DTO pronto para o JSON
+        UsuarioResponseDTO response = service.atualizar(id, dto);
+        return ResponseEntity.ok(response);
     }
 
     // 5️⃣ Deletar usuário

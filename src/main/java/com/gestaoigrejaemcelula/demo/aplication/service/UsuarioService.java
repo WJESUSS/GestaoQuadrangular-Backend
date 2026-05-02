@@ -2,6 +2,7 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.CadastroUsuarioDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.FichaEncontroResponseDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.UsuarioRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.UsuarioResponseDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.FichaEncontro;
@@ -69,25 +70,39 @@ public class UsuarioService {
 
     // 4️⃣ Atualizar usuário
     @Transactional
-    public Usuario atualizar(Long id, CadastroUsuarioDTO dto) {
-        Usuario usuario = buscarPorId(id);
-        usuario.setNome(dto.getNome());
-        usuario.setEmail(dto.getEmail());
-        if (dto.getSenha() != null && !dto.getSenha().isEmpty()) {
-            usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
-        }
-        usuario.setPerfil(dto.getPerfil());
-        usuario.setAtivo(dto.isAtivo());
+    public UsuarioResponseDTO atualizar(Long id, UsuarioRequestDTO dto) {
+        // 1. Busca o usuário por ID ou lança erro se não existir
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com ID: " + id));
 
-        if (dto.getCelulaId() != null) {
-            Celula celula = celulaRepository.findById(dto.getCelulaId())
-                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.getCelulaId()));
+        // 2. Atualiza os campos básicos
+        usuario.setNome(dto.nome());
+        usuario.setEmail(dto.email());
+        usuario.setPerfil(dto.perfil());
+
+        // Se houver lógica de 'ativo' no seu RequestDTO, aplique aqui.
+        // Caso contrário, ele mantém o estado atual.
+
+        // 3. Atualiza a senha apenas se uma nova for fornecida
+        if (dto.senha() != null && !dto.senha().trim().isEmpty()) {
+            usuario.setSenha(passwordEncoder.encode(dto.senha()));
+        }
+
+        // 4. Trata a associação com a Célula
+        if (dto.celulaId() != null) {
+            Celula celula = celulaRepository.findById(dto.celulaId())
+                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.celulaId()));
             usuario.setCelula(celula);
+        } else {
+            usuario.setCelula(null);
         }
 
-        return usuarioRepository.save(usuario);
-    }
+        // 5. Salva as alterações
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
+        // 6. Retorna o ResponseDTO (usando o construtor que você criou)
+        return new UsuarioResponseDTO(usuarioSalvo);
+    }
     // 5️⃣ Deletar usuário
     @Transactional
     public void deletar(Long id) {
