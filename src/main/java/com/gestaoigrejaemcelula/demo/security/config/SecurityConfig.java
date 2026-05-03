@@ -65,6 +65,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/celulas/minha-celula").hasAnyAuthority("LIDER_CELULA")
+                        .requestMatchers("/discipulado/**")
+                        .hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/membros/sem-celula").hasAnyAuthority("LIDER_CELULA", "PASTOR")
                         .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
