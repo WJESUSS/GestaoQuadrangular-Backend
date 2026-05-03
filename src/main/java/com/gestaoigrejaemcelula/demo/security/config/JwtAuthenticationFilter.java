@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -30,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 🔥 CORS preflight
+        // ✅ CORS preflight — deixa passar sem verificar token
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
@@ -38,52 +39,69 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        // 🔥 ROTAS PÚBLICAS (CORRIGIDO)
-        if (path.startsWith("/auth") || path.startsWith("/api/auth")) {
+        // ✅ Rotas públicas — deixa passar sem verificar token
+        if (path.startsWith("/auth") || path.startsWith("/api/auth") || path.startsWith("/actuator")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final String authHeader = request.getHeader("Authorization");
 
+        // ✅ Sem header Authorization — deixa o Spring Security decidir (vai retornar 401 se rota protegida)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("⚠️ [JWT] Header Authorization ausente ou inválido para: " + path);
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwt = authHeader.substring(7);
-        String email;
+        String jwt = authHeader.substring(7).trim();
 
+        // ✅ Token vazio após "Bearer "
+        if (jwt.isEmpty()) {
+            System.out.println("⚠️ [JWT] Token vazio para: " + path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String email;
         try {
             email = jwtService.extractUsername(jwt);
+            System.out.println("✅ [JWT] Username extraído: " + email + " | rota: " + path);
         } catch (Exception e) {
-            System.out.println("JWT inválido");
+            // ✅ Log detalhado para ver exatamente o que está falhando
+            System.out.println("❌ [JWT] Token inválido para rota " + path);
+            System.out.println("❌ [JWT] Erro: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            System.out.println("❌ [JWT] Token recebido (primeiros 40 chars): " + jwt.substring(0, Math.min(40, jwt.length())));
             filterChain.doFilter(request, response);
             return;
         }
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("✅ [JWT] Autenticado com sucesso: " + email
+                            + " | authorities: " + userDetails.getAuthorities()
+                            + " | rota: " + path);
+                } else {
+                    System.out.println("❌ [JWT] Token inválido ou expirado para usuário: " + email);
+                }
+            } catch (Exception e) {
+                System.out.println("❌ [JWT] Erro ao carregar usuário: " + email + " - " + e.getMessage());
             }
         }
 
         filterChain.doFilter(request, response);
     }
-
 }
