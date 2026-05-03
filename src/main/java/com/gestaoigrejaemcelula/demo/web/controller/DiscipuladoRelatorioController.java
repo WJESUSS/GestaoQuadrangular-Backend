@@ -71,4 +71,5 @@ public class DiscipuladoRelatorioController {
     public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosOsRelatorios());
     }
+
 }
