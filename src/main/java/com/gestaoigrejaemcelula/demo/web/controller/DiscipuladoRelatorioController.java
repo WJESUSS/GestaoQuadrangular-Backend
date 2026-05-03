@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/discipulado")
 @RequiredArgsConstructor
-
+@PreAuthorize("hasAnyRole('LIDER_CELULA', 'SECRETARIO', 'ADMIN', 'PASTOR')")
 public class DiscipuladoRelatorioController {
 
     private final DiscipuladoRelatorioService service;
@@ -40,7 +40,7 @@ public class DiscipuladoRelatorioController {
     }
 
     // Listar relatório da semana
-
+    @PreAuthorize("hasAnyRole('PASTOR', 'SECRETARIO', 'ADMIN')")
     @GetMapping("/relatorio-semanal")
     public ResponseEntity<List<DiscipuladoRelatorio>> listarSemana(
             @RequestParam
@@ -66,7 +66,7 @@ public class DiscipuladoRelatorioController {
     }
 
     // Listar todos os relatórios
-
+    @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
     @GetMapping("/todos-relatorios")
     public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosOsRelatorios());
