@@ -9,15 +9,16 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-
+@EnableMethodSecurity
 @RestController
 @RequestMapping("/discipulado")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('SECRETARIO', 'ADMIN', 'PASTOR')")
+
 public class DiscipuladoRelatorioController {
 
     private final DiscipuladoRelatorioService service;
@@ -40,7 +41,7 @@ public class DiscipuladoRelatorioController {
     }
 
     // Listar relatório da semana
-    @PreAuthorize("hasAnyAuthority('SECRETARIO', 'ADMIN', 'PASTOR')")
+
     @GetMapping("/relatorio-semanal")
     public ResponseEntity<List<DiscipuladoRelatorio>> listarSemana(
             @RequestParam
@@ -66,7 +67,7 @@ public class DiscipuladoRelatorioController {
     }
 
     // Listar todos os relatórios
-    @PreAuthorize("hasAnyAuthority('SECRETARIO', 'ADMIN', 'PASTOR')")
+
     @GetMapping("/todos-relatorios")
     public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosOsRelatorios());
