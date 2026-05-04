@@ -68,7 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/discipulado/**").permitAll()
                         .requestMatchers("/celulas/minha-celula").hasAnyAuthority("LIDER_CELULA")
                         .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/membros/sem-celula").hasAnyAuthority("LIDER_CELULA", "PASTOR")
+                        .requestMatchers("/membros/sem-celula").hasAnyAuthority("LIDER_CELULA", "PASTOR","SECRETARIO")
                         .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
                         .requestMatchers("/api/pastor/**").hasAnyAuthority("PASTOR")
                         .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
