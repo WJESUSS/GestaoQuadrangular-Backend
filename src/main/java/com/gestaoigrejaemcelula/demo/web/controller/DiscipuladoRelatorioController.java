@@ -40,7 +40,7 @@ public class DiscipuladoRelatorioController {
     }
 
     // Listar relatório da semana
-    @PreAuthorize("hasAnyRole('PASTOR', 'SECRETARIO', 'ADMIN')")
+
     @GetMapping("/relatorio-semanal")
     public ResponseEntity<List<DiscipuladoRelatorio>> listarSemana(
             @RequestParam
