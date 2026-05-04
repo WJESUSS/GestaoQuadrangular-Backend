@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
+import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioDiscipuladoDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioResponseDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioResumoDTO;
@@ -101,5 +102,10 @@ public class RelatorioController {
     public List<RelatorioResponseDTO> listarHistorico(Authentication authentication) {
         String email = authentication.getName();
         return service.listarHistoricoDaMinhaCelula(email);
+    }
+    @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
+    @GetMapping("/todos-relatorios")
+    public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
+        return ResponseEntity.ok(service.listarTodosOsRelatorios());
     }
 }

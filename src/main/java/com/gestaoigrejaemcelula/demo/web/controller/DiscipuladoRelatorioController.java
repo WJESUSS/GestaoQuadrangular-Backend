@@ -66,10 +66,10 @@ public class DiscipuladoRelatorioController {
     }
 
     // Listar todos os relatórios
-    @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
-    @GetMapping("/todos-relatorios")
-    public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
-        return ResponseEntity.ok(service.listarTodosOsRelatorios());
-    }
+  //  @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
+   // @GetMapping("/todos-relatorios")
+//public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
+     //   return ResponseEntity.ok(service.listarTodosOsRelatorios());
+//    }
 
 }

@@ -35,6 +35,8 @@ public class RelatorioService {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private UsuarioService usuarioService;
+    @Autowired
+    private  DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
 
     /* =========================
        SALVAR RELATÓRIO COMPLETO
@@ -268,4 +270,56 @@ public class RelatorioService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
+        List<DiscipuladoRelatorio> todos = discipuladoRelatorioRepository.findAllWithEagerRelationships();
+
+        return todos.stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.getLider().getId() + "-" + r.getSemanaInicio()
+                ))
+                .values().stream()
+                .map(listaDoGrupo -> {
+                    DiscipuladoRelatorio primeiro = listaDoGrupo.get(0);
+                    Usuario lider = primeiro.getLider();
+
+                    Celula celulaDoRelatorio = primeiro.getCelula();
+
+                    Long celulaId = null;
+                    String nomeCelula = "Célula não informada";
+
+                    if (celulaDoRelatorio != null) {
+                        celulaId = celulaDoRelatorio.getId();
+                        nomeCelula = celulaDoRelatorio.getNome();
+                    } else {
+                        if (lider != null && lider.getCelula() != null) {
+                            celulaId = lider.getCelula().getId();
+                            nomeCelula = lider.getCelula().getNome();
+                        }
+                    }
+
+                    List<PresencaMembroDTO> presencas = listaDoGrupo.stream()
+                            .map(r -> new PresencaMembroDTO(
+                                    r.getId(),
+                                    r.getMembro().getNome(),
+                                    r.isEscolaBiblica(),
+                                    r.isQuartaNoite(),
+                                    r.isQuintaNoite(),
+                                    r.isDomingoManha(),
+                                    r.isDomingoNoite()
+                            ))
+                            .collect(Collectors.toList());
+
+                    return new RelatorioDiscipuladoDTO(
+                            primeiro.getId(),
+                            celulaId,
+                            nomeCelula,
+                            lider != null ? lider.getNome() : "Líder desconhecido",
+                            primeiro.getSemanaInicio(),
+                            primeiro.getSemanaFim(),
+                            presencas
+                    );
+                })
+                .collect(Collectors.toList());
+    }
 }
