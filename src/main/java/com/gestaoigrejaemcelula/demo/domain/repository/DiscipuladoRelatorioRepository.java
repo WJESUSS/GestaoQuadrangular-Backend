@@ -11,7 +11,7 @@ import java.util.List;
 public interface DiscipuladoRelatorioRepository extends JpaRepository<DiscipuladoRelatorio, Long> {
 
     List<DiscipuladoRelatorio> findBySemanaInicioAndSemanaFim(LocalDate inicio, LocalDate fim);
-
+    List<DiscipuladoRelatorio> findBySemanaInicioBetween(LocalDate inicio, LocalDate fim);
     boolean existsByMembroIdAndSemanaInicioAndSemanaFim(Long membroId, LocalDate inicio, LocalDate fim);
     @Query("SELECT r FROM DiscipuladoRelatorio r " +
             "LEFT JOIN FETCH r.celula " + // O segredo é o FETCH

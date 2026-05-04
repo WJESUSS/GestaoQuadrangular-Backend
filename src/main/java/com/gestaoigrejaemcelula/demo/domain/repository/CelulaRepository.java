@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CelulaRepository extends JpaRepository<Celula, Long> {
-
+    List<Celula> findAllByAtivaTrue();
     @Query("SELECT c FROM Celula c " +
             "LEFT JOIN FETCH c.membros " +          // <--- isso carrega TODOS os membros
             "LEFT JOIN FETCH c.lider " +            // opcional, mas bom
