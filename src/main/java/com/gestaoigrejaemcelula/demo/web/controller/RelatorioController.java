@@ -20,9 +20,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/relatorios")
-@PreAuthorize("hasAnyRole('LIDER_CELULA', 'ADMIN', 'SECRETARIO')")
+@PreAuthorize("hasAnyRole('LIDER_CELULA', 'ADMIN', 'SECRETARIO', 'PASTOR')")  // ✅ adicionado PASTOR
 public class RelatorioController {
-
     private final RelatorioService service;
     private final RelatorioPdfService pdfService;
 
