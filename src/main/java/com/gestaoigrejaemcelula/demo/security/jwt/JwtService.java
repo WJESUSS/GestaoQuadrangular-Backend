@@ -83,7 +83,4 @@ public class JwtService {
         logger.info("✅ JWT Service inicializado com sucesso");
         logger.info("🔑 Tamanho do secret configurado: {} caracteres", secretKey != null ? secretKey.length() : 0);
     }
-    public String extractPerfil(String token) {
-        return extractAllClaims(token).get("perfil", String.class);
-    }
 }
