@@ -13,12 +13,9 @@ import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 @Service
 public class RelatorioService {
@@ -36,7 +33,12 @@ public class RelatorioService {
     @Autowired
     private UsuarioService usuarioService;
     @Autowired
-    private  DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
+    private DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
+
+    // ✅ Helper para evitar NullPointerException em campos Boolean do banco
+    private boolean safe(Boolean value) {
+        return Boolean.TRUE.equals(value);
+    }
 
     /* =========================
        SALVAR RELATÓRIO COMPLETO
@@ -55,48 +57,36 @@ public class RelatorioService {
         relatorio.setDataReuniao(dto.getDataReuniao());
         relatorio.setEstudo(dto.getEstudo());
 
-        // Visitantes avulsos
         relatorio.setQuantidadeVisitantes(
                 dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0
         );
 
-        /* ========= MEMBROS ========= */
         if (dto.getMembrosPresentesIds() != null && !dto.getMembrosPresentesIds().isEmpty()) {
-
             List<Membro> membros = membroRepository.findAllById(dto.getMembrosPresentesIds());
-
             if (membros.size() != dto.getMembrosPresentesIds().size()) {
                 throw new IllegalArgumentException("Um ou mais membros não existem");
             }
-
             relatorio.setPresentes(membros);
         }
 
-        /* ========= VISITANTES COM DECISÃO ========= */
         if (dto.getVisitantesPresentes() != null && !dto.getVisitantesPresentes().isEmpty()) {
             List<Long> ids = dto.getVisitantesPresentes()
                     .stream()
                     .map(v -> v.getId())
-
                     .toList();
-
 
             List<Visitante> visitantes = visitanteRepository.findAllById(ids);
 
             for (Visitante visitante : visitantes) {
-
                 dto.getVisitantesPresentes().stream()
                         .filter(v -> v.getId().equals(visitante.getId()))
                         .findFirst()
                         .ifPresent(vdto -> {
-
                             visitante.setDecisaoEspiritual(
                                     vdto.getDecisaoEspiritual() != null
                                             ? vdto.getDecisaoEspiritual()
                                             : DecisaoEspiritual.NENHUMA
                             );
-
-                            // 🔥 GARANTE SALVAR
                             visitanteRepository.save(visitante);
                         });
             }
@@ -107,14 +97,12 @@ public class RelatorioService {
         relatorioRepository.save(relatorio);
     }
 
-
     /* =========================
        LISTAGENS
        ========================= */
 
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> listarRelatoriosUltimosSeteDias() {
-
         ZoneId zoneId = ZoneId.of("America/Sao_Paulo");
         LocalDate hoje = LocalDate.now(zoneId);
         LocalDate seteDiasAtras = hoje.minusDays(7);
@@ -145,7 +133,6 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> listarHistoricoDaMinhaCelula(String email) {
-
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -159,12 +146,11 @@ public class RelatorioService {
     }
 
     /* =========================
-       RESUMO SEMANAL CORRIGIDO
+       RESUMO SEMANAL
        ========================= */
 
     @Transactional(readOnly = true)
     public RelatorioResumoDTO buscarResumoSemana(LocalDate inicio, LocalDate fim) {
-
         List<Relatorio> relatorios = relatorioRepository.findByDataReuniaoBetween(inicio, fim);
 
         int totalMembros = relatorios.stream()
@@ -186,9 +172,7 @@ public class RelatorioService {
         dto.setTotalCelulas(totalCelulas);
         dto.setTotalMembros(totalMembros);
         dto.setTotalVisitantes(totalVisitantes);
-        dto.setRelatorios(
-                relatorios.stream().map(this::converterParaDTO).toList()
-        );
+        dto.setRelatorios(relatorios.stream().map(this::converterParaDTO).toList());
 
         return dto;
     }
@@ -198,67 +182,47 @@ public class RelatorioService {
        ========================= */
 
     private RelatorioResponseDTO converterParaDTO(Relatorio relatorio) {
-
         RelatorioResponseDTO dto = new RelatorioResponseDTO();
 
         dto.setId(relatorio.getId());
         dto.setCelulaId(relatorio.getCelula().getId());
         dto.setNomeCelula(relatorio.getCelula().getNome());
-
         dto.setNomeLider(
                 relatorio.getCelula().getLider() != null
                         ? relatorio.getCelula().getLider().getNome()
                         : "Sem líder"
         );
-
         dto.setDataReuniao(relatorio.getDataReuniao());
         dto.setEstudo(relatorio.getEstudo());
 
-        /* MEMBROS */
         if (relatorio.getPresentes() != null) {
             dto.setMembrosPresentes(
                     relatorio.getPresentes().stream()
-                            .map(m -> new PessoaPresencaDTO(
-                                    m.getId(),
-                                    m.getNome(),
-                                    DecisaoEspiritual.NENHUMA
-                            ))
+                            .map(m -> new PessoaPresencaDTO(m.getId(), m.getNome(), DecisaoEspiritual.NENHUMA))
                             .toList()
             );
         }
 
-        /* VISITANTES */
         if (relatorio.getVisitantesPresentes() != null) {
             dto.setVisitantesPresentes(
                     relatorio.getVisitantesPresentes().stream()
-                            .map(v -> new PessoaPresencaDTO(
-                                    v.getId(),
-                                    v.getNome(),
-                                    v.getDecisaoEspiritual()
-                            ))
+                            .map(v -> new PessoaPresencaDTO(v.getId(), v.getNome(), v.getDecisaoEspiritual()))
                             .toList()
             );
         }
 
         int visitantesAvulsos = relatorio.getQuantidadeVisitantes() != null
-                ? relatorio.getQuantidadeVisitantes()
-                : 0;
+                ? relatorio.getQuantidadeVisitantes() : 0;
 
         dto.setQuantidadeVisitantes(visitantesAvulsos);
-
-        int total = relatorio.getTotalPresentes();
-        dto.setTotalPresentes(total);
+        dto.setTotalPresentes(relatorio.getTotalPresentes());
 
         return dto;
     }
 
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> buscarPorSemana(String data) {
-
-        ZoneId zoneId = ZoneId.of("America/Sao_Paulo");
-
         LocalDate dataBase = LocalDate.parse(data);
-
         LocalDate inicioSemana = dataBase.with(DayOfWeek.MONDAY);
         LocalDate fimSemana = dataBase.with(DayOfWeek.SUNDAY);
 
@@ -302,11 +266,11 @@ public class RelatorioService {
                             .map(r -> new PresencaMembroDTO(
                                     r.getId(),
                                     r.getMembro().getNome(),
-                                    r.isEscolaBiblica(),
-                                    r.isQuartaNoite(),
-                                    r.isQuintaNoite(),
-                                    r.isDomingoManha(),
-                                    r.isDomingoNoite()
+                                    safe(r.isEscolaBiblica()),  // ✅ seguro contra null
+                                    safe(r.isQuartaNoite()),    // ✅ seguro contra null
+                                    safe(r.isQuintaNoite()),    // ✅ seguro contra null
+                                    safe(r.isDomingoManha()),   // ✅ seguro contra null
+                                    safe(r.isDomingoNoite())    // ✅ seguro contra null
                             ))
                             .collect(Collectors.toList());
 

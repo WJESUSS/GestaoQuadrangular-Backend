@@ -8,7 +8,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.DiscipuladoRelatorio;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
-import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository; // <--- IMPORTANTE
+import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.DiscipuladoRelatorioRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
@@ -30,11 +30,13 @@ public class DiscipuladoRelatorioService {
     private final DiscipuladoRelatorioRepository repository;
     private final MembroRepository membroRepository;
     private final UsuarioRepository usuarioRepository;
-    private final CelulaRepository celulaRepository; // <--- ADICIONADO: Necessário para buscar a célula
+    private final CelulaRepository celulaRepository;
 
-    /**
-     * Salva o relatório semanal de discipulado
-     */
+    // ✅ Helper para evitar NullPointerException em campos Boolean do banco
+    private boolean safe(Boolean value) {
+        return Boolean.TRUE.equals(value);
+    }
+
     @Transactional
     public void salvarRelatorioSemanal(
             List<DiscipuladoRequestDTO> lista,
@@ -45,7 +47,6 @@ public class DiscipuladoRelatorioService {
 
         for (DiscipuladoRequestDTO dto : lista) {
 
-            // Evita duplicar relatório da mesma semana para o mesmo membro
             boolean existe = repository.existsByMembroIdAndSemanaInicioAndSemanaFim(
                     dto.membroId(), inicio, fim
             );
@@ -64,22 +65,15 @@ public class DiscipuladoRelatorioService {
             relatorio.setSemanaFim(fim);
             relatorio.setMembro(membro);
 
-            // =================================================================================
-            // CORREÇÃO CRÍTICA AQUI:
-            // Busca a célula pelo ID que veio do Frontend e atribui ao relatório.
-            // =================================================================================
             if (dto.celulaId() != null) {
                 Celula celula = celulaRepository.findById(dto.celulaId())
                         .orElseThrow(() -> new RuntimeException("Célula não encontrada com ID: " + dto.celulaId()));
                 System.out.println("DTO RECEBIDO -> Membro: " + dto.membroId() + " | Celula ID: " + dto.celulaId());
-
-                relatorio.setCelula(celula); // <--- AGORA O ID SERÁ SALVO NO BANCO
-
+                relatorio.setCelula(celula);
             } else {
-                // Fallback: Se o front não mandou (erro), tenta pegar do cadastro do membro
                 relatorio.setCelula(membro.getCelula());
             }
-            // =================================================================================
+
             relatorio.setEscolaBiblica(dto.escolaBiblica());
             relatorio.setQuartaNoite(dto.quartaNoite());
             relatorio.setQuintaNoite(dto.quintaNoite());
@@ -95,20 +89,11 @@ public class DiscipuladoRelatorioService {
         }
     }
 
-    /**
-     * Lista relatórios de uma semana específica (para pastor/secretaria)
-     */
     @Transactional(readOnly = true)
-    public List<DiscipuladoRelatorio> listarSemana(
-            LocalDate inicio,
-            LocalDate fim
-    ) {
+    public List<DiscipuladoRelatorio> listarSemana(LocalDate inicio, LocalDate fim) {
         return repository.findBySemanaInicioAndSemanaFim(inicio, fim);
     }
 
-    /**
-     * Usuário autenticado (líder que está enviando o relatório)
-     */
     private Usuario usuarioLogado() {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
@@ -118,9 +103,6 @@ public class DiscipuladoRelatorioService {
                 .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado: " + email));
     }
 
-    /**
-     * Lista todos os relatórios agrupados para visualização da Secretaria / Pastor
-     */
     @Transactional(readOnly = true)
     public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
         List<DiscipuladoRelatorio> todos = repository.findAllWithEagerRelationships();
@@ -153,11 +135,11 @@ public class DiscipuladoRelatorioService {
                             .map(r -> new PresencaMembroDTO(
                                     r.getId(),
                                     r.getMembro().getNome(),
-                                    r.isEscolaBiblica(),
-                                    r.isQuartaNoite(),
-                                    r.isQuintaNoite(),
-                                    r.isDomingoManha(),
-                                    r.isDomingoNoite()
+                                    safe(r.isEscolaBiblica()),  // ✅ seguro contra null
+                                    safe(r.isQuartaNoite()),    // ✅ seguro contra null
+                                    safe(r.isQuintaNoite()),    // ✅ seguro contra null
+                                    safe(r.isDomingoManha()),   // ✅ seguro contra null
+                                    safe(r.isDomingoNoite())    // ✅ seguro contra null
                             ))
                             .collect(Collectors.toList());
 
@@ -173,6 +155,7 @@ public class DiscipuladoRelatorioService {
                 })
                 .collect(Collectors.toList());
     }
+
     public List<AlertaDTO> obterAlertasCriticos() {
         LocalDate hoje = LocalDate.now();
         LocalDate inicioSemana = hoje.with(DayOfWeek.MONDAY);
@@ -185,11 +168,11 @@ public class DiscipuladoRelatorioService {
                 .map(r -> {
                     int faltas = 0;
 
-                    if (!r.isEscolaBiblica()) faltas++;
-                    if (!r.isQuartaNoite()) faltas++;
-                    if (!r.isQuintaNoite()) faltas++;
-                    if (!r.isDomingoManha()) faltas++;
-                    if (!r.isDomingoNoite()) faltas++;
+                    if (!safe(r.isEscolaBiblica())) faltas++;  // ✅ seguro contra null
+                    if (!safe(r.isQuartaNoite()))   faltas++;  // ✅ seguro contra null
+                    if (!safe(r.isQuintaNoite()))   faltas++;  // ✅ seguro contra null
+                    if (!safe(r.isDomingoManha()))  faltas++;  // ✅ seguro contra null
+                    if (!safe(r.isDomingoNoite()))  faltas++;  // ✅ seguro contra null
 
                     return new Object[]{r, faltas};
                 })
@@ -208,6 +191,4 @@ public class DiscipuladoRelatorioService {
                 })
                 .collect(Collectors.toList());
     }
-
-
 }
