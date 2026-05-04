@@ -103,7 +103,7 @@ public class RelatorioController {
         String email = authentication.getName();
         return service.listarHistoricoDaMinhaCelula(email);
     }
-    @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
+    // Sem @PreAuthorize — o SecurityConfig já garante o acesso correto
     @GetMapping("/todos-relatorios")
     public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosOsRelatorios());
