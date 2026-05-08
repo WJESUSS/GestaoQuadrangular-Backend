@@ -65,11 +65,13 @@ public class SecurityConfig {
 
                         // ✅ removida linha duplicada de /relatorios/** com permitAll()
                         // ✅ removida linha duplicada de /membros/sem-celula
+                        .requestMatchers("/api/casas-de-paz/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+
                         .requestMatchers("/discipulado/**").permitAll()
                         .requestMatchers("/celulas/minha-celula").hasAnyAuthority("LIDER_CELULA")
                         .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/membros/sem-celula").hasAnyAuthority("LIDER_CELULA", "PASTOR","SECRETARIO")
-                        .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO")
+                        .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO","LIDER_CELULA")
                         .requestMatchers("/api/pastor/**").hasAnyAuthority("PASTOR")
                         .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
                         .requestMatchers("/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")

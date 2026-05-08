@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/membros")
 
-@PreAuthorize("hasAnyRole('ADMIN','PASTOR','LIDER_CELULA','SECRETARIO','TESOUREIRO')")
+
 public class MembroController {
 
     private final MembroService service;
