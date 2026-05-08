@@ -1,4 +1,4 @@
-package com.gestaoigrejaemcelula.demo.domain.dto;
+package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.CasaDePaz;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;

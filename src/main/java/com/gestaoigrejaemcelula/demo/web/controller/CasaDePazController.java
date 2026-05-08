@@ -4,7 +4,7 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.aplication.service.CasaDePazPdfService;
 import com.gestaoigrejaemcelula.demo.aplication.service.CasaDePazService;
 
-import com.gestaoigrejaemcelula.demo.domain.dto.CasaDePazResponseDTO;
+
 import com.gestaoigrejaemcelula.demo.domain.entity.CasaDePaz;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;
 import org.springframework.format.annotation.DateTimeFormat;
