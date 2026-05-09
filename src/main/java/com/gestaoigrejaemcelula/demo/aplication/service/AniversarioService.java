@@ -3,8 +3,9 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 import com.gestaoigrejaemcelula.demo.aplication.dto.AniversarianteDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
-
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -20,8 +21,10 @@ public class AniversarioService {
         this.membroRepository = membroRepository;
     }
 
+    // Chave = "dia-05-09" — muda automaticamente todo dia
+    @Cacheable(value = "aniversariantes", key = "'dia-' + T(java.time.LocalDate).now().toString()")
+    @Transactional(readOnly = true)
     public List<AniversarianteDTO> listarAniversariantesDoDia() {
-
         LocalDate hoje = LocalDate.now();
 
         List<Membro> membros = membroRepository.findAniversariantesDoDia(
@@ -30,7 +33,6 @@ public class AniversarioService {
         );
 
         return membros.stream().map(m -> {
-
             String mensagem = """
                 🎉 Feliz Aniversário %s!
                 
@@ -41,22 +43,11 @@ public class AniversarioService {
                 Pastor e Pastora ❤️
                 """.formatted(m.getNome());
 
-            String mensagemCodificada =
-                    URLEncoder.encode(mensagem, StandardCharsets.UTF_8);
+            String mensagemCodificada = URLEncoder.encode(mensagem, StandardCharsets.UTF_8);
+            String telefoneLimpo      = m.getTelefone().replaceAll("[^0-9]", "");
+            String link               = "https://wa.me/" + telefoneLimpo + "?text=" + mensagemCodificada;
 
-            String telefoneLimpo =
-                    m.getTelefone().replaceAll("[^0-9]", "");
-
-            String link = "https://wa.me/" + telefoneLimpo +
-                    "?text=" + mensagemCodificada;
-
-            return new AniversarianteDTO(
-                    m.getId(),
-                    m.getNome(),
-                    telefoneLimpo,
-                    link
-            );
-
+            return new AniversarianteDTO(m.getId(), m.getNome(), telefoneLimpo, link);
         }).toList();
     }
 }

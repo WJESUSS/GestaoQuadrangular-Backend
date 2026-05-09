@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.8</version>
+        <version>3.3.5</version>
         <relativePath/>
     </parent>
 
@@ -81,6 +81,11 @@
             <version>3.2.0</version>
         </dependency>
 
+        <!-- pom.xml -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <!-- PDF ITEXT -->
         <dependency>
             <groupId>com.itextpdf</groupId>
@@ -115,11 +120,7 @@
         </dependency>
 
         <!-- DEVTOOLS -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+
 
         <!-- TESTES -->
         <dependency>
@@ -139,7 +140,10 @@
             <artifactId>jjwt-api</artifactId>
             <version>0.12.5</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
@@ -193,7 +197,6 @@
 
     <build>
 
-        <!-- 🔥 CORREÇÃO DO ERRO -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

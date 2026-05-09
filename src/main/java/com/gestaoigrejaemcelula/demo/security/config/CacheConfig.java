@@ -1,0 +1,60 @@
+package com.gestaoigrejaemcelula.demo.security.config;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.cache.support.SimpleCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+@Configuration
+public class CacheConfig {
+
+    @Bean
+    public CacheManager cacheManager() {
+
+        CaffeineCache metricasCache = new CaffeineCache("metricas-pastor",
+                Caffeine.newBuilder()
+                        .maximumSize(50)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .build());
+
+        CaffeineCache rankingCache = new CaffeineCache("ranking-celulas",
+                Caffeine.newBuilder()
+                        .maximumSize(50)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .build());
+
+        CaffeineCache aniversariantesCache = new CaffeineCache("aniversariantes",
+                Caffeine.newBuilder()
+                        .maximumSize(10)
+                        .expireAfterWrite(1, TimeUnit.HOURS)
+                        .build());
+
+        CaffeineCache alertasCache = new CaffeineCache("alertas-discipulado",
+                Caffeine.newBuilder()
+                        .maximumSize(50)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .build());
+
+        CaffeineCache secretariaCache = new CaffeineCache("secretaria-discipulado",
+                Caffeine.newBuilder()
+                        .maximumSize(10)
+                        .expireAfterWrite(3, TimeUnit.MINUTES)
+                        .build());
+
+        SimpleCacheManager manager = new SimpleCacheManager();
+        manager.setCaches(List.of(
+                metricasCache,
+                rankingCache,
+                aniversariantesCache,
+                alertasCache,
+                secretariaCache
+        ));
+
+        return manager;
+    }
+}

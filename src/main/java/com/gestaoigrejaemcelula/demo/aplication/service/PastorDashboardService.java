@@ -5,7 +5,9 @@ import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.DiscipuladoAcompanhamentoRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -17,40 +19,25 @@ public class PastorDashboardService {
     private MembroRepository membroRepository;
     @Autowired
     private CelulaRepository celulaRepository;
-
     @Autowired
     private DiscipuladoAcompanhamentoRepository acompanhamentoRepository;
+
+    // Cache por mês — chave "2026-05", "2026-04", etc.
+    @Cacheable(value = "metricas-pastor", key = "#mes")
+    @Transactional(readOnly = true)
     public PastorMetricasDTO carregarMetricas(String mes) {
-        // 🔹 Converte "2026-01" para YearMonth para extrair Mês e Ano
         YearMonth yearMonth = YearMonth.parse(mes);
         int mesInt = yearMonth.getMonthValue();
         int anoInt = yearMonth.getYear();
 
         LocalDate inicio = yearMonth.atDay(1);
-        LocalDate fim = yearMonth.atEndOfMonth();
+        LocalDate fim    = yearMonth.atEndOfMonth();
 
-        // Busca o total de membros
-        Long totalMembros = membroRepository.count();
+        Long totalMembros     = membroRepository.count();
+        Long novosMembrosMes  = membroRepository.novosMembrosMes(inicio, fim);
+        Long naoAcompanhados  = acompanhamentoRepository.contarPendentesReal(mesInt, anoInt, mes);
+        Long celulasAtivas    = celulaRepository.countByAtivaTrue();
 
-        // Busca novos membros no intervalo do mês
-        Long novosMembrosMes = membroRepository.novosMembrosMes(inicio, fim);
-
-        // Busca pendências de acompanhamento
-        Long naoAcompanhados = acompanhamentoRepository.contarPendentesReal(
-                mesInt,
-                anoInt,
-                mes
-        );
-
-        // --- NOVA LINHA: Busca o total de células que estão com status ativa = true ---
-        Long celulasAtivas = celulaRepository.countByAtivaTrue();
-
-        // Retorna o DTO com o novo campo (certifique-se que o DTO tem esse 4º parâmetro no construtor)
-        return new PastorMetricasDTO(
-                totalMembros,
-                novosMembrosMes,
-                naoAcompanhados,
-                celulasAtivas
-        );
+        return new PastorMetricasDTO(totalMembros, novosMembrosMes, naoAcompanhados, celulasAtivas);
     }
 }
