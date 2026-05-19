@@ -67,6 +67,8 @@ public class SecurityConfig {
                         // ✅ removida linha duplicada de /membros/sem-celula
                         .requestMatchers("/api/casas-de-paz/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
 
+                        .requestMatchers("/api/missao70/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/missao70").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/discipulado/**").permitAll()
                         .requestMatchers("/celulas/minha-celula").hasAnyAuthority("LIDER_CELULA")
                         .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
