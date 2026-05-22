@@ -161,4 +161,8 @@ public class CelulaController {
 
         return ResponseEntity.ok(celulaAtualizada);
     }
+    @GetMapping("/{id}/membros/listar")
+    public ResponseEntity<?> buscarMembrosPorCelula(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarMembrosPorCelula(id));
+    }
 }

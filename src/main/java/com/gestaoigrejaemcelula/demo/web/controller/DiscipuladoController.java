@@ -44,8 +44,7 @@ public class DiscipuladoController {
     public ResponseEntity<List<DiscipuladoRelatorioResponseDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosParaSecretaria());
     }
-    @Autowired
-    private DiscipuladoService discipuladoService;
+
 
     @GetMapping("/alertas")
     public ResponseEntity<List<AlertaDTO>> obterAlertas(@RequestParam(value = "mes", required = false) String mesRef) {
@@ -54,7 +53,7 @@ public class DiscipuladoController {
             mesRef = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
         }
 
-        List<AlertaDTO> alertas = discipuladoService.obterAlertasCriticosPorMes(mesRef);
+        List<AlertaDTO> alertas = service.obterAlertasCriticosPorMes(mesRef);
         return ResponseEntity.ok(alertas);
     }
 }

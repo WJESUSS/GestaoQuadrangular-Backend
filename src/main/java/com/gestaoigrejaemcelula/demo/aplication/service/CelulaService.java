@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CelulaService {
@@ -448,5 +449,14 @@ public class CelulaService {
                 celula.getId(),
                 celula.getStatusMultiplicacao().name()
         );
+    }
+    @Transactional(readOnly = true)
+    public List<MembroResponseDTO> buscarMembrosPorCelula(Long celulaId) {
+        Celula celula = celulaRepository.findById(celulaId)
+                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+        return celula.getMembros()
+                .stream()
+                .map(MembroResponseDTO::new)
+                .collect(Collectors.toList());
     }
 }
