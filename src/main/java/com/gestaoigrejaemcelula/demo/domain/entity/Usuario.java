@@ -32,6 +32,20 @@ public class Usuario implements UserDetails {
     private Perfil perfil;
     private String nome;
 
+    @Column(name = "email_pendente")
+    private String emailPendente;
+
+    /** Nova senha (já com hash BCrypt) aguardando aprovação do admin. Null = sem solicitação. */
+    @Column(name = "senha_pendente")
+    private String senhaPendente;
+
+    // Getters e setters
+    public String getEmailPendente()            { return emailPendente; }
+    public void   setEmailPendente(String v)    { this.emailPendente = v; }
+
+    public String getSenhaPendente()            { return senhaPendente; }
+    public void   setSenhaPendente(String v)    { this.senhaPendente = v; }
+
     public String getNome() {
         return nome;
     }

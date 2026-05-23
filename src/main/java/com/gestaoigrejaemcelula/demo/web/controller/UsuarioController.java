@@ -1,10 +1,9 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
-import com.gestaoigrejaemcelula.demo.aplication.dto.CadastroUsuarioDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.UsuarioRequestDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.UsuarioResponseDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import com.gestaoigrejaemcelula.demo.aplication.service.UsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/usuarios") // ✅ corrigido
 public class UsuarioController {
 
@@ -79,6 +77,39 @@ public class UsuarioController {
     public ResponseEntity<Void> alternarStatus(@PathVariable Long id) {
         service.alternarStatus(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/pendentes")
+    public ResponseEntity<List<UsuarioResponseDTO>> listarPendentes() {
+        return ResponseEntity.ok(service.listarPendentes());
+    }
+    @GetMapping("/com-alteracao-pendente")
+    public ResponseEntity<List<UsuarioResponseDTO>> listarComAlteracaoPendente() {
+        return ResponseEntity.ok(service.listarComAlteracaoPendente());
+    }
+
+    /**
+     * Admin aprova a alteração de dados do líder — aplica e-mail/senha pendentes.
+     * PATCH /usuarios/{id}/aprovar-alteracao
+     */
+    @PatchMapping("/{id}/aprovar-alteracao")
+    public ResponseEntity<Void> aprovarAlteracao(@PathVariable Long id) {
+        service.aprovarAlteracao(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Admin rejeita a alteração de dados do líder — descarta e-mail/senha pendentes.
+     * PATCH /usuarios/{id}/rejeitar-alteracao
+     */
+    @PatchMapping("/{id}/rejeitar-alteracao")
+    public ResponseEntity<Void> rejeitarAlteracao(@PathVariable Long id) {
+        service.rejeitarAlteracao(id);
+        return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/solicitar-alteracao")
+    public ResponseEntity<SolicitacaoAlteracaoResponseDTO> solicitarAlteracao(
+            @RequestBody @Valid SolicitacaoAlteracaoDTO dto) {
+        return ResponseEntity.ok(service.solicitarAlteracao(dto));
     }
 
 }

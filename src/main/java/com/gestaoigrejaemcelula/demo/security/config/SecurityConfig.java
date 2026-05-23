@@ -62,6 +62,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/solicitar-cadastro-lider").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuarios/solicitar-alteracao").permitAll()
 
                         // ✅ removida linha duplicada de /relatorios/** com permitAll()
                         // ✅ removida linha duplicada de /membros/sem-celula
