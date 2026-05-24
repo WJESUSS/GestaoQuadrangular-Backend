@@ -21,20 +21,16 @@ public class PastorPendenciasController {
         this.pendenciasService = pendenciasService;
     }
 
-    // =========================
-    // GET /pastor/pendencias
-    // Lista células com relatório e/ou discipulado pendente na semana atual
-    // =========================
     @GetMapping("/pendencias")
     @PreAuthorize("hasAnyRole('PASTOR', 'ADMIN')")
-    public ResponseEntity<List<PendenciaDTO>> getPendencias() {
-        return ResponseEntity.ok(pendenciasService.listarPendenciasDaSemana());
+    public ResponseEntity<List<PendenciaDTO>> getPendencias(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate semanaInicio,
+            @RequestParam(defaultValue = "false") boolean todas) {
+
+        return ResponseEntity.ok(pendenciasService.listarPendencias(semanaInicio, todas));
     }
 
-    // =========================
-    // GET /pastor/pendencias/resumo
-    // Retorna apenas os totais (útil para badges e KPIs no dashboard)
-    // =========================
     @GetMapping("/pendencias/resumo")
     @PreAuthorize("hasAnyRole('PASTOR', 'ADMIN')")
     public ResponseEntity<ResumoDTO> getResumoPendencias(
