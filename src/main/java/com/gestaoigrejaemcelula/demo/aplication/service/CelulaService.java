@@ -15,7 +15,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,29 +29,35 @@ public class CelulaService {
     private final UsuarioRepository usuarioRepository;
     private final VisitanteRepository visitanteRepository;
     private final NotificacaoService notificacaoService;
+    private final AuditoriaHelper auditoria;
 
     public CelulaService(
             CelulaRepository celulaRepository,
             MembroRepository membroRepository,
             UsuarioRepository usuarioRepository,
-            VisitanteRepository visitanteRepository, NotificacaoService notificacaoService
+            VisitanteRepository visitanteRepository,
+            NotificacaoService notificacaoService,
+            AuditoriaHelper auditoria
     ) {
-        this.celulaRepository = celulaRepository;
-        this.membroRepository = membroRepository;
-        this.usuarioRepository = usuarioRepository;
+        this.celulaRepository    = celulaRepository;
+        this.membroRepository    = membroRepository;
+        this.usuarioRepository   = usuarioRepository;
         this.visitanteRepository = visitanteRepository;
-        this.notificacaoService = notificacaoService;
+        this.notificacaoService  = notificacaoService;
+        this.auditoria           = auditoria;
     }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    private String str(Object o) { return o != null ? o.toString() : ""; }
 
     // =========================
     // CADASTRAR CÉLULA
+    // =========================
     @Transactional
     public CelulaResponseDTO cadastrar(CelulaRequestDTO dto) {
-        // 1. Busca o líder no banco de dados
         Usuario lider = usuarioRepository.findById(dto.liderId())
                 .orElseThrow(() -> new RuntimeException("Líder não encontrado"));
 
-        // 2. Cria o objeto Célula com os dados do Front-end
         Celula celula = new Celula();
         celula.setNome(dto.nome());
         celula.setAnfitriao(dto.anfitriao());
@@ -56,15 +65,21 @@ public class CelulaService {
         celula.setBairro(dto.bairro());
         celula.setDiaSemana(dto.diaSemana());
         celula.setHorario(dto.horario());
-        celula.setLider(lider); // Aqui a Célula sabe quem é o líder
+        celula.setLider(lider);
         celula.setAtiva(true);
 
-        // 3. SALVA A CÉLULA PRIMEIRO (O saveAndFlush obriga o banco a criar o ID AGORA)
         Celula celulaSalva = celulaRepository.saveAndFlush(celula);
 
-        // 4. AQUI ESTÁ A CORREÇÃO: Vincula a célula ao usuário e SALVA O USUÁRIO
         lider.setCelula(celulaSalva);
-        usuarioRepository.saveAndFlush(lider); // <--- Isso faz o ID aparecer na tabela de usuários
+        usuarioRepository.saveAndFlush(lider);
+
+        auditoria.registrar("CELULA", celulaSalva.getId(), celulaSalva.getNome(), "CREATE",
+                Map.of(
+                        "lider",    Map.of("para", str(lider.getNome())),
+                        "endereco", Map.of("para", str(dto.endereco())),
+                        "horario",  Map.of("para", str(dto.horario()))
+                )
+        );
 
         return new CelulaResponseDTO(celulaSalva);
     }
@@ -96,9 +111,23 @@ public class CelulaService {
     // =========================
     @Transactional
     public CelulaResponseDTO atualizar(Long id, CelulaRequestDTO dto) {
-
         Celula celula = celulaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+
+        // Monta diff ANTES de alterar
+        Map<String, Object> diff = new LinkedHashMap<>();
+        if (!Objects.equals(celula.getNome(), dto.nome()))
+            diff.put("nome",      Map.of("de", str(celula.getNome()),      "para", str(dto.nome())));
+        if (!Objects.equals(celula.getAnfitriao(), dto.anfitriao()))
+            diff.put("anfitriao", Map.of("de", str(celula.getAnfitriao()), "para", str(dto.anfitriao())));
+        if (!Objects.equals(celula.getEndereco(), dto.endereco()))
+            diff.put("endereco",  Map.of("de", str(celula.getEndereco()),  "para", str(dto.endereco())));
+        if (!Objects.equals(celula.getBairro(), dto.bairro()))
+            diff.put("bairro",    Map.of("de", str(celula.getBairro()),    "para", str(dto.bairro())));
+        if (!Objects.equals(celula.getDiaSemana(), dto.diaSemana()))
+            diff.put("diaSemana", Map.of("de", str(celula.getDiaSemana()), "para", str(dto.diaSemana())));
+        if (!Objects.equals(celula.getHorario(), dto.horario()))
+            diff.put("horario",   Map.of("de", str(celula.getHorario()),   "para", str(dto.horario())));
 
         celula.setNome(dto.nome());
         celula.setAnfitriao(dto.anfitriao());
@@ -115,10 +144,16 @@ public class CelulaService {
                 throw new RuntimeException("Usuário não possui perfil de líder");
             }
 
+            diff.put("lider", Map.of("de", str(celula.getLider().getNome()), "para", str(novoLider.getNome())));
             celula.setLider(novoLider);
         }
 
-        return new CelulaResponseDTO(celulaRepository.save(celula));
+        CelulaResponseDTO resposta = new CelulaResponseDTO(celulaRepository.save(celula));
+
+        if (!diff.isEmpty())
+            auditoria.registrar("CELULA", id, celula.getNome(), "UPDATE", diff);
+
+        return resposta;
     }
 
     // =========================
@@ -135,7 +170,6 @@ public class CelulaService {
     // =========================
     @Transactional
     public void adicionarMembro(Long celulaId, Long membroId) {
-
         Celula celula = celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
 
@@ -148,6 +182,10 @@ public class CelulaService {
 
         membro.setCelula(celula);
         membroRepository.save(membro);
+
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+                Map.of("celula", Map.of("de", "", "para", str(celula.getNome())))
+        );
     }
 
     @Transactional
@@ -160,21 +198,23 @@ public class CelulaService {
         }
 
         Celula celula = membro.getCelula();
+        String nomeCelula = str(celula.getNome());
+
         membro.setCelula(null);
         membroRepository.save(membro);
 
-        // --- NOVA LÓGICA DE RESET ---
-        // Se após a remoção a célula tiver menos de 8 membros,
-        // resetamos o status para permitir um novo ciclo no futuro.
         if (celula.getQuantidadeMembrosAtivos() < 8) {
             celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.NORMAL);
             celulaRepository.save(celula);
         }
+
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+                Map.of("celula", Map.of("de", nomeCelula, "para", ""))
+        );
     }
 
     @Transactional
     public void transferirMembro(TransferirMembroDTO dto) {
-
         Membro membro = membroRepository.findById(dto.getMembroId())
                 .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
 
@@ -186,8 +226,14 @@ public class CelulaService {
         Celula novaCelula = celulaRepository.findById(dto.getNovaCelulaId())
                 .orElseThrow(() -> new RuntimeException("Nova célula não encontrada"));
 
+        String celulaAnterior = membro.getCelula() != null ? str(membro.getCelula().getNome()) : "";
+
         membro.setCelula(novaCelula);
         membroRepository.save(membro);
+
+        auditoria.registrar("MEMBRO", membro.getId(), membro.getNome(), "UPDATE",
+                Map.of("celula", Map.of("de", celulaAnterior, "para", str(novaCelula.getNome())))
+        );
     }
 
     // =========================
@@ -195,7 +241,6 @@ public class CelulaService {
     // =========================
     @Transactional
     public VisitanteResponseDTO salvarVisitanteNaCelula(Long celulaId, VisitanteRequestDTO dto) {
-
         Celula celula = celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
 
@@ -205,10 +250,15 @@ public class CelulaService {
         visitante.setEmail(dto.getEmail());
         visitante.setDataPrimeiraVisita(LocalDate.now());
         visitante.setOrigem(OrigemVisitante.CELULA);
-
         visitante.setCelula(celula);
 
-        return converterVisitante(visitanteRepository.save(visitante));
+        Visitante salvo = visitanteRepository.save(visitante);
+
+        auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "CREATE",
+                Map.of("celula", Map.of("para", str(celula.getNome())))
+        );
+
+        return converterVisitante(salvo);
     }
 
     @Transactional(readOnly = true)
@@ -227,7 +277,6 @@ public class CelulaService {
         dto.setEmail(v.getEmail());
         dto.setDataPrimeiraVisita(v.getDataPrimeiraVisita());
         dto.setOrigem(v.getOrigem());
-
         return dto;
     }
 
@@ -244,97 +293,58 @@ public class CelulaService {
 
         int qtdMembros = celula.getQuantidadeMembrosAtivos();
 
-        // Só dispara se ainda não foi solicitado e já atingiu o limite
         if (qtdMembros >= 8 && celula.getStatusMultiplicacao() == Celula.StatusMultiplicacao.NORMAL) {
             celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.SOLICITADO);
             celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now());
             celulaRepository.save(celula);
 
-            // 1. Criamos o título
-            String titulo = "Sugestão de Multiplicação";
-
-            // 2. Preparamos a mensagem (removi o parabéns daqui para não ficar repetitivo com o título)
-            String mensagem = "🎉 Parabéns, líder! Sua célula **" + celula.getNome() +
-                    "** atingiu **" + qtdMembros + "** membros ativos.\n" +
-                    "Chegou a hora de pensar na multiplicação! Clique em 'Solicitar Multiplicação' no seu painel.";
-
-            // 3. Chamada corrigida com os 4 parâmetros
             notificacaoService.enviarNotificacao(
                     celula.getLider().getId(),
-                    titulo, // <-- O parâmetro que faltava
-                    mensagem,
+                    "Sugestão de Multiplicação",
+                    "🎉 Parabéns, líder! Sua célula **" + celula.getNome() +
+                            "** atingiu **" + qtdMembros + "** membros ativos.\n" +
+                            "Chegou a hora de pensar na multiplicação! Clique em 'Solicitar Multiplicação' no seu painel.",
                     Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
             );
         }
     }
 
-    /**
-     * O líder solicita oficialmente a multiplicação da célula.
-     * Muda o status para EM_ANALISE e notifica pastor + secretário (se existirem).
-     */
-    /**
-     * O líder solicita oficialmente a multiplicação da célula.
-     * Muda o status para EM_ANALISE e notifica a liderança superior.
-     */
     @Transactional
     public void solicitarMultiplicacao(Long celulaId, String motivo, Long usuarioSolicitanteId) {
-        // 1. Busca a célula ou lança erro 404
         Celula celula = celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + celulaId));
 
-        // 2. Validação de Status: Bloqueia apenas se já houver um processo pendente
         if (celula.getStatusMultiplicacao() == Celula.StatusMultiplicacao.EM_ANALISE) {
             throw new IllegalStateException("Esta célula já possui uma solicitação em análise pela secretaria.");
         }
 
-        // 3. Segurança: Verifica se quem está tentando é de fato o líder da célula
         if (!celula.getLider().getId().equals(usuarioSolicitanteId)) {
             throw new SecurityException("Apenas o líder responsável pela célula pode solicitar a multiplicação.");
         }
 
-        // 4. Atualização dos Dados da Célula
         celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.EM_ANALISE);
         celula.setMotivoSolicitacao(motivo != null && !motivo.trim().isEmpty() ? motivo.trim() : "Plano de multiplicação enviado pelo líder.");
-        celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now()); // Registra o momento do pedido
-
+        celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now());
         celulaRepository.save(celula);
 
-        // 5. Preparação das Notificações
-        String tituloAdm = "Nova Solicitação de Multiplicação";
-        String mensagemAdm = String.format(
-                "📢 SOLICITAÇÃO DE MULTIPLICAÇÃO\n\n" +
-                        "Célula: %s\n" +
-                        "Líder: %s\n" +
-                        "Membros Ativos: %d\n" +
-                        "Motivo: %s\n\n" +
-                        "Por favor, analise a viabilidade no painel administrativo.",
-                celula.getNome(),
-                celula.getLider().getNome(),
-                celula.getQuantidadeMembrosAtivos(),
-                celula.getMotivoSolicitacao()
+        auditoria.registrar("CELULA", celulaId, celula.getNome(), "UPDATE",
+                Map.of("statusMultiplicacao", Map.of("de", "NORMAL", "para", "EM_ANALISE"),
+                        "motivo",              Map.of("para", str(celula.getMotivoSolicitacao())))
         );
 
-        // 6. Envio para Pastor (se vinculado)
-        if (celula.getPastor() != null) {
-            notificacaoService.enviarNotificacao(
-                    celula.getPastor().getId(),
-                    tituloAdm,
-                    mensagemAdm,
-                    Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
-            );
-        }
+        String tituloAdm = "Nova Solicitação de Multiplicação";
+        String mensagemAdm = String.format(
+                "📢 SOLICITAÇÃO DE MULTIPLICAÇÃO\n\nCélula: %s\nLíder: %s\nMembros Ativos: %d\nMotivo: %s\n\nPor favor, analise a viabilidade no painel administrativo.",
+                celula.getNome(), celula.getLider().getNome(),
+                celula.getQuantidadeMembrosAtivos(), celula.getMotivoSolicitacao()
+        );
 
-        // 7. Envio para Secretário (se vinculado)
-        if (celula.getSecretario() != null) {
-            notificacaoService.enviarNotificacao(
-                    celula.getSecretario().getId(),
-                    tituloAdm,
-                    mensagemAdm,
-                    Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
-            );
-        }
+        if (celula.getPastor() != null)
+            notificacaoService.enviarNotificacao(celula.getPastor().getId(), tituloAdm, mensagemAdm, Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA);
 
-        // 8. Confirmação para o Líder (Feedback visual de sucesso)
+        if (celula.getSecretario() != null)
+            notificacaoService.enviarNotificacao(celula.getSecretario().getId(), tituloAdm, mensagemAdm, Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA);
+
         notificacaoService.enviarNotificacao(
                 usuarioSolicitanteId,
                 "Solicitação Enviada",
@@ -342,21 +352,15 @@ public class CelulaService {
                 Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
         );
     }
-    // Método 1: lista todos os membros (ativos ou não, dependendo do seu desejo)
+
     public List<Membro> listarMembrosDaCelula(Long id) {
         Celula celula = celulaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com o ID: " + id));
-
-        return celula.getMembros();  // retorna todos
-        // Ou, se quiser só ativos aqui:
-        // return celula.getMembros().stream()
-        //         .filter(m -> m.getStatus() == StatusMembro.ATIVO)
-        //         .toList();
+        return celula.getMembros();
     }
-    // Método 2: só ativos (recomendado para a maioria dos usos)
+
     public List<Membro> listarMembrosAtivosDaCelula(Long celulaId) {
         Celula celula = buscarPorId(celulaId);
-
         return celula.getMembros().stream()
                 .filter(m -> m.getStatus() == StatusMembro.ATIVO)
                 .toList();
@@ -367,26 +371,23 @@ public class CelulaService {
         Celula celula = celulaRepository.findByLiderIdWithMembros(liderId)
                 .orElseThrow(() -> new RuntimeException("Líder não possui célula ativa"));
 
-        // Força o load
         Hibernate.initialize(celula.getMembros());
 
         System.out.println("DEBUG CELULA SERVICE - Membros na memória: " + celula.getMembros().size());
         celula.getMembros().forEach(m -> System.out.println("  -> Membro: " + m.getNome() +
-                " | Status: " + m.getStatus() +
-                " | ID: " + m.getId()));
+                " | Status: " + m.getStatus() + " | ID: " + m.getId()));
 
         return celula;
     }
 
     @Transactional(readOnly = true)
     public List<CelulaResumoDTO> buscarSolicitacoesPendentes() {
-        // Busca apenas células que estão aguardando análise da secretaria
         return celulaRepository.findByStatusMultiplicacao(Celula.StatusMultiplicacao.EM_ANALISE)
                 .stream()
-                .map(CelulaResumoDTO::new) // Usa o construtor do record acima
+                .map(CelulaResumoDTO::new)
                 .toList();
-
     }
+
     @Transactional
     public void vincularMembro(Long celulaId, Long membroId) {
         Celula celula = celulaRepository.findById(celulaId).orElseThrow();
@@ -394,10 +395,12 @@ public class CelulaService {
 
         membro.setCelula(celula);
         celula.getMembros().add(membro);
+        celulaRepository.save(celula);
 
-        celulaRepository.save(celula); // Salva o vínculo
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+                Map.of("celula", Map.of("de", "", "para", str(celula.getNome())))
+        );
 
-        // AQUI ESTÁ O SEGREDO: Chama o seu método automático
         this.verificarELancarAlertaMultiplicacao(celulaId);
     }
 
@@ -406,50 +409,48 @@ public class CelulaService {
         Celula celula = celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
 
-        if (aprovado) {
-            celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.APROVADO);
-            // Aqui você poderia disparar a criação da nova célula se quiser automatizar tudo
-        } else {
-            celula.setStatusMultiplicacao(Celula.StatusMultiplicacao.REJEITADO);
-        }
+        String statusAnterior = str(celula.getStatusMultiplicacao());
+
+        celula.setStatusMultiplicacao(aprovado
+                ? Celula.StatusMultiplicacao.APROVADO
+                : Celula.StatusMultiplicacao.REJEITADO);
 
         celulaRepository.save(celula);
 
-        // 1. Criamos um título dinâmico
-        String titulo = aprovado ? "Multiplicação APROVADA" : "Solicitação Indeferida";
+        auditoria.registrar("CELULA", celulaId, celula.getNome(),
+                aprovado ? "APPROVE" : "REJECT",
+                Map.of("statusMultiplicacao", Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
+        );
 
-        // 2. Ajustamos a mensagem
-        String msg = aprovado
+        String titulo = aprovado ? "Multiplicação APROVADA" : "Solicitação Indeferida";
+        String msg    = aprovado
                 ? "🎉 Parabéns! Sua solicitação de multiplicação para a célula " + celula.getNome() + " foi APROVADA!"
                 : "⚠️ Olá líder, sua solicitação de multiplicação para a célula " + celula.getNome() + " foi indeferida no momento.";
 
-        // 3. Chamada corrigida com os 4 parâmetros: ID, Título, Mensagem, Tipo
-        notificacaoService.enviarNotificacao(
-                celula.getLider().getId(),
-                titulo,
-                msg,
-                Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA
-        );
+        notificacaoService.enviarNotificacao(celula.getLider().getId(), titulo, msg, Notificacao.TipoNotificacao.MULTIPLICACAO_CELULA);
     }
+
     @Transactional
     public CelulaStatusMultiplicacaoDTO atualizarStatusMultiplicacao(Long id, boolean aprovado) {
-
         Celula celula = celulaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
 
-        celula.setStatusMultiplicacao(
-                aprovado
-                        ? Celula.StatusMultiplicacao.APROVADO
-                        : Celula.StatusMultiplicacao.REJEITADO
-        );
+        String statusAnterior = str(celula.getStatusMultiplicacao());
+
+        celula.setStatusMultiplicacao(aprovado
+                ? Celula.StatusMultiplicacao.APROVADO
+                : Celula.StatusMultiplicacao.REJEITADO);
 
         celulaRepository.save(celula);
 
-        return new CelulaStatusMultiplicacaoDTO(
-                celula.getId(),
-                celula.getStatusMultiplicacao().name()
+        auditoria.registrar("CELULA", id, celula.getNome(),
+                aprovado ? "APPROVE" : "REJECT",
+                Map.of("statusMultiplicacao", Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
         );
+
+        return new CelulaStatusMultiplicacaoDTO(celula.getId(), celula.getStatusMultiplicacao().name());
     }
+
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> buscarMembrosPorCelula(Long celulaId) {
         Celula celula = celulaRepository.findById(celulaId)

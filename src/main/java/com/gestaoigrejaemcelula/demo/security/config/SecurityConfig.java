@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/solicitar-cadastro-lider").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/solicitar-alteracao").permitAll()
+                        .requestMatchers("/auditoria").hasAnyAuthority("ADMIN","PASTOR")
 
                         // ✅ removida linha duplicada de /relatorios/** com permitAll()
                         // ✅ removida linha duplicada de /membros/sem-celula

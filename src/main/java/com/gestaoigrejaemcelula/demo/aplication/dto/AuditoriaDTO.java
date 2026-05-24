@@ -1,0 +1,26 @@
+package com.gestaoigrejaemcelula.demo.aplication.dto;
+
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AuditoriaDTO {
+    private Long          id;
+    private String        entidade;
+    private Long          entidadeId;
+    private String        entidadeNome;
+    private String        acao;
+    private String        detalhes;
+    private String        usuarioNome;
+    private String        usuarioEmail;
+    private String        aprovadorNome;
+    private String        aprovadorEmail;
+    private LocalDateTime dataHora;
+    private String        ipOrigem;
+}
+

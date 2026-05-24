@@ -14,8 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,12 +23,14 @@ public class MembroService {
     private final MembroRepository repository;
     private final HistoricoStatusMembroRepository historicoRepository;
     private  final  VisitanteRepository visitanteRepository;
+    private final AuditoriaHelper auditoria;
 
     public MembroService(MembroRepository repository,
-                         HistoricoStatusMembroRepository historicoRepository, VisitanteRepository visitanteRepository) {
+                         HistoricoStatusMembroRepository historicoRepository, VisitanteRepository visitanteRepository, AuditoriaHelper auditoria) {
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.visitanteRepository = visitanteRepository;
+        this.auditoria = auditoria;
     }
 
 
@@ -58,13 +59,38 @@ public class MembroService {
     public MembroResponseDTO criar(MembroRequestDTO dto) {
         Membro membro = new Membro();
         copiarDtoParaEntidade(dto, membro);
-        return new MembroResponseDTO(repository.save(membro));
+        Membro salvo = repository.save(membro);
+
+        auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "CREATE", null);
+
+        return new MembroResponseDTO(salvo);
     }
     @Transactional
     public MembroResponseDTO atualizar(Long id, MembroRequestDTO dto) {
         Membro membro = buscarEntidadePorId(id);
+
+        // Monta diff ANTES de alterar
+        Map<String, Object> diff = new LinkedHashMap<>();
+        if (!Objects.equals(membro.getNome(), dto.getNome()))
+            diff.put("nome", Map.of("de", str(membro.getNome()), "para", str(dto.getNome())));
+        if (!Objects.equals(membro.getTelefone(), dto.getTelefone()))
+            diff.put("telefone", Map.of("de", str(membro.getTelefone()), "para", str(dto.getTelefone())));
+        if (!Objects.equals(membro.getEmail(), dto.getEmail()))
+            diff.put("email", Map.of("de", str(membro.getEmail()), "para", str(dto.getEmail())));
+        if (!Objects.equals(membro.getStatus(), dto.getStatus()))
+            diff.put("status", Map.of("de", str(membro.getStatus()), "para", str(dto.getStatus())));
+        if (!Objects.equals(membro.getEndereco(), dto.getEndereco()))
+            diff.put("endereco", Map.of("de", str(membro.getEndereco()), "para", str(dto.getEndereco())));
+        if (!Objects.equals(membro.getEstadoCivil(), dto.getEstadoCivil()))
+            diff.put("estadoCivil", Map.of("de", str(membro.getEstadoCivil()), "para", str(dto.getEstadoCivil())));
+
         copiarDtoParaEntidade(dto, membro);
-        return new MembroResponseDTO(repository.save(membro));
+        Membro salvo = repository.save(membro);
+
+        if (!diff.isEmpty())
+            auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "UPDATE", diff);
+
+        return new MembroResponseDTO(salvo);
     }
 
     // --- MÉTODOS DE LISTAGEM ---
@@ -96,7 +122,9 @@ public class MembroService {
     }
 
     public void remover(Long id) {
+        Membro m = buscarEntidadePorId(id);
         repository.deleteById(id);
+        auditoria.registrar("MEMBRO", id, m.getNome(), "DELETE", null);
     }
 
     // --- MÉTODOS AUXILIARES ---
@@ -154,25 +182,22 @@ public class MembroService {
 
 
     @Transactional
-    public void alterarStatus(Long membroId,
-                              StatusMembro novoStatus,
-                              String observacao) {
-
+    public void alterarStatus(Long membroId, StatusMembro novoStatus, String observacao) {
         Membro membro = repository.findById(membroId)
                 .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
 
         StatusMembro statusAnterior = membro.getStatus();
-
         membro.setStatus(novoStatus);
 
-        if (novoStatus.deveRemoverVinculos()) {
-            removerVinculos(membro);
-        }
+        if (novoStatus.deveRemoverVinculos()) removerVinculos(membro);
 
         repository.save(membro);
-
         registrarHistorico(membro, statusAnterior, novoStatus, observacao);
+
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+                Map.of("status", Map.of("de", str(statusAnterior), "para", str(novoStatus))));
     }
+    private String str(Object o) { return o != null ? o.toString() : ""; }
 
     private void removerVinculos(Membro membro) {
 

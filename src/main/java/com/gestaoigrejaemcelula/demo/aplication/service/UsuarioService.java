@@ -21,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.AccessDeniedException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,8 +36,14 @@ public class UsuarioService {
     private final CelulaRepository celulaRepository;
     private final FichaEncontroRepository fichaEncontroRepository;
     private final NotificacaoService notificacaoService;
+    private final AuditoriaHelper auditoria;
 
-    // 1️⃣ Cadastrar usuário
+    // ── Helper ─────────────────────────────────────────────────────────────────
+    private String str(Object o) { return o != null ? o.toString() : ""; }
+
+    // =========================
+    // 1 — CADASTRAR
+    // =========================
     @Transactional
     public Usuario cadastrar(CadastroUsuarioDTO dto) {
         Usuario usuario = new Usuario();
@@ -50,10 +59,22 @@ public class UsuarioService {
             usuario.setCelula(celula);
         }
 
-        return usuarioRepository.save(usuario);
+        Usuario salvo = usuarioRepository.save(usuario);
+
+        auditoria.registrar("USUARIO", salvo.getId(), salvo.getNome(), "CREATE",
+                Map.of(
+                        "email",  Map.of("para", str(salvo.getEmail())),
+                        "perfil", Map.of("para", str(salvo.getPerfil())),
+                        "ativo",  Map.of("para", str(salvo.isAtivo()))
+                )
+        );
+
+        return salvo;
     }
 
-    // 2️⃣ Listar todos usuários
+    // =========================
+    // 2 — LISTAR TODOS
+    // =========================
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodos() {
         return usuarioRepository.findAll()
@@ -62,34 +83,46 @@ public class UsuarioService {
                 .collect(Collectors.toList());
     }
 
-    // 3️⃣ Buscar usuário por ID
+    // =========================
+    // 3 — BUSCAR POR ID
+    // =========================
     @Transactional(readOnly = true)
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com ID: " + id));
     }
 
-    // 4️⃣ Atualizar usuário
+    // =========================
+    // 4 — ATUALIZAR
+    // =========================
     @Transactional
     public UsuarioResponseDTO atualizar(Long id, UsuarioRequestDTO dto) {
-        // 1. Busca o usuário por ID ou lança erro se não existir
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com ID: " + id));
 
-        // 2. Atualiza os campos básicos
+        // Monta diff ANTES de alterar
+        Map<String, Object> diff = new LinkedHashMap<>();
+        if (!Objects.equals(usuario.getNome(), dto.nome()))
+            diff.put("nome",   Map.of("de", str(usuario.getNome()),   "para", str(dto.nome())));
+        if (!Objects.equals(usuario.getEmail(), dto.email()))
+            diff.put("email",  Map.of("de", str(usuario.getEmail()),  "para", str(dto.email())));
+        if (!Objects.equals(usuario.getPerfil(), dto.perfil()))
+            diff.put("perfil", Map.of("de", str(usuario.getPerfil()), "para", str(dto.perfil())));
+        if (dto.celulaId() != null) {
+            Long celulaAtualId = usuario.getCelula() != null ? usuario.getCelula().getId() : null;
+            if (!Objects.equals(celulaAtualId, dto.celulaId()))
+                diff.put("celulaId", Map.of("de", str(celulaAtualId), "para", str(dto.celulaId())));
+        }
+        if (dto.senha() != null && !dto.senha().trim().isEmpty())
+            diff.put("senha", Map.of("para", "*** alterada ***"));
+
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
         usuario.setPerfil(dto.perfil());
 
-        // Se houver lógica de 'ativo' no seu RequestDTO, aplique aqui.
-        // Caso contrário, ele mantém o estado atual.
-
-        // 3. Atualiza a senha apenas se uma nova for fornecida
-        if (dto.senha() != null && !dto.senha().trim().isEmpty()) {
+        if (dto.senha() != null && !dto.senha().trim().isEmpty())
             usuario.setSenha(passwordEncoder.encode(dto.senha()));
-        }
 
-        // 4. Trata a associação com a Célula
         if (dto.celulaId() != null) {
             Celula celula = celulaRepository.findById(dto.celulaId())
                     .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.celulaId()));
@@ -98,89 +131,103 @@ public class UsuarioService {
             usuario.setCelula(null);
         }
 
-        // 5. Salva as alterações
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
-        // 6. Retorna o ResponseDTO (usando o construtor que você criou)
+        if (!diff.isEmpty())
+            auditoria.registrar("USUARIO", id, usuarioSalvo.getNome(), "UPDATE", diff);
+
         return new UsuarioResponseDTO(usuarioSalvo);
     }
-    // 5️⃣ Deletar usuário
+
+    // =========================
+    // 5 — DELETAR
+    // =========================
     @Transactional
     public void deletar(Long id) {
         Usuario usuario = buscarPorId(id);
         usuarioRepository.delete(usuario);
+        auditoria.registrar("USUARIO", id, usuario.getNome(), "DELETE", null);
     }
 
-    // 6️⃣ Ativar usuário
+    // =========================
+    // 6 — ATIVAR
+    // =========================
     @Transactional
     public void ativar(Long id) {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(true);
         usuarioRepository.save(usuario);
+        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
+                Map.of("ativo", Map.of("de", "false", "para", "true"))
+        );
     }
 
-    // 7️⃣ Desativar usuário
+    // =========================
+    // 7 — DESATIVAR
+    // =========================
     @Transactional
     public void desativar(Long id) {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
+        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
+                Map.of("ativo", Map.of("de", "true", "para", "false"))
+        );
     }
 
-    // 8️⃣ Alternar status (ativo/inativo)
+    // =========================
+    // 8 — ALTERNAR STATUS
+    // =========================
     @Transactional
     public void alternarStatus(Long id) {
         Usuario usuario = buscarPorId(id);
-        usuario.setAtivo(!usuario.isAtivo());
+        boolean anterior = usuario.isAtivo();
+        usuario.setAtivo(!anterior);
         usuarioRepository.save(usuario);
+        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
+                Map.of("ativo", Map.of("de", str(anterior), "para", str(!anterior)))
+        );
     }
 
-    // 9️⃣ Obter usuário logado (baseado no token JWT)
+    // =========================
+    // 9 — USUÁRIO LOGADO
+    // =========================
     @Transactional(readOnly = true)
     public Usuario getUsuarioLogado() throws AccessDeniedException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated())
             throw new AccessDeniedException("Usuário não autenticado");
-        }
 
         String email = authentication.getName();
-
         return usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
+
+    // =========================
+    // FICHAS DO USUÁRIO LOGADO
+    // =========================
     @Transactional(readOnly = true)
     public List<FichaEncontroResponseDTO> findByUsuarioLogado(String username) {
-        // username aqui é o email (padrão Spring Security)
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
 
         List<FichaEncontro> fichas = fichaEncontroRepository
                 .findByUsuarioIdOrderByDataCriacaoDesc(usuario.getId());
 
-        return fichas.stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+        return fichas.stream().map(this::toResponseDTO).collect(Collectors.toList());
     }
-    /**
-     * Converte FichaEncontro → FichaEncontroResponseDTO (manual, sem MapStruct)
-     */
+
     private FichaEncontroResponseDTO toResponseDTO(FichaEncontro entity) {
-        if (entity == null) {
-            return null;
-        }
+        if (entity == null) return null;
 
         FichaEncontroResponseDTO dto = new FichaEncontroResponseDTO();
-
-        // ID e auditoria
         dto.setId(entity.getId());
         dto.setDataCriacao(entity.getDataCriacao());
         dto.setDataAtualizacao(entity.getDataAtualizacao());
         dto.setStatus(entity.getStatus() != null ? entity.getStatus().name() : "PENDENTE");
         dto.setCriadoPor(entity.getCriadoPor());
         dto.setUsuarioId(entity.getUsuario() != null ? entity.getUsuario().getId() : null);
-
-        // Dados pessoais
         dto.setNome(entity.getNomeConvidado());
         dto.setDataNascimento(entity.getDataNascimento());
         dto.setEndereco(entity.getEndereco());
@@ -193,147 +240,144 @@ public class UsuarioService {
         dto.setEstado(entity.getEstado());
         dto.setPeso(entity.getPeso());
         dto.setAltura(entity.getAltura());
-
-        // Saúde
         dto.setTomaMedicamento(entity.isTomaMedicamento());
         dto.setQualMedicamento(entity.getQualMedicamento());
         dto.setTemProblemasSaude(entity.isTemProblemasSaude());
         dto.setQualProblemaSaude(entity.getQualProblemaSaude());
         dto.setTemApneia(entity.isTemApneia());
-
-        // Contatos e líderes
         dto.setNomeConvidador(entity.getNomeConvidador());
         dto.setCelulaConvidador(entity.getCelulaConvidador());
         dto.setNomeLiderCelula(entity.getNomeLiderCelula());
         dto.setNomeFamiliarContato(entity.getNomeFamiliarContato());
         dto.setTelefoneFamiliarContato(entity.getTelefoneFamiliarContato());
-
-        // Participação e célula
         dto.setFrequentaCelula(entity.isFrequentaCelula());
         dto.setNomeCelula(entity.getNomeCelula());
         dto.setOutrosParticipantes(entity.getOutrosParticipantes());
-
-        // Decisões espirituais
         dto.setAceitouJesus(entity.isAceitouJesus());
         dto.setJaEraCristao(entity.isJaEraCristao());
-
-        // Dados do encontro
         dto.setNomeEncontro(entity.getNomeEncontro());
         dto.setLocalEncontro(entity.getLocalEncontro());
         dto.setTipoEncontro(entity.getTipoEncontro());
         dto.setDataInicio(entity.getDataInicio());
         dto.setDataFim(entity.getDataFim());
-
         return dto;
     }
+
+    // =========================
+    // SOLICITAR CADASTRO LÍDER
+    // =========================
     @Transactional
     public SolicitacaoCadastroResponseDTO solicitarCadastroLider(SolicitacaoCadastroLiderDTO dto) {
-
-        // Verifica e-mail duplicado
-        if (usuarioRepository.findByEmailIgnoreCase(dto.getEmail().trim().toLowerCase()).isPresent()) {
+        if (usuarioRepository.findByEmailIgnoreCase(dto.getEmail().trim().toLowerCase()).isPresent())
             throw new IllegalArgumentException("Já existe um cadastro com este e-mail.");
-        }
 
         Usuario usuario = new Usuario();
         usuario.setNome(dto.getNome().trim());
         usuario.setEmail(dto.getEmail().trim().toLowerCase());
         usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
-        usuario.setPerfil(Perfil.LIDER_CELULA);  // sempre LIDER_CELULA
-        usuario.setAtivo(false);                  // PENDENTE — admin precisa ativar
+        usuario.setPerfil(Perfil.LIDER_CELULA);
+        usuario.setAtivo(false);
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Célula não encontrada com ID: " + dto.getCelulaId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.getCelulaId()));
             usuario.setCelula(celula);
         }
 
         Usuario salvo = usuarioRepository.save(usuario);
 
+        auditoria.registrar("USUARIO", salvo.getId(), salvo.getNome(), "CREATE",
+                Map.of(
+                        "perfil", Map.of("para", "LIDER_CELULA"),
+                        "ativo",  Map.of("para", "false (pendente aprovação)")
+                )
+        );
+
         return new SolicitacaoCadastroResponseDTO(
-                salvo.getId(),
-                salvo.getNome(),
-                salvo.getEmail(),
-                salvo.getPerfil().name(),
-                salvo.isAtivo(),
+                salvo.getId(), salvo.getNome(), salvo.getEmail(),
+                salvo.getPerfil().name(), salvo.isAtivo(),
                 "Solicitação recebida! Aguarde a aprovação do administrador para acessar o sistema."
         );
     }
 
-    /**
-     * Lista todos os usuários PENDENTES de aprovação (ativo = false).
-     * Endpoint exclusivo do admin para ver quem está aguardando.
-     */
+    // =========================
+    // LISTAR PENDENTES
+    // =========================
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarPendentes() {
-        return usuarioRepository.findAll()
-                .stream()
+        return usuarioRepository.findAll().stream()
                 .filter(u -> !u.isAtivo())
                 .map(UsuarioResponseDTO::new)
                 .collect(Collectors.toList());
     }
 
+    // =========================
+    // REJEITAR ALTERAÇÃO
+    // =========================
     @Transactional
     public void rejeitarAlteracao(Long usuarioId) {
         Usuario usuario = buscarPorId(usuarioId);
 
-        boolean temAlteracao = usuario.getEmailPendente() != null || usuario.getSenhaPendente() != null;
-        if (!temAlteracao) {
+        if (usuario.getEmailPendente() == null && usuario.getSenhaPendente() == null)
             throw new IllegalArgumentException("Este usuário não possui alteração pendente.");
-        }
 
         usuario.setEmailPendente(null);
         usuario.setSenhaPendente(null);
         usuarioRepository.save(usuario);
 
-        // Notifica o líder
+        auditoria.registrarComAprovador("USUARIO", usuarioId, usuario.getNome(),
+                "REJECT", str(getEmailLogado()), str(getEmailLogado())
+        );
+
         notificacaoService.enviarNotificacao(
                 usuario.getId(),
                 "Solicitação rejeitada",
                 "Sua solicitação de alteração de dados foi rejeitada pelo administrador. Em caso de dúvidas, entre em contato.",
-                com.gestaoigrejaemcelula.demo.domain.entity.Notificacao.TipoNotificacao.REJEICAO_SOLICITACAO
+                Notificacao.TipoNotificacao.REJEICAO_SOLICITACAO
         );
     }
 
-    /**
-     * Lista usuários com alterações pendentes (emailPendente ou senhaPendente preenchidos).
-     * Usado no painel do admin.
-     *
-     * GET /usuarios/com-alteracao-pendente   (autenticado como ADMIN)
-     */
+    // =========================
+    // LISTAR COM ALTERAÇÃO PENDENTE
+    // =========================
     @Transactional(readOnly = true)
-    public java.util.List<UsuarioResponseDTO> listarComAlteracaoPendente() {
-        return usuarioRepository.findAll()
-                .stream()
+    public List<UsuarioResponseDTO> listarComAlteracaoPendente() {
+        return usuarioRepository.findAll().stream()
                 .filter(u -> u.getEmailPendente() != null || u.getSenhaPendente() != null)
                 .map(UsuarioResponseDTO::new)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
+    // =========================
+    // APROVAR ALTERAÇÃO
+    // =========================
     @Transactional
     public void aprovarAlteracao(Long usuarioId) {
         Usuario usuario = buscarPorId(usuarioId);
 
-        boolean temAlteracao = usuario.getEmailPendente() != null || usuario.getSenhaPendente() != null;
-        if (!temAlteracao) {
+        if (usuario.getEmailPendente() == null && usuario.getSenhaPendente() == null)
             throw new IllegalArgumentException("Este usuário não possui alteração pendente.");
-        }
 
-        // Promove e-mail pendente → e-mail real
+        Map<String, Object> diff = new LinkedHashMap<>();
+
         if (usuario.getEmailPendente() != null) {
+            diff.put("email", Map.of("de", str(usuario.getEmail()), "para", str(usuario.getEmailPendente())));
             usuario.setEmail(usuario.getEmailPendente());
             usuario.setEmailPendente(null);
         }
 
-        // Promove senha pendente → senha real
         if (usuario.getSenhaPendente() != null) {
+            diff.put("senha", Map.of("para", "*** alterada ***"));
             usuario.setSenha(usuario.getSenhaPendente());
             usuario.setSenhaPendente(null);
         }
 
         usuarioRepository.save(usuario);
 
-        // Notifica o líder
+        auditoria.registrarComAprovador("USUARIO", usuarioId, usuario.getNome(),
+                "APPROVE", str(getEmailLogado()), str(getEmailLogado())
+        );
+
         notificacaoService.enviarNotificacao(
                 usuario.getId(),
                 "Solicitação aprovada",
@@ -341,65 +385,55 @@ public class UsuarioService {
                 Notificacao.TipoNotificacao.APROVACAO_SOLICITACAO
         );
     }
+
+    // =========================
+    // SOLICITAR ALTERAÇÃO
+    // =========================
     @Transactional
     public SolicitacaoAlteracaoResponseDTO solicitarAlteracao(@Valid SolicitacaoAlteracaoDTO dto) {
-
-        // 1. Identifica o usuário pelo e-mail informado (não pelo token)
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + dto.getEmail()));
 
-        // 2. Confirma identidade com a senha atual
-        if (dto.getSenhaAtual() == null || dto.getSenhaAtual().isBlank()) {
+        if (dto.getSenhaAtual() == null || dto.getSenhaAtual().isBlank())
             throw new IllegalArgumentException("A senha atual é obrigatória.");
-        }
-        if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha())) {
+        if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha()))
             throw new IllegalArgumentException("Senha atual incorreta.");
-        }
 
-        // 3. Valida que ao menos um campo foi enviado
         boolean trocaEmail = dto.getEmailNovo() != null && !dto.getEmailNovo().isBlank();
         boolean trocaSenha = dto.getNovaSenha() != null && !dto.getNovaSenha().isBlank();
 
-        if (!trocaEmail && !trocaSenha) {
+        if (!trocaEmail && !trocaSenha)
             throw new IllegalArgumentException("Informe um novo e-mail e/ou uma nova senha.");
-        }
 
-        // 4. Processa troca de e-mail
         if (trocaEmail) {
             String emailNovo = dto.getEmailNovo().trim().toLowerCase();
-
-            if (emailNovo.equalsIgnoreCase(usuario.getEmail())) {
+            if (emailNovo.equalsIgnoreCase(usuario.getEmail()))
                 throw new IllegalArgumentException("O novo e-mail não pode ser igual ao e-mail atual.");
-            }
-            if (usuarioRepository.findByEmailIgnoreCase(emailNovo).isPresent()) {
+            if (usuarioRepository.findByEmailIgnoreCase(emailNovo).isPresent())
                 throw new IllegalArgumentException("Este e-mail já está em uso por outro usuário.");
-            }
-
             usuario.setEmailPendente(emailNovo);
         }
 
-        // 5. Processa troca de senha
         if (trocaSenha) {
-            if (dto.getConfirmarNovaSenha() == null || dto.getConfirmarNovaSenha().isBlank()) {
+            if (dto.getConfirmarNovaSenha() == null || dto.getConfirmarNovaSenha().isBlank())
                 throw new IllegalArgumentException("A confirmação da nova senha é obrigatória.");
-            }
-            if (!dto.getNovaSenha().equals(dto.getConfirmarNovaSenha())) {
+            if (!dto.getNovaSenha().equals(dto.getConfirmarNovaSenha()))
                 throw new IllegalArgumentException("A nova senha e a confirmação não coincidem.");
-            }
-            if (passwordEncoder.matches(dto.getNovaSenha(), usuario.getSenha())) {
+            if (passwordEncoder.matches(dto.getNovaSenha(), usuario.getSenha()))
                 throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
-            }
-
             usuario.setSenhaPendente(passwordEncoder.encode(dto.getNovaSenha()));
         }
 
-        // 6. Salva pendente
         usuarioRepository.save(usuario);
 
-        // 7. Notifica
+        auditoria.registrar("USUARIO", usuario.getId(), usuario.getNome(), "UPDATE",
+                Map.of("solicitacao", Map.of("para",
+                        trocaEmail && trocaSenha ? "e-mail e senha pendentes" :
+                                trocaEmail ? "e-mail pendente" : "senha pendente"))
+        );
+
         notificacaoService.enviarNotificacao(
                 usuario.getId(),
-
                 "Solicitação de alteração de dados",
                 "O usuário " + usuario.getNome() + " solicitou alteração de " +
                         (trocaEmail && trocaSenha ? "e-mail e senha" : trocaEmail ? "e-mail" : "senha") +
@@ -407,19 +441,29 @@ public class UsuarioService {
                 Notificacao.TipoNotificacao.SOLICITACAO_ALTERACAO
         );
 
-        // 8. Retorna resposta
         return new SolicitacaoAlteracaoResponseDTO(
-                usuario.getId(),
-                usuario.getNome(),
-                usuario.getEmail(),
-                trocaEmail  ? usuario.getEmailPendente() : null,
+                usuario.getId(), usuario.getNome(), usuario.getEmail(),
+                trocaEmail ? usuario.getEmailPendente() : null,
                 trocaSenha,
                 "Solicitação recebida! Aguarde a aprovação do administrador."
         );
     }
+
+    // =========================
+    // ATUALIZAR FOTO
+    // =========================
     public void atualizarFoto(Long id, String fotoBase64) {
         Usuario usuario = buscarPorId(id);
         usuario.setFotoPerfil(fotoBase64);
         usuarioRepository.save(usuario);
+        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
+                Map.of("fotoPerfil", Map.of("para", "*** imagem atualizada ***"))
+        );
+    }
+
+    // ── Helper interno para pegar e-mail do usuário logado ──────────────────
+    private String getEmailLogado() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "sistema";
     }
 }
