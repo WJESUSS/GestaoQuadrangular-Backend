@@ -3,10 +3,13 @@ package com.gestaoigrejaemcelula.demo.web.controller;
 import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import com.gestaoigrejaemcelula.demo.aplication.service.UsuarioService;
+import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,9 +19,11 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService service;
+    private final UsuarioRepository repository;
 
-    public UsuarioController(UsuarioService service) {
+    public UsuarioController(UsuarioService service, UsuarioRepository repository) {
         this.service = service;
+        this.repository = repository;
     }
 
     @GetMapping("/admin/dashboard")
@@ -110,6 +115,19 @@ public class UsuarioController {
     public ResponseEntity<SolicitacaoAlteracaoResponseDTO> solicitarAlteracao(
             @RequestBody @Valid SolicitacaoAlteracaoDTO dto) {
         return ResponseEntity.ok(service.solicitarAlteracao(dto));
+    }
+    @PatchMapping("/{id}/foto")
+    public ResponseEntity<Void> atualizarFoto(
+            @PathVariable Long id,
+            @RequestBody FotoPerfilDTO dto) {
+        service.atualizarFoto(id, dto.getFotoBase64());
+        return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponseDTO> getMe(Authentication auth) {
+        Usuario u = repository.findByEmailIgnoreCase(auth.getName())
+                .orElseThrow(() -> new EntityNotFoundException("Não encontrado"));
+        return ResponseEntity.ok(new UsuarioResponseDTO(u));
     }
 
 }

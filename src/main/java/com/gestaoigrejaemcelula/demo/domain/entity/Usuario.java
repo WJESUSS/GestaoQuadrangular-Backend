@@ -20,9 +20,18 @@ public class Usuario implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // chave primária auto increment
     private Long id;
-
+    @Column(name = "foto_perfil", columnDefinition = "TEXT")
+    private String fotoPerfil;
     @Column(nullable = false, unique = true)
     private String email;
+
+    public String getFotoPerfil() {
+        return fotoPerfil;
+    }
+
+    public void setFotoPerfil(String fotoPerfil) {
+        this.fotoPerfil = fotoPerfil;
+    }
 
     @Column(nullable = false)
     private String senha;
@@ -154,4 +163,6 @@ public class Usuario implements UserDetails {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "celula_id")
     private Celula celula;
+
+
 }

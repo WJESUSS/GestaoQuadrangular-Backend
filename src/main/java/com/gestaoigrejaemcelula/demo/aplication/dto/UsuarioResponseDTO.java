@@ -6,16 +6,18 @@ import com.gestaoigrejaemcelula.demo.domain.enums.Perfil;
 public record UsuarioResponseDTO(
         Long id,
         String nome,
+        String fotoPerfil,
         String email,
         Perfil perfil,
         boolean ativo,
         Long celulaId,
-        String nomeCelula // 💡 O segredo está aqui!
+        String nomeCelula
 ) {
     public UsuarioResponseDTO(Usuario usuario) {
         this(
                 usuario.getId(),
                 usuario.getNome(),
+                usuario.getFotoPerfil(), // ✅ agora passa a foto
                 usuario.getEmail(),
                 usuario.getPerfil(),
                 usuario.isAtivo(),

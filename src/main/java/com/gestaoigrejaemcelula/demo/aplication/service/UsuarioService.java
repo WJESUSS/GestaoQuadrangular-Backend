@@ -417,4 +417,9 @@ public class UsuarioService {
                 "Solicitação recebida! Aguarde a aprovação do administrador."
         );
     }
+    public void atualizarFoto(Long id, String fotoBase64) {
+        Usuario usuario = buscarPorId(id);
+        usuario.setFotoPerfil(fotoBase64);
+        usuarioRepository.save(usuario);
+    }
 }
