@@ -1,8 +1,6 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
-import com.gestaoigrejaemcelula.demo.domain.entity.DiscipuladoRelatorio;
-import com.gestaoigrejaemcelula.demo.domain.entity.Relatorio;
 import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.DiscipuladoRelatorioRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.RelatorioRepository;
@@ -28,40 +26,47 @@ public class PastorPendenciasService {
             RelatorioRepository relatorioRepository,
             DiscipuladoRelatorioRepository discipuladoRepository
     ) {
-        this.celulaRepository      = celulaRepository;
-        this.relatorioRepository   = relatorioRepository;
+        this.celulaRepository    = celulaRepository;
+        this.relatorioRepository = relatorioRepository;
         this.discipuladoRepository = discipuladoRepository;
     }
 
-    // =========================
-    // LISTAR PENDÊNCIAS DA SEMANA
-    // =========================
+    // =============================================================
+    // LISTAR — com suporte a semana específica e exibição de todas
+    //
+    // semanaInicio → se null, usa a semana atual
+    // todas        → se true, retorna também células em dia
+    // =============================================================
     @Transactional(readOnly = true)
-    public List<PendenciaDTO> listarPendenciasDaSemana() {
+    public List<PendenciaDTO> listarPendencias(LocalDate semanaInicio, boolean todas) {
 
-        /* Intervalo: segunda → domingo da semana atual */
-        LocalDate hoje        = LocalDate.now();
-        LocalDate inicioSemana = hoje.with(WeekFields.ISO.dayOfWeek(), 1);
-        LocalDate fimSemana    = hoje.with(WeekFields.ISO.dayOfWeek(), 7);
+        // Se não vier data, usa a semana atual (segunda → domingo)
+        LocalDate inicio = (semanaInicio != null)
+                ? semanaInicio.with(WeekFields.ISO.dayOfWeek(), 1)  // garante que é segunda
+                : LocalDate.now().with(WeekFields.ISO.dayOfWeek(), 1);
 
-        /* Todas as células ativas */
+        LocalDate fim = inicio.with(WeekFields.ISO.dayOfWeek(), 7);
+
+        // Todas as células ativas
         List<Celula> celulas = celulaRepository.findAllByAtivaTrue();
 
-        /* IDs de células que já entregaram relatório esta semana */
+        // IDs que já entregaram relatório nesta semana
         Set<Long> comRelatorio = relatorioRepository
-                .findByDataReuniaoBetween(inicioSemana, fimSemana)
+                .findByDataReuniaoBetween(inicio, fim)
                 .stream()
                 .map(r -> r.getCelula().getId())
                 .collect(Collectors.toSet());
 
-        /* IDs de células que já entregaram discipulado esta semana */
+        // IDs que já entregaram discipulado nesta semana
         Set<Long> comDiscipulado = discipuladoRepository
-                .findBySemanaInicioBetween(inicioSemana, fimSemana)
+                .findBySemanaInicioBetween(inicio, fim)
                 .stream()
                 .map(d -> d.getCelula().getId())
                 .collect(Collectors.toSet());
 
-        /* Monta e filtra: só células com pelo menos uma pendência */
+        LocalDate inicioFinal = inicio;
+        LocalDate fimFinal    = fim;
+
         return celulas.stream()
                 .map(c -> new PendenciaDTO(
                         c.getId(),
@@ -70,11 +75,12 @@ public class PastorPendenciasService {
                         c.getBairro(),
                         !comRelatorio.contains(c.getId()),
                         !comDiscipulado.contains(c.getId()),
-                        inicioSemana.toString(),
-                        fimSemana.toString()
+                        inicioFinal.toString(),
+                        fimFinal.toString()
                 ))
-                .filter(dto -> dto.isRelatorioPendente() || dto.isDiscipuladoPendente())
-                /* Ambas pendentes primeiro, depois por nome */
+                // Se todas=false → só pendentes; se todas=true → todas as células
+                .filter(dto -> todas || dto.isRelatorioPendente() || dto.isDiscipuladoPendente())
+                // Ordenação: ambas pendentes → só uma pendente → em dia; depois por nome
                 .sorted(Comparator
                         .comparingInt((PendenciaDTO d) ->
                                 (d.isRelatorioPendente() ? 1 : 0) + (d.isDiscipuladoPendente() ? 1 : 0))
@@ -83,16 +89,23 @@ public class PastorPendenciasService {
                 .collect(Collectors.toList());
     }
 
-    // =========================
-    // RESUMO RÁPIDO
-    // =========================
+    // Atalho para manter compatibilidade com chamadas antigas (semana atual, só pendentes)
     @Transactional(readOnly = true)
-    public ResumoDTO resumoPendencias() {
-        List<PendenciaDTO> todas = listarPendenciasDaSemana();
+    public List<PendenciaDTO> listarPendenciasDaSemana() {
+        return listarPendencias(null, false);
+    }
+
+    // =============================================================
+    // RESUMO RÁPIDO
+    // =============================================================
+    @Transactional(readOnly = true)
+    public ResumoDTO resumoPendencias(LocalDate semanaInicio) {
+        List<PendenciaDTO> todas = listarPendencias(semanaInicio, true);
         long ambas       = todas.stream().filter(p -> p.isRelatorioPendente() && p.isDiscipuladoPendente()).count();
         long relatorio   = todas.stream().filter(PendenciaDTO::isRelatorioPendente).count();
         long discipulado = todas.stream().filter(PendenciaDTO::isDiscipuladoPendente).count();
-        return new ResumoDTO((long) todas.size(), ambas, relatorio, discipulado);
+        long emDia       = todas.stream().filter(p -> !p.isRelatorioPendente() && !p.isDiscipuladoPendente()).count();
+        return new ResumoDTO((long) todas.size(), ambas, relatorio, discipulado, emDia);
     }
 
     // =========================
@@ -141,18 +154,21 @@ public class PastorPendenciasService {
         private final long ambasPendentes;
         private final long relatorioPendente;
         private final long discipuladoPendente;
+        private final long emDia;
 
         public ResumoDTO(long total, long ambasPendentes,
-                         long relatorioPendente, long discipuladoPendente) {
+                         long relatorioPendente, long discipuladoPendente, long emDia) {
             this.total               = total;
             this.ambasPendentes      = ambasPendentes;
             this.relatorioPendente   = relatorioPendente;
             this.discipuladoPendente = discipuladoPendente;
+            this.emDia               = emDia;
         }
 
         public long getTotal()               { return total;               }
         public long getAmbasPendentes()      { return ambasPendentes;      }
         public long getRelatorioPendente()   { return relatorioPendente;   }
         public long getDiscipuladoPendente() { return discipuladoPendente; }
+        public long getEmDia()               { return emDia;               }
     }
 }
