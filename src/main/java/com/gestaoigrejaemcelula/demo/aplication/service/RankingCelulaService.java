@@ -69,6 +69,17 @@ public class RankingCelulaService {
         pontos += (dto.getReconciliou()    != null ? dto.getReconciliou()    : 0) * 8;
         pontos += Boolean.TRUE.equals(dto.getMultiplicou()) ? 20 : 0;
 
+        // Log temporário para debug
+        System.out.println("=== " + dto.getNomeCelula() + " ===");
+        System.out.println("Presença: "      + dto.getPresencaMedia());
+        System.out.println("Visitantes: "    + dto.getVisitantes());
+        System.out.println("Aceitou Jesus: " + dto.getAceitouJesus());
+        System.out.println("Deseja Batismo: "+ dto.getDesejaBatismo());
+        System.out.println("Reconciliou: "   + dto.getReconciliou());
+        System.out.println("Batismos: "      + dto.getBatismos());
+        System.out.println("Multiplicou: "   + dto.getMultiplicou());
+        System.out.println("TOTAL: "         + pontos);
+
         dto.setPontuacao(pontos);
     }
 
@@ -79,4 +90,6 @@ public class RankingCelulaService {
     }
     @CacheEvict(value = "ranking-celulas", allEntries = true)
     public void limparCache() {}
+
+
 }
