@@ -327,4 +327,19 @@ public class RelatorioService {
                 .orElseThrow(() -> new RuntimeException("Relatório não encontrado"));
         return converterParaDTO(relatorio);
     }
+    @Autowired
+    private RankingCelulaService rankingCelulaService;
+
+    // No método de salvar
+    public Relatorio salvar(Relatorio relatorio) {
+        Relatorio salvo = relatorioRepository.save(relatorio);
+        rankingCelulaService.limparCache(); // limpa o cache
+        return salvo;
+    }
+
+    // No método de deletar
+    public void deletar(Long id) {
+        relatorioRepository.deleteById(id);
+        rankingCelulaService.limparCache(); // limpa o cache
+    }
 }

@@ -4,6 +4,7 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaProjection;
 import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,4 +77,6 @@ public class RankingCelulaService {
         String mesAtual = YearMonth.now().format(MES_ANO_FORMATTER);
         return gerarRanking(mesAtual);
     }
+    @CacheEvict(value = "ranking-celulas", allEntries = true)
+    public void limparCache() {}
 }
