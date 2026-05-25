@@ -13,4 +13,7 @@ public interface RankingCelulaProjection {
     Number getBatismos();
     Boolean getMultiplicou();
     Number getPontuacao();
+    Number getAceitouJesus();
+    Number getDesejaBatismo();
+    Number getReconciliou();
 }

@@ -18,6 +18,12 @@ public class RankingCelulaDTO {
     private Boolean multiplicou;
     private Integer pontuacao;
     private Integer posicao;
+    private Integer aceitouJesus;
+    private Integer desejaBatismo;
+    private Integer reconciliou;
+
+// No construtor RankingCelulaDTO(RankingCelulaProjection p):
+
 
     // Construtor para converter a Projeção (Interface) em DTO (Classe)
     public RankingCelulaDTO(RankingCelulaProjection p) {
@@ -30,6 +36,9 @@ public class RankingCelulaDTO {
         this.batismos = p.getBatismos() != null ? p.getBatismos().intValue() : 0;
         this.multiplicou = Boolean.TRUE.equals(p.getMultiplicou());
         this.pontuacao = p.getPontuacao() != null ? p.getPontuacao().intValue() : 0;
+        this.aceitouJesus  = p.getAceitouJesus()  != null ? p.getAceitouJesus().intValue()  : 0;
+        this.desejaBatismo = p.getDesejaBatismo() != null ? p.getDesejaBatismo().intValue() : 0;
+        this.reconciliou   = p.getReconciliou()   != null ? p.getReconciliou().intValue()   : 0;
         this.posicao = 0;
     }
 }

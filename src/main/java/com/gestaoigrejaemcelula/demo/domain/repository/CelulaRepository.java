@@ -44,22 +44,41 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
     Long countByAtivaTrue();
 
     @Query(value = """
-    SELECT 
-        c.id AS celulaId,
-        c.nome AS nomeCelula,
-        u.nome AS lider,
-        COALESCE(COUNT(r.id), 0) * 10.0 AS presencaMedia,
-        0 AS visitantes,
-        0 AS consolidados,
-        0 AS batismos,
-        FALSE AS multiplicou,
-        0 AS pontuacao
+    SELECT
+        c.id                                        AS celulaId,
+        c.nome                                      AS nomeCelula,
+        u.nome                                      AS lider,
+        COALESCE(AVG(membros_count.total), 0)       AS presencaMedia,
+        COALESCE(SUM(
+            COALESCE(rv.visitantes_cadastrados, 0) +
+            COALESCE(r.quantidade_visitantes, 0)
+        ), 0)                                       AS visitantes,
+        0                                           AS consolidados,
+        0                                           AS batismos,
+        FALSE                                       AS multiplicou,
+        COALESCE(SUM(CASE WHEN v.decisao_espiritual = 'ACEITOU_JESUS'  THEN 1 ELSE 0 END), 0) AS aceitouJesus,
+        COALESCE(SUM(CASE WHEN v.decisao_espiritual = 'BATISMO_AGUAS'  THEN 1 ELSE 0 END), 0) AS desejaBatismo,
+        COALESCE(SUM(CASE WHEN v.decisao_espiritual = 'RECONCILIOU'    THEN 1 ELSE 0 END), 0) AS reconciliou,
+        0                                           AS pontuacao
     FROM celulas c
     LEFT JOIN usuarios u ON u.id = c.lider_id
-    LEFT JOIN relatorio r 
+    LEFT JOIN relatorio r
         ON r.celula_id = c.id
         AND r.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
-        AND r.data_reuniao < (TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH')
+        AND r.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+    LEFT JOIN relatorio_visitantes_presenca rvp ON rvp.relatorio_id = r.id
+    LEFT JOIN visitantes v ON v.id = rvp.visitante_id
+    LEFT JOIN (
+        SELECT rmp.relatorio_id, COUNT(rmp.membro_id) AS total
+        FROM relatorio_membros_presenca rmp
+        GROUP BY rmp.relatorio_id
+    ) membros_count ON membros_count.relatorio_id = r.id
+    LEFT JOIN (
+        SELECT rvp2.relatorio_id, COUNT(rvp2.visitante_id) AS visitantes_cadastrados
+        FROM relatorio_visitantes_presenca rvp2
+        GROUP BY rvp2.relatorio_id
+    ) rv ON rv.relatorio_id = r.id
+    WHERE c.ativo = TRUE
     GROUP BY c.id, c.nome, u.nome
 """, nativeQuery = true)
     List<RankingCelulaProjection> buscarDadosRankingNativo(@Param("mes") String mesAno);}

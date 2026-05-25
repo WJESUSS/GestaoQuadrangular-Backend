@@ -56,14 +56,18 @@ public class RankingCelulaService {
 
         return ordenado;
     }
-
     private void calcularPontuacaoManual(RankingCelulaDTO dto) {
         int pontos = 0;
-        pontos += (dto.getPresencaMedia()  != null ? dto.getPresencaMedia()  : 0) * 4;
-        pontos += (dto.getVisitantes()     != null ? dto.getVisitantes()     : 0) * 3;
+
+        pontos += (dto.getPresencaMedia()  != null ? dto.getPresencaMedia()  : 0) * 5;
+        pontos += (dto.getVisitantes()     != null ? dto.getVisitantes()     : 0) * 10;
         pontos += (dto.getConsolidados()   != null ? dto.getConsolidados()   : 0) * 3;
         pontos += (dto.getBatismos()       != null ? dto.getBatismos()       : 0) * 5;
+        pontos += (dto.getAceitouJesus()   != null ? dto.getAceitouJesus()   : 0) * 15;
+        pontos += (dto.getDesejaBatismo()  != null ? dto.getDesejaBatismo()  : 0) * 10;
+        pontos += (dto.getReconciliou()    != null ? dto.getReconciliou()    : 0) * 8;
         pontos += Boolean.TRUE.equals(dto.getMultiplicou()) ? 20 : 0;
+
         dto.setPontuacao(pontos);
     }
 

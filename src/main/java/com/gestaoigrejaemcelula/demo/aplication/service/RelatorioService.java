@@ -286,4 +286,45 @@ public class RelatorioService {
                 })
                 .collect(Collectors.toList());
     }
+    @Transactional
+    public void atualizarRelatorio(Long id, RelatorioRequestDTO dto) throws AccessDeniedException {
+        Usuario lider = usuarioService.getUsuarioLogado();
+
+        Celula celula = celulaRepository.findByLider_Id(lider.getId())
+                .orElseThrow(() -> new RuntimeException("Líder não possui célula vinculada"));
+
+        Relatorio relatorio = relatorioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Relatório não encontrado"));
+
+        // Garante que o líder só edita o relatório da própria célula
+        if (!relatorio.getCelula().getId().equals(celula.getId())) {
+            throw new AccessDeniedException("Você não tem permissão para editar este relatório");
+        }
+
+        relatorio.setDataReuniao(dto.getDataReuniao());
+        relatorio.setEstudo(dto.getEstudo());
+        relatorio.setQuantidadeVisitantes(
+                dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0
+        );
+
+        if (dto.getMembrosPresentesIds() != null) {
+            List<Membro> membros = membroRepository.findAllById(dto.getMembrosPresentesIds());
+            relatorio.setPresentes(membros);
+        }
+
+        if (dto.getVisitantesPresentes() != null) {
+            List<Long> ids = dto.getVisitantesPresentes().stream()
+                    .map(v -> v.getId()).toList();
+            List<Visitante> visitantes = visitanteRepository.findAllById(ids);
+            relatorio.setVisitantesPresentes(visitantes);
+        }
+
+        relatorioRepository.save(relatorio);
+    }
+    @Transactional(readOnly = true)
+    public RelatorioResponseDTO buscarPorId(Long id) {
+        Relatorio relatorio = relatorioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Relatório não encontrado"));
+        return converterParaDTO(relatorio);
+    }
 }

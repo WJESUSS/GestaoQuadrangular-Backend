@@ -10,12 +10,14 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @RestController
@@ -83,19 +85,25 @@ public class RelatorioController {
     // Buscar resumo por semana
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTOR', 'SECRETARIO')")
     @GetMapping("/semana")
-    public ResponseEntity<RelatorioResumoDTO> buscarPorSemana(
+    public ResponseEntity<?> buscarPorSemana(
             @RequestParam("inicio") String inicioStr,
             @RequestParam("fim") String fimStr) {
 
+        LocalDate inicio, fim;
         try {
-            LocalDate inicio = LocalDate.parse(inicioStr);
-            LocalDate fim = LocalDate.parse(fimStr);
-
-            RelatorioResumoDTO resumo = service.buscarResumoSemana(inicio, fim);
-            return ResponseEntity.ok(resumo);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Formato de data inválido. Use YYYY-MM-DD");
+            inicio = LocalDate.parse(inicioStr);
+            fim = LocalDate.parse(fimStr);
+        } catch (DateTimeParseException e) {
+            // Log para confirmar o que está chegando
+            System.out.println(">>> inicio recebido: '" + inicioStr + "'");
+            System.out.println(">>> fim recebido: '" + fimStr + "'");
+            return ResponseEntity
+                    .badRequest()
+                    .body("Formato de data inválido. Use YYYY-MM-DD. Recebido: inicio=" + inicioStr + ", fim=" + fimStr);
         }
+
+        RelatorioResumoDTO resumo = service.buscarResumoSemana(inicio, fim);
+        return ResponseEntity.ok(resumo);
     }
     @GetMapping("/historico")
     public List<RelatorioResponseDTO> listarHistorico(Authentication authentication) {
@@ -106,5 +114,31 @@ public class RelatorioController {
     @GetMapping("/todos-relatorios")
     public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
         return ResponseEntity.ok(service.listarTodosOsRelatorios());
+    }
+    // Editar relatório existente
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('LIDER_CELULA')")
+    public ResponseEntity<String> atualizar(
+            @PathVariable Long id,
+            @RequestBody @Valid RelatorioRequestDTO dto) {
+        try {
+            service.atualizarRelatorio(id, dto);
+            return ResponseEntity.ok("Relatório atualizado com sucesso!");
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Acesso negado: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Erro ao atualizar relatório: " + e.getMessage());
+        }
+    }
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LIDER_CELULA', 'ADMIN', 'SECRETARIO', 'PASTOR')")
+    public ResponseEntity<RelatorioResponseDTO> buscarPorId(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.buscarPorId(id));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }
