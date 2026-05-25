@@ -42,38 +42,78 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
 
     @Query(value = """
     SELECT
-        c.id                                        AS celulaId,
-        c.nome                                      AS nomeCelula,
-        u.nome                                      AS lider,
-        COALESCE(AVG(membros_count.total), 0)       AS presencaMedia,
-        COALESCE(SUM(rv.visitantes_cadastrados), 0) AS visitantes,
-        0                                           AS consolidados,
-        0                                           AS batismos,
-        FALSE                                       AS multiplicou,
-        COALESCE(SUM(CASE WHEN v.decisao_espiritual = 'ACEITOU_JESUS'  THEN 1 ELSE 0 END), 0) AS aceitouJesus,
-        COALESCE(SUM(CASE WHEN v.decisao_espiritual = 'BATISMO_AGUAS'  THEN 1 ELSE 0 END), 0) AS desejaBatismo,
-        COALESCE(SUM(CASE WHEN v.decisao_espiritual = 'RECONCILIOU'    THEN 1 ELSE 0 END), 0) AS reconciliou,
-        0                                           AS pontuacao
+        c.id                                            AS celulaId,
+        c.nome                                          AS nomeCelula,
+        u.nome                                          AS lider,
+
+        -- Média de membros presentes por reunião no mês
+        COALESCE((
+            SELECT AVG(mc.total)
+            FROM (
+                SELECT rmp.relatorio_id, COUNT(rmp.membro_id) AS total
+                FROM relatorio_membros_presenca rmp
+                INNER JOIN relatorio r2 ON r2.id = rmp.relatorio_id
+                WHERE r2.celula_id = c.id
+                  AND r2.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+                  AND r2.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+                GROUP BY rmp.relatorio_id
+            ) mc
+        ), 0)                                           AS presencaMedia,
+
+        -- Total de visitantes únicos no mês (sem dupla contagem)
+        COALESCE((
+            SELECT COUNT(DISTINCT rvp.visitante_id)
+            FROM relatorio_visitantes_presenca rvp
+            INNER JOIN relatorio r3 ON r3.id = rvp.relatorio_id
+            WHERE r3.celula_id = c.id
+              AND r3.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND r3.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+        ), 0)                                           AS visitantes,
+
+        0                                               AS consolidados,
+        0                                               AS batismos,
+        FALSE                                           AS multiplicou,
+
+        -- Decisões espirituais: conta visitante uma vez por mês (DISTINCT por visitante)
+        COALESCE((
+            SELECT COUNT(DISTINCT v.id)
+            FROM relatorio_visitantes_presenca rvp
+            INNER JOIN relatorio r4 ON r4.id = rvp.relatorio_id
+            INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
+            WHERE r4.celula_id = c.id
+              AND r4.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND r4.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+              AND v.decisao_espiritual = 'ACEITOU_JESUS'
+        ), 0)                                           AS aceitouJesus,
+
+        COALESCE((
+            SELECT COUNT(DISTINCT v.id)
+            FROM relatorio_visitantes_presenca rvp
+            INNER JOIN relatorio r5 ON r5.id = rvp.relatorio_id
+            INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
+            WHERE r5.celula_id = c.id
+              AND r5.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND r5.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+              AND v.decisao_espiritual = 'BATISMO_AGUAS'
+        ), 0)                                           AS desejaBatismo,
+
+        COALESCE((
+            SELECT COUNT(DISTINCT v.id)
+            FROM relatorio_visitantes_presenca rvp
+            INNER JOIN relatorio r6 ON r6.id = rvp.relatorio_id
+            INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
+            WHERE r6.celula_id = c.id
+              AND r6.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND r6.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+              AND v.decisao_espiritual = 'RECONCILIOU'
+        ), 0)                                           AS reconciliou,
+
+        0                                               AS pontuacao
+
     FROM celulas c
     LEFT JOIN usuarios u ON u.id = c.lider_id
-    LEFT JOIN relatorio r
-        ON r.celula_id = c.id
-        AND r.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
-        AND r.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
-    LEFT JOIN relatorio_visitantes_presenca rvp ON rvp.relatorio_id = r.id
-    LEFT JOIN visitantes v ON v.id = rvp.visitante_id
-    LEFT JOIN (
-        SELECT rvp2.relatorio_id, COUNT(rvp2.visitante_id) AS visitantes_cadastrados
-        FROM relatorio_visitantes_presenca rvp2
-        GROUP BY rvp2.relatorio_id
-    ) rv ON rv.relatorio_id = r.id
-    LEFT JOIN (
-        SELECT rmp.relatorio_id, COUNT(rmp.membro_id) AS total
-        FROM relatorio_membros_presenca rmp
-        GROUP BY rmp.relatorio_id
-    ) membros_count ON membros_count.relatorio_id = r.id
     WHERE c.ativo = TRUE
-    GROUP BY c.id, c.nome, u.nome
+    ORDER BY c.nome
 """, nativeQuery = true)
     List<RankingCelulaProjection> buscarDadosRankingNativo(@Param("mes") String mesAno);
 }
