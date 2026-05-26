@@ -1,16 +1,16 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
-import com.gestaoigrejaemcelula.demo.aplication.dto.MembroRequestDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.MembroResponseDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.MembroResumoDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.MembroSelectDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.aplication.service.MembroService;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
+import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/membros")
@@ -19,9 +19,11 @@ import java.util.List;
 public class MembroController {
 
     private final MembroService service;
+    private final MembroRepository membroRepository;
 
-    public MembroController(MembroService service) {
+    public MembroController(MembroService service, MembroRepository membroRepository) {
         this.service = service;
+        this.membroRepository = membroRepository;
     }
 
     @PostMapping
@@ -90,4 +92,10 @@ public class MembroController {
         service.alterarStatus(id, status, observacao);
         return ResponseEntity.ok().build();
     }
+    @GetMapping("/celula/{celulaId}/aniversariantes-hoje")
+    public ResponseEntity<List<CelulaResponseDTO.MembroDTO>> aniversariantesHoje(@PathVariable Long celulaId) {
+        List<CelulaResponseDTO.MembroDTO> lista = service.buscarAniversariantesHoje(celulaId);
+        return ResponseEntity.ok(lista);
+    }
+
 }

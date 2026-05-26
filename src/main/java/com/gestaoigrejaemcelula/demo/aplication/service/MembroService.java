@@ -231,4 +231,21 @@ public class MembroService {
                 .filter(alerta -> alerta.getTotalFaltas() != null && alerta.getTotalFaltas() >= 2)
                 .collect(Collectors.toList());
     }
+    public List<CelulaResponseDTO.MembroDTO> buscarAniversariantesHoje(Long celulaId) {
+        int dia = LocalDate.now().getDayOfMonth();
+        int mes = LocalDate.now().getMonthValue();
+
+        return repository.findByCelulaId(celulaId)
+                .stream()
+                .filter(m -> m.getDataNascimento() != null
+                        && m.getDataNascimento().getDayOfMonth() == dia
+                        && m.getDataNascimento().getMonthValue() == mes)
+                .map(m -> new CelulaResponseDTO.MembroDTO(
+                        m.getId(),
+                        m.getNome(),
+                        m.getTelefone(),
+                        m.getDataNascimento()
+                ))
+                .collect(Collectors.toList());
+    }
 }

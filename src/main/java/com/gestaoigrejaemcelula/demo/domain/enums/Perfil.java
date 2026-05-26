@@ -5,6 +5,7 @@ public enum Perfil {
     ADMIN,
     PASTOR,
     LIDER_CELULA,
+    SUPERINTENDENTE,
     SECRETARIO,
     TESOUREIRO;
 

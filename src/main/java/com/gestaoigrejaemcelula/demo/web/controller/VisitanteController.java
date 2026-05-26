@@ -51,5 +51,9 @@ public class VisitanteController {
 
         return service.listarAtivosPorCelula(celulaId);
     }
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        service.deletar(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
 }

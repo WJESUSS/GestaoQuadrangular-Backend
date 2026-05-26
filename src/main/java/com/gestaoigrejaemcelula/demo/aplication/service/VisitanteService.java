@@ -164,4 +164,16 @@ public class VisitanteService {
         return celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
     }
+    // =========================
+
+// =========================
+// =========================
+// DELETAR (hard delete)
+// =========================
+public void deletar(Long id) {
+    Visitante visitante = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+    visitante.setAtivo(false);
+    repository.save(visitante);
+}
 }

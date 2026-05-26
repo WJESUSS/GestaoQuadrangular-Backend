@@ -4,6 +4,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,9 +45,11 @@ public record CelulaResponseDTO(
     }
 
     // Mude o construtor do MembroDTO para aceitar Membro
-    public record MembroDTO(Long id, String nome, String email) {
-        public MembroDTO(Membro m) {   // <--- mude de Usuario para Membro
-            this(m.getId(), m.getNome(), m.getEmail());
+    public record MembroDTO(Long id, String nome, String telefone, LocalDate dataNascimento) {
+
+        // construtor a partir da entidade Membro
+        public MembroDTO(Membro m) {
+            this(m.getId(), m.getNome(), m.getTelefone(), m.getDataNascimento());
         }
     }
 }

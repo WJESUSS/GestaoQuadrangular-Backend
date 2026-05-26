@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/usuarios/solicitar-alteracao").permitAll()
                         .requestMatchers("/auditoria").hasAnyAuthority("ADMIN","PASTOR")
 
+
                         // ✅ removida linha duplicada de /relatorios/** com permitAll()
                         // ✅ removida linha duplicada de /membros/sem-celula
                         .requestMatchers("/api/casas-de-paz/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
