@@ -1,6 +1,8 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
+import com.gestaoigrejaemcelula.demo.aplication.dto.DiscipuladoHistoricoItemDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.DiscipuladoRequestDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.DiscipuladoSemanaDetalheDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioDiscipuladoDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.DiscipuladoRelatorioService;
 import com.gestaoigrejaemcelula.demo.domain.entity.DiscipuladoRelatorio;
@@ -42,14 +44,9 @@ public class DiscipuladoRelatorioController {
     // Listar relatório da semana
 
     @GetMapping("/relatorio-semanal")
-    public ResponseEntity<List<DiscipuladoRelatorio>> listarSemana(
-            @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate inicio,
-
-            @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate fim
+    public ResponseEntity<List<RelatorioDiscipuladoDTO>> listarSemana(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim
     ) {
         return ResponseEntity.ok(service.listarSemana(inicio, fim));
     }
@@ -65,11 +62,33 @@ public class DiscipuladoRelatorioController {
         return ResponseEntity.ok().build();
     }
 
-    // Listar todos os relatórios
-  //  @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
-   // @GetMapping("/todos-relatorios")
-//public ResponseEntity<List<RelatorioDiscipuladoDTO>> buscarTodos() {
-     //   return ResponseEntity.ok(service.listarTodosOsRelatorios());
-//    }
+    @PutMapping("/{id}")
+    public ResponseEntity<RelatorioDiscipuladoDTO> atualizarUnico(
+            @PathVariable Long id,
+            @RequestBody DiscipuladoRequestDTO dto
+    ) {
+        return ResponseEntity.ok(service.atualizarRelatorio(id, dto));
+    }
+
+    @GetMapping("/historico")
+    public ResponseEntity<List<DiscipuladoHistoricoItemDTO>> listarHistorico() {
+        return ResponseEntity.ok(service.listarHistorico());
+    }
+    @PutMapping("/relatorio-semanal/{id}")
+    public ResponseEntity<Void> atualizarRelatorioSemanal(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestBody List<DiscipuladoRequestDTO> lista
+    ) {
+        service.atualizarRelatorioSemanal(id, lista, inicio, fim);
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping("/relatorio-semanal/{id}")
+    public ResponseEntity<DiscipuladoSemanaDetalheDTO> buscarDetalhe(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(service.buscarDetalhe(id));
+    }
 
 }
