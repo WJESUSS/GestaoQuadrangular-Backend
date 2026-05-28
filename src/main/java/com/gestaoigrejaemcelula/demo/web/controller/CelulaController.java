@@ -165,4 +165,5 @@ public class CelulaController {
     public ResponseEntity<?> buscarMembrosPorCelula(@PathVariable Long id) {
         return ResponseEntity.ok(service.buscarMembrosPorCelula(id));
     }
+
 }
