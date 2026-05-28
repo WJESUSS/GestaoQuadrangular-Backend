@@ -223,8 +223,9 @@ public class RelatorioService {
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> buscarPorSemana(String data) {
         LocalDate dataBase = LocalDate.parse(data);
-        LocalDate inicioSemana = dataBase.with(DayOfWeek.MONDAY);
-        LocalDate fimSemana = dataBase.with(DayOfWeek.SUNDAY);
+        // ✅ domingo a sábado, igual ao frontend
+        LocalDate inicioSemana = dataBase.with(DayOfWeek.SUNDAY);
+        LocalDate fimSemana    = inicioSemana.plusDays(6); // sábado
 
         return relatorioRepository
                 .findByDataReuniaoBetween(inicioSemana, fimSemana)
@@ -296,7 +297,6 @@ public class RelatorioService {
         Relatorio relatorio = relatorioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Relatório não encontrado"));
 
-        // Garante que o líder só edita o relatório da própria célula
         if (!relatorio.getCelula().getId().equals(celula.getId())) {
             throw new AccessDeniedException("Você não tem permissão para editar este relatório");
         }
@@ -316,6 +316,22 @@ public class RelatorioService {
             List<Long> ids = dto.getVisitantesPresentes().stream()
                     .map(v -> v.getId()).toList();
             List<Visitante> visitantes = visitanteRepository.findAllById(ids);
+
+            // ✅ CORREÇÃO: atualiza a decisão espiritual de cada visitante
+            for (Visitante visitante : visitantes) {
+                dto.getVisitantesPresentes().stream()
+                        .filter(v -> v.getId().equals(visitante.getId()))
+                        .findFirst()
+                        .ifPresent(vdto -> {
+                            visitante.setDecisaoEspiritual(
+                                    vdto.getDecisaoEspiritual() != null
+                                            ? vdto.getDecisaoEspiritual()
+                                            : DecisaoEspiritual.NENHUMA
+                            );
+                            visitanteRepository.save(visitante);
+                        });
+            }
+
             relatorio.setVisitantesPresentes(visitantes);
         }
 

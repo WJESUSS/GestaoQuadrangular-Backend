@@ -36,16 +36,22 @@ public class PastorPendenciasService {
     //
     // semanaInicio → se null, usa a semana atual
     // todas        → se true, retorna também células em dia
-    // =============================================================
     @Transactional(readOnly = true)
     public List<PendenciaDTO> listarPendencias(LocalDate semanaInicio, boolean todas) {
 
-        // Se não vier data, usa a semana atual (segunda → domingo)
-        LocalDate inicio = (semanaInicio != null)
-                ? semanaInicio.with(WeekFields.ISO.dayOfWeek(), 1)  // garante que é segunda
-                : LocalDate.now().with(WeekFields.ISO.dayOfWeek(), 1);
+        // ✅ Frontend manda o domingo da semana — usa direto, sem reposicionar
+        // Se não vier data, calcula o domingo da semana atual
+        LocalDate inicio;
+        if (semanaInicio != null) {
+            inicio = semanaInicio; // já é domingo, não mexe
+        } else {
+            LocalDate hoje = LocalDate.now();
+            // recua até o domingo (DayOfWeek.SUNDAY = 7 no ISO, mas getDay domingo=0)
+            int diasAteDomingo = hoje.getDayOfWeek().getValue() % 7; // seg=1→1, dom=7→0
+            inicio = hoje.minusDays(diasAteDomingo);
+        }
 
-        LocalDate fim = inicio.with(WeekFields.ISO.dayOfWeek(), 7);
+        LocalDate fim = inicio.plusDays(6); // domingo + 6 = sábado
 
         // Todas as células ativas
         List<Celula> celulas = celulaRepository.findAllByAtivaTrue();
@@ -78,9 +84,7 @@ public class PastorPendenciasService {
                         inicioFinal.toString(),
                         fimFinal.toString()
                 ))
-                // Se todas=false → só pendentes; se todas=true → todas as células
                 .filter(dto -> todas || dto.isRelatorioPendente() || dto.isDiscipuladoPendente())
-                // Ordenação: ambas pendentes → só uma pendente → em dia; depois por nome
                 .sorted(Comparator
                         .comparingInt((PendenciaDTO d) ->
                                 (d.isRelatorioPendente() ? 1 : 0) + (d.isDiscipuladoPendente() ? 1 : 0))
@@ -88,7 +92,6 @@ public class PastorPendenciasService {
                         .thenComparing(PendenciaDTO::getNomeCelula))
                 .collect(Collectors.toList());
     }
-
     // Atalho para manter compatibilidade com chamadas antigas (semana atual, só pendentes)
     @Transactional(readOnly = true)
     public List<PendenciaDTO> listarPendenciasDaSemana() {
