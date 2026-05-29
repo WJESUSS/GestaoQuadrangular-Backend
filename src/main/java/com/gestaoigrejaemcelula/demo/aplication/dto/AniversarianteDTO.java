@@ -7,7 +7,7 @@ public class AniversarianteDTO {
     private String telefone;
     private String linkWhatsApp;
 
-    public AniversarianteDTO(Long id, String nome, String telefone, String linkWhatsApp) {
+    public AniversarianteDTO(Long id, String nome, String telefone, String linkWhatsApp, String link) {
         this.id = id;
         this.nome = nome;
         this.telefone = telefone;
