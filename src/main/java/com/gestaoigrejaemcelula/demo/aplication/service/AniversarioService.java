@@ -94,4 +94,27 @@ Pastores Renato e Jaci Soares 🙏 🤍""".formatted(m.getNome());
                 link
         );
     }
+    // Para aniversariantes da CÉLULA
+    @Transactional(readOnly = true)
+    public List<AniversarianteDTO> listarAniversariantesDoDiaPorCelula(Long celulaId) {
+        LocalDate hoje = LocalDate.now(ZONE_BAHIA);
+        List<Membro> membros = membroRepository.findAniversariantesDoDiaPorCelula(
+                celulaId,
+                hoje.getMonthValue(),
+                hoje.getDayOfMonth()
+        );
+        return membros.stream().map(this::toDTO).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AniversarianteDTO> listarAniversariantesSemanaPoeCelula(Long celulaId) {
+        LocalDate hoje = LocalDate.now(ZONE_BAHIA);
+        List<Integer> diasMes = new ArrayList<>();
+        for (int i = 0; i <= 7; i++) {
+            LocalDate d = hoje.plusDays(i);
+            diasMes.add(d.getMonthValue() * 100 + d.getDayOfMonth());
+        }
+        List<Membro> membros = membroRepository.findAniversariantesSemanaPoeCelula(celulaId, diasMes);
+        return membros.stream().map(this::toDTO).toList();
+    }
 }

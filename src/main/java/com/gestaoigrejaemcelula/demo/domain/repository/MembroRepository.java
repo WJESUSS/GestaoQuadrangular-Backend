@@ -76,5 +76,31 @@ public interface MembroRepository extends JpaRepository<Membro, Long> {
     ) IN :diasMes
 """)
     List<Membro> findAniversariantesPorDiasMes(@Param("diasMes") List<Integer> diasMes);
+    // Buscar aniversariantes de UMA CÉLULA específica
+    @Query("""
+    SELECT m FROM Membro m
+    WHERE m.celula.id = :celulaId
+    AND EXTRACT(MONTH FROM m.dataNascimento) = :mes
+    AND EXTRACT(DAY FROM m.dataNascimento) = :dia
+    AND m.status = 'ATIVO'
+""")
+    List<Membro> findAniversariantesDoDiaPorCelula(
+            @Param("celulaId") Long celulaId,
+            @Param("mes") int mes,
+            @Param("dia") int dia
+    );
 
+    // Buscar aniversariantes da semana de UMA CÉLULA
+    @Query("""
+    SELECT m FROM Membro m
+    WHERE m.celula.id = :celulaId
+    AND m.status = 'ATIVO'
+    AND (
+        EXTRACT(MONTH FROM m.dataNascimento) * 100 + EXTRACT(DAY FROM m.dataNascimento)
+    ) IN :diasMes
+""")
+    List<Membro> findAniversariantesSemanaPoeCelula(
+            @Param("celulaId") Long celulaId,
+            @Param("diasMes") List<Integer> diasMes
+    );
 }
