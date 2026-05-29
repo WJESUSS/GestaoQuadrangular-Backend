@@ -64,13 +64,13 @@ public class AniversarioService {
     // ✅ Método auxiliar para evitar duplicação
     private AniversarianteDTO toDTO(Membro m) {
         String mensagem = """
-                🎂 Feliz Aniversário %s!
-
-                Que Deus abençoe sua vida,
-                lhe conceda saúde, paz e prosperidade.
-
-                Com carinho,
-                Pastor e Pastora 🙏
+                🎂  Paz seja contigo minha ovelhinha 🐑! Feliz Aniversário %s!
+                
+                                             Que Deus abençoe sua vida,
+                                             lhe conceda saúde, paz e prosperidade.
+                
+                                             Com carinho,
+                                             Pastores Renato e Jaci Soares 🐑 🙏
                 """.formatted(m.getNome());
 
         String mensagemCodificada = URLEncoder.encode(mensagem, StandardCharsets.UTF_8);
