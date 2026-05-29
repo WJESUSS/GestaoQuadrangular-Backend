@@ -66,4 +66,15 @@ public interface MembroRepository extends JpaRepository<Membro, Long> {
             "(SELECT count(p) FROM Presenca p WHERE p.membro = m AND p.status = 'FALTA' AND p.data >= :dataLimite)) " +
             "FROM Membro m WHERE m.status = com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro.ATIVO")
     List<AlertaDTO> findAlertasMembros(@Param("dataLimite") LocalDate dataLimite);
+// ❌ Remove a query antiga findAniversariantesDaSemana e substitui por:
+
+    @Query("""
+    SELECT m FROM Membro m
+    WHERE m.status = 'ATIVO'
+    AND (
+        EXTRACT(MONTH FROM m.dataNascimento) * 100 + EXTRACT(DAY FROM m.dataNascimento)
+    ) IN :diasMes
+""")
+    List<Membro> findAniversariantesPorDiasMes(@Param("diasMes") List<Integer> diasMes);
+
 }

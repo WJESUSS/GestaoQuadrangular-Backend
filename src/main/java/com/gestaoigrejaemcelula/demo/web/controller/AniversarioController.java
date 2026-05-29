@@ -22,4 +22,8 @@ public class AniversarioController {
     public List<AniversarianteDTO> listarHoje() {
         return aniversarioService.listarAniversariantesDoDia();
     }
+    @GetMapping("/semana")
+    public List<AniversarianteDTO> listarSemana() {
+        return aniversarioService.listarAniversariantesDaSemana();
+    }
 }
