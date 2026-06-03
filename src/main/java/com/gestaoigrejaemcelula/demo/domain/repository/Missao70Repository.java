@@ -1,6 +1,6 @@
 package com.gestaoigrejaemcelula.demo.domain.repository;
 
-import com.gestaoigrejaemcelula.demo.aplication.dto.StatusMissao70;
+import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
 import com.gestaoigrejaemcelula.demo.domain.entity.Missao70;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

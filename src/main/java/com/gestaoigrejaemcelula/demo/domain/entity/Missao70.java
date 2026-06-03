@@ -1,7 +1,7 @@
 package com.gestaoigrejaemcelula.demo.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.gestaoigrejaemcelula.demo.aplication.dto.StatusMissao70;
+import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;

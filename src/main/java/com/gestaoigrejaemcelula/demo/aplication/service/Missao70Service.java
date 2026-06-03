@@ -2,9 +2,9 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.EncontroMissao70RequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.Missao70RequestDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.StatusMissao70;
+import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
 import com.gestaoigrejaemcelula.demo.domain.entity.*;
-
+import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,18 +20,25 @@ public class Missao70Service {
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
     private final VisitanteRepository visitanteRepository;
+    private final MetaService metaService; // ← injeção para recalcular metas
 
     public Missao70Service(Missao70Repository missao70Repository,
                            EncontroMissao70Repository encontroRepository,
                            CelulaRepository celulaRepository,
                            MembroRepository membroRepository,
-                           VisitanteRepository visitanteRepository) {
+                           VisitanteRepository visitanteRepository,
+                           MetaService metaService) {
         this.missao70Repository = missao70Repository;
         this.encontroRepository = encontroRepository;
-        this.celulaRepository = celulaRepository;
-        this.membroRepository = membroRepository;
+        this.celulaRepository   = celulaRepository;
+        this.membroRepository   = membroRepository;
         this.visitanteRepository = visitanteRepository;
+        this.metaService        = metaService;
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // CRUD
+    // ─────────────────────────────────────────────────────────────
 
     @Transactional
     public Missao70 criar(Missao70RequestDTO dto) {
@@ -95,6 +102,18 @@ public class Missao70Service {
 
         return missao70Repository.save(missao);
     }
+
+    @Transactional
+    public Missao70 cancelar(Long id) {
+        Missao70 missao = buscarPorId(id);
+        missao.setStatus(StatusMissao70.CANCELADA);
+        return missao70Repository.save(missao);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // VISITANTES
+    // ─────────────────────────────────────────────────────────────
+
     @Transactional
     public Missao70 adicionarVisitante(Long missaoId, Long visitanteId) {
         Missao70 missao = buscarPorId(missaoId);
@@ -103,9 +122,21 @@ public class Missao70Service {
 
         if (!missao.getVisitantes().contains(visitante)) {
             missao.getVisitantes().add(visitante);
+
+            // Garante que o visitante conhece a célula da missão
+            // (necessário para que countByCelulaIdAndDecisaoEspiritual funcione)
+            if (visitante.getCelula() == null && missao.getCelula() != null) {
+                visitante.setCelula(missao.getCelula());
+                visitanteRepository.save(visitante);
+            }
         }
+
         return missao70Repository.save(missao);
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // ENCONTROS
+    // ─────────────────────────────────────────────────────────────
 
     /**
      * Registra o encontro da semana atual.
@@ -124,28 +155,51 @@ public class Missao70Service {
 
         int semanaAtual = missao.getProximaSemana();
 
+        // ── Cria o encontro ──────────────────────────────────────
         EncontroMissao70 encontro = new EncontroMissao70();
         encontro.setDataEncontro(dto.getDataEncontro());
         encontro.setNumeroSemana(semanaAtual);
         encontro.setObservacoes(dto.getObservacoes());
         encontro.setMissao70(missao);
 
-        // Usa DecisaoMissao70 — não conflita com DecisaoEncontro da CasaDePaz
+        boolean houveDecisao = false;
+
         if (dto.getDecisoes() != null) {
             for (EncontroMissao70RequestDTO.DecisaoDTO decisaoDTO : dto.getDecisoes()) {
                 Visitante visitante = visitanteRepository.findById(decisaoDTO.getVisitanteId())
                         .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
 
+                // Registra a decisão no encontro
                 DecisaoMissao70 decisao = new DecisaoMissao70();
                 decisao.setTipoDecisao(decisaoDTO.getTipoDecisao());
                 decisao.setVisitante(visitante);
                 decisao.setEncontro(encontro);
                 encontro.getDecisoes().add(decisao);
+
+                // Atualiza o campo decisaoEspiritual do Visitante
+                // (só altera se ainda não tem uma decisão registrada)
+                DecisaoEspiritual atual = visitante.getDecisaoEspiritual();
+                boolean jaTemDecisao = atual == DecisaoEspiritual.ACEITOU_JESUS
+                        || atual == DecisaoEspiritual.RECONCILIOU
+                        || atual == DecisaoEspiritual.BATISMO_AGUAS;
+
+                if (!jaTemDecisao) {
+                    visitante.setDecisaoEspiritual(decisaoDTO.getTipoDecisao());
+
+                    // Garante vínculo com a célula para que o recálculo funcione
+                    if (visitante.getCelula() == null && missao.getCelula() != null) {
+                        visitante.setCelula(missao.getCelula());
+                    }
+
+                    visitanteRepository.save(visitante);
+                    houveDecisao = true;
+                }
             }
         }
 
         encontroRepository.save(encontro);
 
+        // ── Atualiza contadores da missão ────────────────────────
         missao.setProximaSemana(semanaAtual + 1);
         missao.setEncontrosRestantes(missao.getEncontrosRestantes() - 1);
 
@@ -156,22 +210,26 @@ public class Missao70Service {
 
         missao70Repository.save(missao);
 
+        // ── Recalcula metas da célula se houve decisão espiritual ─
+        // Garante que o progresso das metas seja atualizado no banco
+        // mesmo que o frontend não dispare o endpoint /recalcular
+        if (houveDecisao && missao.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(missao.getCelula().getId());
+        }
+
         return Map.of(
                 "semanaRegistrada", semanaAtual,
                 "semanasRestantes", missao.getEncontrosRestantes(),
-                "concluida", concluida,
-                "mensagem", concluida
+                "concluida",        concluida,
+                "mensagem",         concluida
                         ? "Parabéns! Missão 70 concluída — 4 semanas realizadas!"
                         : "Semana " + semanaAtual + " de 4 registrada com sucesso."
         );
     }
 
-    @Transactional
-    public Missao70 cancelar(Long id) {
-        Missao70 missao = buscarPorId(id);
-        missao.setStatus(StatusMissao70.CANCELADA);
-        return missao70Repository.save(missao);
-    }
+    // ─────────────────────────────────────────────────────────────
+    // CONSULTAS
+    // ─────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<Missao70> listarTodas() {

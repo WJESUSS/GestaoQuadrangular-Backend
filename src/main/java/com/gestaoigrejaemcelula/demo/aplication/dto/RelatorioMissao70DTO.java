@@ -2,6 +2,8 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 
 
+import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
+
 import java.time.LocalDate;
 
 public class RelatorioMissao70DTO {

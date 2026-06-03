@@ -1,6 +1,5 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
-
 import com.gestaoigrejaemcelula.demo.aplication.dto.CasaDePazRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.EncontroRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioCasaDePazDTO;
@@ -8,8 +7,6 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteResponseDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.*;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;
-
-
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,20 +25,27 @@ public class CasaDePazService {
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
     private final VisitanteRepository visitanteRepository;
+    private final MetaService metaService; // ← injeção para recalcular metas
 
     public CasaDePazService(CasaDePazRepository casaDePazRepository,
                             EncontroCasaDePazRepository encontroRepository,
                             DecisaoEncontroRepository decisaoRepository,
                             CelulaRepository celulaRepository,
                             MembroRepository membroRepository,
-                            VisitanteRepository visitanteRepository) {
+                            VisitanteRepository visitanteRepository,
+                            MetaService metaService) {
         this.casaDePazRepository = casaDePazRepository;
-        this.encontroRepository = encontroRepository;
-        this.decisaoRepository = decisaoRepository;
-        this.celulaRepository = celulaRepository;
-        this.membroRepository = membroRepository;
+        this.encontroRepository  = encontroRepository;
+        this.decisaoRepository   = decisaoRepository;
+        this.celulaRepository    = celulaRepository;
+        this.membroRepository    = membroRepository;
         this.visitanteRepository = visitanteRepository;
+        this.metaService         = metaService;
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // CRUD
+    // ─────────────────────────────────────────────────────────────
 
     @Transactional
     public CasaDePaz criar(CasaDePazRequestDTO dto) {
@@ -61,10 +65,44 @@ public class CasaDePazService {
         casa.setCelula(celula);
         casa.setLider(lider);
         casa.setAuxiliar(auxiliar);
-        casa.setEncontrosRestantes(7); // adicionar após casa.setDataInicio(...)
+        casa.setEncontrosRestantes(7);
 
         return casaDePazRepository.save(casa);
     }
+
+    @Transactional
+    public CasaDePaz atualizar(Long id, CasaDePazRequestDTO dto) {
+        CasaDePaz casa = casaDePazRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Casa de Paz não encontrada"));
+        Celula celula = celulaRepository.findById(dto.getCelulaId())
+                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+        Membro lider = membroRepository.findById(dto.getLiderId())
+                .orElseThrow(() -> new RuntimeException("Líder não encontrado"));
+        Membro auxiliar = membroRepository.findById(dto.getAuxiliarId())
+                .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado"));
+
+        casa.setNome(dto.getNome());
+        casa.setNomeAnfitriao(dto.getNomeAnfitriao());
+        casa.setEndereco(dto.getEndereco());
+        casa.setTelefoneContato(dto.getTelefoneContato());
+        casa.setDataInicio(dto.getDataInicio());
+        casa.setCelula(celula);
+        casa.setLider(lider);
+        casa.setAuxiliar(auxiliar);
+
+        return casaDePazRepository.save(casa);
+    }
+
+    @Transactional
+    public CasaDePaz cancelar(Long casaId) {
+        CasaDePaz casa = buscarPorId(casaId);
+        casa.setStatus(StatusCasaDePaz.CANCELADA);
+        return casaDePazRepository.save(casa);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // VISITANTES
+    // ─────────────────────────────────────────────────────────────
 
     @Transactional
     public CasaDePaz adicionarVisitante(Long casaId, Long visitanteId) {
@@ -74,9 +112,20 @@ public class CasaDePazService {
 
         if (!casa.getVisitantes().contains(visitante)) {
             casa.getVisitantes().add(visitante);
+
+            // Garante que o visitante conhece a célula da casa
+            // (necessário para que countByCelulaIdAndDecisaoEspiritual funcione)
+            if (visitante.getCelula() == null) {
+                visitante.setCelula(casa.getCelula());
+                visitanteRepository.save(visitante);
+            }
         }
         return casaDePazRepository.save(casa);
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // ENCONTROS
+    // ─────────────────────────────────────────────────────────────
 
     @Transactional
     public Map<String, Object> registrarEncontro(Long casaId, EncontroRequestDTO dto) {
@@ -89,54 +138,78 @@ public class CasaDePazService {
             throw new RuntimeException("Todos os encontros já foram realizados.");
         }
 
+        // ── Cria o encontro ──────────────────────────────────────
         EncontroCasaDePaz encontro = new EncontroCasaDePaz();
         encontro.setDataEncontro(dto.getDataEncontro());
         encontro.setObservacoes(dto.getObservacoes());
         encontro.setCasaDePaz(casa);
 
+        boolean houveDecisao = false;
+
         if (dto.getDecisoes() != null) {
             for (EncontroRequestDTO.DecisaoDTO decisaoDTO : dto.getDecisoes()) {
                 Visitante visitante = visitanteRepository.findById(decisaoDTO.getVisitanteId())
                         .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+
+                // Registra a decisão no encontro
                 DecisaoEncontro decisao = new DecisaoEncontro();
                 decisao.setTipoDecisao(decisaoDTO.getTipoDecisao());
                 decisao.setVisitante(visitante);
                 decisao.setEncontro(encontro);
                 encontro.getDecisoes().add(decisao);
+
+                // Atualiza o campo decisaoEspiritual do Visitante
+                // (só altera se ainda não tem uma decisão registrada)
+                DecisaoEspiritual atual = visitante.getDecisaoEspiritual();
+                boolean jaTemDecisao = atual == DecisaoEspiritual.ACEITOU_JESUS
+                        || atual == DecisaoEspiritual.RECONCILIOU
+                        || atual == DecisaoEspiritual.BATISMO_AGUAS;
+
+                if (!jaTemDecisao) {
+                    visitante.setDecisaoEspiritual(decisaoDTO.getTipoDecisao());
+
+                    // Garante vínculo com a célula para que o recálculo funcione
+                    if (visitante.getCelula() == null) {
+                        visitante.setCelula(casa.getCelula());
+                    }
+
+                    visitanteRepository.save(visitante);
+                    houveDecisao = true;
+                }
             }
         }
 
         encontroRepository.save(encontro);
 
+        // ── Atualiza contadores da casa ──────────────────────────
         casa.setEncontrosRestantes(casa.getEncontrosRestantes() - 1);
-
-        boolean concluida = false;
         if (casa.getEncontrosRestantes() == 0) {
             casa.setStatus(StatusCasaDePaz.CONCLUIDA);
-            concluida = true;
         }
-
         casaDePazRepository.save(casa);
 
+        // ── Recalcula metas da célula se houve decisão espiritual ─
+        // Isso garante que o frontend reflita o novo progresso
+        // mesmo sem o evento JavaScript (fallback server-side)
+        if (houveDecisao) {
+            metaService.recalcularTodasMetasCelula(casa.getCelula().getId());
+        }
+
+        boolean concluida = casa.getEncontrosRestantes() == 0;
         return Map.of(
-                "encontro", encontro,
+                "encontro",           encontro,
                 "encontrosRestantes", casa.getEncontrosRestantes(),
-                "concluida", concluida,
-                "mensagem", concluida
+                "concluida",          concluida,
+                "mensagem",           concluida
                         ? "Parabéns! Você concluiu a Casa de Paz!"
                         : "Encontro registrado com sucesso."
         );
     }
 
-    @Transactional
-    public CasaDePaz cancelar(Long casaId) {
-        CasaDePaz casa = buscarPorId(casaId);
-        casa.setStatus(StatusCasaDePaz.CANCELADA);
-        return casaDePazRepository.save(casa);
-    }
+    // ─────────────────────────────────────────────────────────────
+    // CONSULTAS
+    // ─────────────────────────────────────────────────────────────
 
-    // CORREÇÃO 1: @Transactional(readOnly = true) mantém a sessão JPA aberta durante o mapeamento
-    // CORREÇÃO 2: findAllWithAssociations() usa JOIN FETCH para carregar célula/líder/auxiliar de uma vez
     @Transactional(readOnly = true)
     public List<RelatorioCasaDePazDTO> gerarRelatorio(Long celulaId, StatusCasaDePaz status,
                                                       LocalDate dataInicio, LocalDate dataFim) {
@@ -149,37 +222,17 @@ public class CasaDePazService {
         } else if (status != null) {
             casas = casaDePazRepository.findByStatus(status);
         } else {
-            casas = casaDePazRepository.findAllWithAssociations(); // era findAll() — sem JOIN FETCH
+            casas = casaDePazRepository.findAllWithAssociations();
         }
 
         if (dataInicio != null && dataFim != null) {
             casas = casas.stream()
-                    .filter(c -> !c.getDataInicio().isBefore(dataInicio) && !c.getDataInicio().isAfter(dataFim))
+                    .filter(c -> !c.getDataInicio().isBefore(dataInicio)
+                            && !c.getDataInicio().isAfter(dataFim))
                     .collect(Collectors.toList());
         }
 
         return casas.stream().map(this::toRelatorioDTO).collect(Collectors.toList());
-    }
-
-    private RelatorioCasaDePazDTO toRelatorioDTO(CasaDePaz casa) {
-        RelatorioCasaDePazDTO dto = new RelatorioCasaDePazDTO();
-        dto.setId(casa.getId());
-        dto.setNome(casa.getNome());
-        dto.setNomeCelula(casa.getCelula().getNome());
-        dto.setNomeLider(casa.getLider().getNome());
-        dto.setNomeAuxiliar(casa.getAuxiliar().getNome());
-        dto.setStatus(casa.getStatus());
-        dto.setEncontrosRestantes(casa.getEncontrosRestantes());
-        dto.setEncontrosRealizados(7 - casa.getEncontrosRestantes());
-        dto.setTotalVisitantes(casa.getVisitantes().size());
-        dto.setTotalAceitouJesus(
-                decisaoRepository.countByEncontro_CasaDePaz_IdAndTipoDecisao(casa.getId(), DecisaoEspiritual.ACEITOU_JESUS));
-        dto.setTotalReconciliacao(
-                decisaoRepository.countByEncontro_CasaDePaz_IdAndTipoDecisao(casa.getId(), DecisaoEspiritual.RECONCILIOU));
-        dto.setTotalDesejoBatismo(
-                decisaoRepository.countByEncontro_CasaDePaz_IdAndTipoDecisao(casa.getId(), DecisaoEspiritual.BATISMO_AGUAS));
-
-        return dto;
     }
 
     @Transactional(readOnly = true)
@@ -201,47 +254,43 @@ public class CasaDePazService {
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> listar() {
         return visitanteRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    private VisitanteResponseDTO toDTO(Visitante visitante) {
-        return new VisitanteResponseDTO(visitante);
+                .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> buscarPorNome(String nome) {
         return visitanteRepository.findByNomeContainingIgnoreCase(nome)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+                .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    @Transactional
-    public CasaDePaz atualizar(Long id, CasaDePazRequestDTO dto) {
+    // ─────────────────────────────────────────────────────────────
+    // HELPERS PRIVADOS
+    // ─────────────────────────────────────────────────────────────
 
-        CasaDePaz casa = casaDePazRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Casa de Paz não encontrada"));
+    private RelatorioCasaDePazDTO toRelatorioDTO(CasaDePaz casa) {
+        RelatorioCasaDePazDTO dto = new RelatorioCasaDePazDTO();
+        dto.setId(casa.getId());
+        dto.setNome(casa.getNome());
+        dto.setNomeCelula(casa.getCelula().getNome());
+        dto.setNomeLider(casa.getLider().getNome());
+        dto.setNomeAuxiliar(casa.getAuxiliar().getNome());
+        dto.setStatus(casa.getStatus());
+        dto.setEncontrosRestantes(casa.getEncontrosRestantes());
+        dto.setEncontrosRealizados(7 - casa.getEncontrosRestantes());
+        dto.setTotalVisitantes(casa.getVisitantes().size());
+        dto.setTotalAceitouJesus(
+                decisaoRepository.countByEncontro_CasaDePaz_IdAndTipoDecisao(
+                        casa.getId(), DecisaoEspiritual.ACEITOU_JESUS));
+        dto.setTotalReconciliacao(
+                decisaoRepository.countByEncontro_CasaDePaz_IdAndTipoDecisao(
+                        casa.getId(), DecisaoEspiritual.RECONCILIOU));
+        dto.setTotalDesejoBatismo(
+                decisaoRepository.countByEncontro_CasaDePaz_IdAndTipoDecisao(
+                        casa.getId(), DecisaoEspiritual.BATISMO_AGUAS));
+        return dto;
+    }
 
-        Celula celula = celulaRepository.findById(dto.getCelulaId())
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
-
-        Membro lider = membroRepository.findById(dto.getLiderId())
-                .orElseThrow(() -> new RuntimeException("Líder não encontrado"));
-
-        Membro auxiliar = membroRepository.findById(dto.getAuxiliarId())
-                .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado"));
-
-        casa.setNome(dto.getNome());
-        casa.setNomeAnfitriao(dto.getNomeAnfitriao());
-        casa.setEndereco(dto.getEndereco());
-        casa.setTelefoneContato(dto.getTelefoneContato());
-        casa.setDataInicio(dto.getDataInicio());
-        casa.setCelula(celula);
-        casa.setLider(lider);
-        casa.setAuxiliar(auxiliar);
-
-        return casaDePazRepository.save(casa);
+    private VisitanteResponseDTO toDTO(Visitante visitante) {
+        return new VisitanteResponseDTO(visitante);
     }
 }

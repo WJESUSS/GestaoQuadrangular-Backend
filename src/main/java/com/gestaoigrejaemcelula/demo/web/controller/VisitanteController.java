@@ -43,7 +43,10 @@ public class VisitanteController {
 
         return ResponseEntity.ok(service.atualizar(id, dto));
     }
-
+    @GetMapping("/{id}")
+    public ResponseEntity<VisitanteResponseDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarPorId(id));
+    }
 
     @GetMapping("/celula/{celulaId}/ativos")
     public List<VisitanteResponseDTO> listarAtivosPorCelula(
@@ -51,9 +54,14 @@ public class VisitanteController {
 
         return service.listarAtivosPorCelula(celulaId);
     }
+    @GetMapping("/{id}/historico-decisoes")
+    public ResponseEntity<?> historicoDecisoes(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscarDecisaoAtual(id));
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         service.deletar(id);
         return ResponseEntity.noContent().build(); // 204 No Content
     }
+
 }

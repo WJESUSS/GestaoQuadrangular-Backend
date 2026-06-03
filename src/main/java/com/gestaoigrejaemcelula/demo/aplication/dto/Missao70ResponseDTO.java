@@ -1,6 +1,7 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Missao70;
+import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
 
 import java.time.LocalDate;
 import java.util.List;

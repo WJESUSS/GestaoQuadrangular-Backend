@@ -1,4 +1,4 @@
-package com.gestaoigrejaemcelula.demo.aplication.dto;
+package com.gestaoigrejaemcelula.demo.domain.enums;
 
 public enum StatusMissao70 {
     EM_ANDAMENTO,

@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.domain.repository;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
+import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -15,6 +16,7 @@ public interface VisitanteRepository extends JpaRepository<Visitante, Long> {
     List<Visitante> findByCelulaIdAndAtivoTrue(Long celulaId);
 
     List<Visitante> findByCelulaId(Long celulaId);
+    long countByCelulaIdAndDecisaoEspiritualAndAtivoTrue(Long celulaId, DecisaoEspiritual decisaoEspiritual);
 
 
 

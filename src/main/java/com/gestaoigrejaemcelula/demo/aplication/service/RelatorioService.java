@@ -91,6 +91,7 @@ public class RelatorioService {
                         });
             }
 
+            visitanteRepository.flush();
             relatorio.setVisitantesPresentes(visitantes);
         }
 
@@ -183,7 +184,6 @@ public class RelatorioService {
 
     private RelatorioResponseDTO converterParaDTO(Relatorio relatorio) {
         RelatorioResponseDTO dto = new RelatorioResponseDTO();
-
         dto.setId(relatorio.getId());
         dto.setCelulaId(relatorio.getCelula().getId());
         dto.setNomeCelula(relatorio.getCelula().getNome());
@@ -206,17 +206,27 @@ public class RelatorioService {
         if (relatorio.getVisitantesPresentes() != null) {
             dto.setVisitantesPresentes(
                     relatorio.getVisitantesPresentes().stream()
-                            .map(v -> new PessoaPresencaDTO(v.getId(), v.getNome(), v.getDecisaoEspiritual()))
+                            .map(v -> {
+                                // ?? Rebusca do banco para garantir decisão atualizada
+                                // (evita cache de primeiro nível do JPA retornar dado antigo)
+                                Visitante atualizado = visitanteRepository.findById(v.getId())
+                                        .orElse(v);
+                                return new PessoaPresencaDTO(
+                                        atualizado.getId(),
+                                        atualizado.getNome(),
+                                        atualizado.getDecisaoEspiritual() != null
+                                                ? atualizado.getDecisaoEspiritual()
+                                                : DecisaoEspiritual.NENHUMA
+                                );
+                            })
                             .toList()
             );
         }
 
         int visitantesAvulsos = relatorio.getQuantidadeVisitantes() != null
                 ? relatorio.getQuantidadeVisitantes() : 0;
-
         dto.setQuantidadeVisitantes(visitantesAvulsos);
         dto.setTotalPresentes(relatorio.getTotalPresentes());
-
         return dto;
     }
 
@@ -331,7 +341,7 @@ public class RelatorioService {
                             visitanteRepository.save(visitante);
                         });
             }
-
+            visitanteRepository.flush();
             relatorio.setVisitantesPresentes(visitantes);
         }
 

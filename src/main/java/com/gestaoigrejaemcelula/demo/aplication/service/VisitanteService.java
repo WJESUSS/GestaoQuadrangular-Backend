@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
+import com.gestaoigrejaemcelula.demo.aplication.dto.HistoricoDecisaoDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteResponseDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
@@ -21,16 +22,19 @@ public class VisitanteService {
     private final VisitanteRepository repository;
     private final CelulaRepository celulaRepository;
     private final AuditoriaHelper auditoria;
+    private final MetaService metaService;
 
     public VisitanteService(VisitanteRepository repository,
                             CelulaRepository celulaRepository,
-                            AuditoriaHelper auditoria) {
-        this.repository      = repository;
+                            AuditoriaHelper auditoria,
+                            MetaService metaService) {
+        this.repository       = repository;
         this.celulaRepository = celulaRepository;
-        this.auditoria       = auditoria;
+        this.auditoria        = auditoria;
+        this.metaService      = metaService;
     }
 
-    // ── Helper ─────────────────────────────────────────────────────────────────
+    // ?? Helper
     private String str(Object o) { return o != null ? o.toString() : ""; }
 
     // =========================
@@ -51,6 +55,11 @@ public class VisitanteService {
                         "origem",   Map.of("para", str(salvo.getOrigem()))
                 )
         );
+
+        // ?? Recalcula metas automaticamente ao cadastrar
+        if (salvo.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(salvo.getCelula().getId());
+        }
 
         return toDTO(salvo);
     }
@@ -88,25 +97,50 @@ public class VisitanteService {
         // Monta diff ANTES de alterar
         Map<String, Object> diff = new LinkedHashMap<>();
         if (!Objects.equals(visitante.getNome(), dto.getNome()))
-            diff.put("nome",      Map.of("de", str(visitante.getNome()),      "para", str(dto.getNome())));
+            diff.put("nome",        Map.of("de", str(visitante.getNome()),                      "para", str(dto.getNome())));
         if (!Objects.equals(visitante.getTelefone(), dto.getTelefone()))
-            diff.put("telefone",  Map.of("de", str(visitante.getTelefone()),  "para", str(dto.getTelefone())));
+            diff.put("telefone",    Map.of("de", str(visitante.getTelefone()),                  "para", str(dto.getTelefone())));
         if (!Objects.equals(visitante.getEmail(), dto.getEmail()))
-            diff.put("email",     Map.of("de", str(visitante.getEmail()),     "para", str(dto.getEmail())));
+            diff.put("email",       Map.of("de", str(visitante.getEmail()),                     "para", str(dto.getEmail())));
         if (!Objects.equals(visitante.getOrigem(), dto.getOrigem()))
-            diff.put("origem",    Map.of("de", str(visitante.getOrigem()),    "para", str(dto.getOrigem())));
+            diff.put("origem",      Map.of("de", str(visitante.getOrigem()),                    "para", str(dto.getOrigem())));
         if (!Objects.equals(visitante.getResponsavelAcompanhamento(), dto.getResponsavelAcompanhamento()))
             diff.put("responsavel", Map.of("de", str(visitante.getResponsavelAcompanhamento()), "para", str(dto.getResponsavelAcompanhamento())));
         if (visitante.isAtivo() != dto.isAtivo())
-            diff.put("ativo",     Map.of("de", str(visitante.isAtivo()),      "para", str(dto.isAtivo())));
+            diff.put("ativo",       Map.of("de", str(visitante.isAtivo()),                      "para", str(dto.isAtivo())));
+        if (!Objects.equals(visitante.getDecisaoEspiritual(), dto.getDecisaoEspiritual()))
+            diff.put("decisaoEspiritual", Map.of("de", str(visitante.getDecisaoEspiritual()),   "para", str(dto.getDecisaoEspiritual())));
 
         preencher(visitante, dto);
+        visitante.setDecisaoEspiritual(dto.getDecisaoEspiritual());
+
         Visitante salvo = repository.save(visitante);
 
         if (!diff.isEmpty())
             auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "UPDATE", diff);
 
+        // ?? Recalcula metas automaticamente ao atualizar
+        if (salvo.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(salvo.getCelula().getId());
+        }
+
         return toDTO(salvo);
+    }
+
+    // =========================
+    // DELETAR (soft delete)
+    // =========================
+    @Transactional
+    public void deletar(Long id) {
+        Visitante visitante = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+        visitante.setAtivo(false);
+        repository.save(visitante);
+
+        // ?? Recalcula metas para remover visitante inativo da contagem
+        if (visitante.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(visitante.getCelula().getId());
+        }
     }
 
     // =========================
@@ -129,7 +163,31 @@ public class VisitanteService {
     }
 
     // =========================
-    // AUXILIARES
+    // BUSCAR POR ID
+    // =========================
+    @Transactional(readOnly = true)
+    public VisitanteResponseDTO buscarPorId(Long id) {
+        Visitante visitante = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+        return toDTO(visitante);
+    }
+
+    // =========================
+    // DECISÃO ATUAL
+    // =========================
+    @Transactional(readOnly = true)
+    public HistoricoDecisaoDTO buscarDecisaoAtual(Long id) {
+        Visitante v = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+        return new HistoricoDecisaoDTO(
+                v.getId(),
+                v.getNome(),
+                v.getDecisaoEspiritual() != null ? v.getDecisaoEspiritual().name() : null
+        );
+    }
+
+    // =========================
+    // AUXILIARES PRIVADOS
     // =========================
     private void preencher(Visitante visitante, VisitanteRequestDTO dto) {
         visitante.setNome(dto.getNome());
@@ -157,23 +215,11 @@ public class VisitanteService {
         dto.setOrigem(visitante.getOrigem());
         dto.setResponsavelAcompanhamento(visitante.getResponsavelAcompanhamento());
         dto.setAtivo(visitante.isAtivo());
+        dto.setDecisaoEspiritual(
+                visitante.getDecisaoEspiritual() != null
+                        ? visitante.getDecisaoEspiritual().name()
+                        : "NENHUMA"
+        );
         return dto;
     }
-
-    private Celula buscarPorId(Long celulaId) {
-        return celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
-    }
-    // =========================
-
-// =========================
-// =========================
-// DELETAR (hard delete)
-// =========================
-public void deletar(Long id) {
-    Visitante visitante = repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
-    visitante.setAtivo(false);
-    repository.save(visitante);
-}
 }
