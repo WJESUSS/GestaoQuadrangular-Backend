@@ -4,6 +4,7 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.aplication.service.MembroService;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class MembroController {
     }
 
     @PostMapping
-    public ResponseEntity<MembroResponseDTO> criar(@RequestBody MembroRequestDTO dto) {
+    public ResponseEntity<MembroResponseDTO> criar(@RequestBody @Valid MembroRequestDTO dto) {
         return ResponseEntity.ok(service.criar(dto));
     }
 
@@ -40,7 +41,7 @@ public class MembroController {
     @PutMapping("/{id}")
     public ResponseEntity<MembroResponseDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody MembroRequestDTO dto) {
+            @RequestBody @Valid MembroRequestDTO dto) {
 
         return ResponseEntity.ok(service.atualizar(id, dto));
     }

@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/aniversariantes")
-@CrossOrigin
 public class AniversarioController {
 
     private final AniversarioService aniversarioService;

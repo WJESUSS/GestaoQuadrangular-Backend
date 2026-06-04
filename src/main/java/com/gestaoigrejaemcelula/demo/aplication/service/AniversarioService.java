@@ -3,6 +3,8 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 import com.gestaoigrejaemcelula.demo.aplication.dto.AniversarianteDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,8 @@ import java.util.List;
 
 @Service
 public class AniversarioService {
+
+    private static final Logger log = LoggerFactory.getLogger(AniversarioService.class);
 
     // ✅ FUSO HORÁRIO DE SALVADOR/BAHIA
     private static final ZoneId ZONE_BAHIA = ZoneId.of("America/Bahia");
@@ -32,14 +36,14 @@ public class AniversarioService {
         // ✅ USA FUSO HORÁRIO DE BAHIA
         LocalDate hoje = LocalDate.now(ZONE_BAHIA);
 
-        System.out.println("📅 Procurando aniversariantes para: " + hoje);
+        log.info("Procurando aniversariantes para: {}", hoje);
 
         List<Membro> membros = membroRepository.findAniversariantesDoDia(
                 hoje.getMonthValue(),
                 hoje.getDayOfMonth()
         );
 
-        System.out.println("✅ Encontrados: " + membros.size() + " aniversariantes");
+        log.info("Encontrados: {} aniversariantes", membros.size());
 
         return membros.stream().map(this::toDTO).toList();
     }
@@ -58,11 +62,11 @@ public class AniversarioService {
             diasMes.add(dia);
         }
 
-        System.out.println("📅 Procurando aniversariantes da semana: " + diasMes);
+        log.info("Procurando aniversariantes da semana: {}", diasMes);
 
         List<Membro> membros = membroRepository.findAniversariantesPorDiasMes(diasMes);
 
-        System.out.println("✅ Encontrados: " + membros.size() + " aniversariantes");
+        log.info("Encontrados: {} aniversariantes", membros.size());
 
         return membros.stream().map(this::toDTO).toList();
     }

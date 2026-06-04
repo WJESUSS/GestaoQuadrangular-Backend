@@ -1,12 +1,13 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
+import jakarta.validation.constraints.NotNull;
+
 public record DiscipuladoRequestDTO(
-        Long membroId,
-        Long celulaId,
+        @NotNull Long membroId,
+        @NotNull Long celulaId,
         boolean escolaBiblica,
         boolean quartaNoite,
         boolean quintaNoite,
         boolean domingoManha,
         boolean domingoNoite
-) {
-}
+) {}

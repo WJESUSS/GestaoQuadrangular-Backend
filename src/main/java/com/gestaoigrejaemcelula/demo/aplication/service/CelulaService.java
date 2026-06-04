@@ -8,6 +8,8 @@ import com.gestaoigrejaemcelula.demo.domain.enums.Perfil;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.hibernate.Hibernate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class CelulaService {
+
+    private static final Logger log = LoggerFactory.getLogger(CelulaService.class);
 
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
@@ -375,9 +379,8 @@ public class CelulaService {
 
         Hibernate.initialize(celula.getMembros());
 
-        System.out.println("DEBUG CELULA SERVICE - Membros na memória: " + celula.getMembros().size());
-        celula.getMembros().forEach(m -> System.out.println("  -> Membro: " + m.getNome() +
-                " | Status: " + m.getStatus() + " | ID: " + m.getId()));
+        log.debug("Membros na memória: {}", celula.getMembros().size());
+        celula.getMembros().forEach(m -> log.debug("  -> Membro: {} | Status: {} | ID: {}", m.getNome(), m.getStatus(), m.getId()));
 
         return celula;
     }

@@ -6,7 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +24,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -30,15 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 🔥 CORS preflight
-        if (HttpMethod.OPTIONS.matches(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         String path = request.getServletPath();
 
-        // 🔥 ROTAS PÚBLICAS (CORRIGIDO)
         if (path.startsWith("/auth") || path.startsWith("/api/auth")) {
             filterChain.doFilter(request, response);
             return;
@@ -57,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             email = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            System.out.println("JWT inválido");
+            log.warn("JWT inválido: {}", e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }

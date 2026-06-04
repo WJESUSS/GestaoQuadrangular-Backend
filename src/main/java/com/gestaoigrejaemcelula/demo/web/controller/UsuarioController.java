@@ -33,7 +33,7 @@ public class UsuarioController {
 
     // 1️⃣ Cadastrar usuário
     @PostMapping
-    public ResponseEntity<Usuario> cadastrar(@RequestBody CadastroUsuarioDTO dto) {
+    public ResponseEntity<Usuario> cadastrar(@RequestBody @Valid CadastroUsuarioDTO dto) {
         Usuario usuario = service.cadastrar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(usuario);
     }
@@ -53,7 +53,7 @@ public class UsuarioController {
 
     // 4️⃣ Atualizar usuário
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponseDTO> atualizar(@PathVariable Long id, @RequestBody UsuarioRequestDTO dto) {
+    public ResponseEntity<UsuarioResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid UsuarioRequestDTO dto) {
         // O Service já devolve o DTO pronto para o JSON
         UsuarioResponseDTO response = service.atualizar(id, dto);
         return ResponseEntity.ok(response);

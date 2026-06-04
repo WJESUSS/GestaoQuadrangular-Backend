@@ -7,6 +7,8 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.AcompanhamentoRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.DiscipuladoRelatorioRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DiscipuladoService {
+
+    private static final Logger log = LoggerFactory.getLogger(DiscipuladoService.class);
 
     @Autowired
     private DiscipuladoRelatorioRepository relatorioRepo;
@@ -59,7 +63,7 @@ public class DiscipuladoService {
             )).toList();
 
         } catch (Exception e) {
-            System.err.println("Erro ao processar alertas: " + e.getMessage());
+            log.error("Erro ao processar alertas", e);
             return new ArrayList<>();
         }
     }
@@ -119,7 +123,7 @@ public class DiscipuladoService {
             )).collect(Collectors.toList());
 
         } catch (Exception e) {
-            System.err.println("Erro ao buscar alertas críticos para " + mesRef + ": " + e.getMessage());
+            log.error("Erro ao buscar alertas críticos para {}", mesRef, e);
             return new ArrayList<>();
         }
     }

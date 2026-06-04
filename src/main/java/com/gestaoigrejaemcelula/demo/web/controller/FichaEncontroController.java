@@ -8,6 +8,7 @@ import com.gestaoigrejaemcelula.demo.aplication.service.UsuarioService;
 import com.gestaoigrejaemcelula.demo.domain.entity.FichaEncontro;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +35,7 @@ public class FichaEncontroController {
 
     // --- MÉTODOS DE CRIAÇÃO E BUSCA BÁSICA ---
     @PostMapping
-    public ResponseEntity<FichaEncontroResponseDTO> criar(@RequestBody FichaEncontroRequestDTO dto) {
+    public ResponseEntity<FichaEncontroResponseDTO> criar(@RequestBody @Valid FichaEncontroRequestDTO dto) {
         // O service já devolve o ResponseDTO pronto e preenchido
         FichaEncontroResponseDTO resposta = service.criar(dto);
 

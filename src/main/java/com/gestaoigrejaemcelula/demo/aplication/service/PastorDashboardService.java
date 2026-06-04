@@ -5,6 +5,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.DiscipuladoAcompanhamentoRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,9 @@ public class PastorDashboardService {
     private DiscipuladoAcompanhamentoRepository acompanhamentoRepository;
 
     // Cache por mês — chave "2026-05", "2026-04", etc.
+    @CacheEvict(value = "metricas-pastor", allEntries = true)
+    public void limparCache() {}
+
     @Cacheable(value = "metricas-pastor", key = "#mes")
     @Transactional(readOnly = true)
     public PastorMetricasDTO carregarMetricas(String mes) {

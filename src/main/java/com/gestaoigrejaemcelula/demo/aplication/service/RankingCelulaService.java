@@ -4,6 +4,8 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaProjection;
 import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RankingCelulaService {
+
+    private static final Logger log = LoggerFactory.getLogger(RankingCelulaService.class);
 
     private final CelulaRepository celulaRepository;
     private static final DateTimeFormatter MES_ANO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
@@ -70,15 +74,15 @@ public class RankingCelulaService {
         pontos += Boolean.TRUE.equals(dto.getMultiplicou()) ? 20 : 0;
 
         // Log temporário para debug
-        System.out.println("=== " + dto.getNomeCelula() + " ===");
-        System.out.println("Presença: "      + dto.getPresencaMedia());
-        System.out.println("Visitantes: "    + dto.getVisitantes());
-        System.out.println("Aceitou Jesus: " + dto.getAceitouJesus());
-        System.out.println("Deseja Batismo: "+ dto.getDesejaBatismo());
-        System.out.println("Reconciliou: "   + dto.getReconciliou());
-        System.out.println("Batismos: "      + dto.getBatismos());
-        System.out.println("Multiplicou: "   + dto.getMultiplicou());
-        System.out.println("TOTAL: "         + pontos);
+        log.debug("=== {} ===", dto.getNomeCelula());
+        log.debug("Presença: {}",      dto.getPresencaMedia());
+        log.debug("Visitantes: {}",    dto.getVisitantes());
+        log.debug("Aceitou Jesus: {}", dto.getAceitouJesus());
+        log.debug("Deseja Batismo: {}", dto.getDesejaBatismo());
+        log.debug("Reconciliou: {}",   dto.getReconciliou());
+        log.debug("Batismos: {}",      dto.getBatismos());
+        log.debug("Multiplicou: {}",   dto.getMultiplicou());
+        log.debug("TOTAL: {}",         pontos);
 
         dto.setPontuacao(pontos);
     }

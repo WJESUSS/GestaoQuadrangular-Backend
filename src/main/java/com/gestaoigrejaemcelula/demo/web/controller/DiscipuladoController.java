@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/discipulado") // Este mapeamento deve ser EXATAMENTE igual ao chamado no Front
-@CrossOrigin(origins = "*") // Libera acesso se o Front estiver em porta diferente
 public class DiscipuladoController {
 
     @Autowired

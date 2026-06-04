@@ -20,7 +20,6 @@ import java.util.List;
 @Validated
 @RestController
 @RequestMapping("/api/ranking")
-@CrossOrigin(origins = "*", maxAge = 3600) // Ajuste os origins em produção!
 @RequiredArgsConstructor // Substitui @Autowired field injection
 public class RankingCelulaController {
 

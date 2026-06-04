@@ -75,7 +75,7 @@ public class CelulaController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO','PASTOR')")
     @PutMapping("/{id}")
-    public ResponseEntity<CelulaResponseDTO> atualizar(@PathVariable Long id, @RequestBody CelulaRequestDTO dto) {
+    public ResponseEntity<CelulaResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid CelulaRequestDTO dto) {
         return ResponseEntity.ok(service.atualizar(id, dto));
     }
 
@@ -109,7 +109,7 @@ public class CelulaController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO','PASTOR')")
     @PostMapping("/transferir-membro")
-    public ResponseEntity<Void> transferirMembro(@RequestBody TransferirMembroDTO dto) {
+    public ResponseEntity<Void> transferirMembro(@RequestBody @Valid TransferirMembroDTO dto) {
         service.transferirMembro(dto);
         return ResponseEntity.ok().build();
     }
@@ -122,7 +122,7 @@ public class CelulaController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'LIDER_CELULA','PASTOR')")
     @PostMapping("/{id}/visitantes")
-    public ResponseEntity<VisitanteResponseDTO> adicionarVisitanteACelula(@PathVariable Long id, @RequestBody VisitanteRequestDTO dto) {
+    public ResponseEntity<VisitanteResponseDTO> adicionarVisitanteACelula(@PathVariable Long id, @RequestBody @Valid VisitanteRequestDTO dto) {
         return ResponseEntity.ok(service.salvarVisitanteNaCelula(id, dto));
     }
 

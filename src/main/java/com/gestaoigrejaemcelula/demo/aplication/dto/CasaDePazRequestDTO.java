@@ -1,18 +1,20 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDate;
 
 public class CasaDePazRequestDTO {
-    private String nome;
-    private String nomeAnfitriao;
+    @NotBlank private String nome;
+    @NotBlank private String nomeAnfitriao;
     private String endereco;
     private String telefoneContato;
     private LocalDate dataInicio;
-    private Long celulaId;
+    @NotNull private Long celulaId;
     private Long liderId;
     private Long auxiliarId;
 
-    // Getters e Setters
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
     public String getNomeAnfitriao() { return nomeAnfitriao; }

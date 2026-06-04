@@ -2,17 +2,20 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.enums.OrigemVisitante;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDate;
 
 public class VisitanteRequestDTO {
-    private Long celulaId;
-    private String nome;
+    @NotNull private Long celulaId;
+    @NotBlank private String nome;
     private String telefone;
     private String email;
     private LocalDate dataPrimeiraVisita;
     private OrigemVisitante origem;
     private String responsavelAcompanhamento;
-    private DecisaoEspiritual decisaoEspiritual;  // ← mova para cá
+    private DecisaoEspiritual decisaoEspiritual;
     private boolean ativo;
 
     public Long getCelulaId() { return celulaId; }

@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.web.controller;
 import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteResponseDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.VisitanteService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class VisitanteController {
 
     @PostMapping
     // 💡 Removi o hasRole que estava travando o acesso
-    public ResponseEntity<VisitanteResponseDTO> cadastrar(@RequestBody VisitanteRequestDTO dto) {
+    public ResponseEntity<VisitanteResponseDTO> cadastrar(@RequestBody @Valid VisitanteRequestDTO dto) {
         return ResponseEntity.ok(service.cadastrar(dto));
     }
 
@@ -39,7 +40,7 @@ public class VisitanteController {
     @PutMapping("/{id}")
     public ResponseEntity<VisitanteResponseDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody VisitanteRequestDTO dto) {
+            @RequestBody @Valid VisitanteRequestDTO dto) {
 
         return ResponseEntity.ok(service.atualizar(id, dto));
     }

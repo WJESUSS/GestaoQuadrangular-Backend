@@ -7,6 +7,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.LancamentoTesouraria;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class TesourariaController {
     }
 
     @PostMapping("/lancar")
-    public ResponseEntity<String> lancar(@RequestBody LancamentoTesourariaDTO dto) {
+    public ResponseEntity<String> lancar(@RequestBody @Valid LancamentoTesourariaDTO dto) {
         service.lancar(dto);
         return ResponseEntity.ok("Lançamento registrado com sucesso!");
     }

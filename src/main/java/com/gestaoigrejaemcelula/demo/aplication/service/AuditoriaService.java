@@ -5,6 +5,8 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.AuditoriaDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.RegistroAuditoria;
 import com.gestaoigrejaemcelula.demo.domain.repository.AuditoriaRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class AuditoriaService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuditoriaService.class);
 
     private final AuditoriaRepository repo;
     private final ObjectMapper mapper;
@@ -52,7 +56,7 @@ public class AuditoriaService {
             repo.save(reg);
         } catch (Exception e) {
             // Nunca deixar auditoria derrubar a operação principal
-            System.err.println("[AUDITORIA] Erro ao registrar: " + e.getMessage());
+            log.error("Erro ao registrar auditoria", e);
         }
     }
 

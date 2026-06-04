@@ -10,6 +10,8 @@ import com.gestaoigrejaemcelula.demo.domain.repository.DiscipuladoRelatorioRepos
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DiscipuladoRelatorioService {
+
+    private static final Logger log = LoggerFactory.getLogger(DiscipuladoRelatorioService.class);
 
     private final DiscipuladoRelatorioRepository repository;
     private final MembroRepository membroRepository;
@@ -268,16 +272,16 @@ public class DiscipuladoRelatorioService {
         Usuario lider = usuarioLogado();
         Celula  celula = lider.getCelula();
 
-        System.out.println("=== HISTORICO DEBUG ===");
-        System.out.println("Lider ID: " + lider.getId() + " | Email: " + lider.getEmail());
-        System.out.println("Celula: " + (celula != null ? celula.getId() + " - " + celula.getNome() : "NULL"));
+        log.debug("=== HISTORICO DEBUG ===");
+        log.debug("Lider ID: {} | Email: {}", lider.getId(), lider.getEmail());
+        log.debug("Celula: {}", celula != null ? celula.getId() + " - " + celula.getNome() : "NULL");
 
         if (celula == null) return List.of();
 
         List<DiscipuladoRelatorio> todos =
                 repository.findByCelulaIdOrderBySemanaInicioDesc(celula.getId());
 
-        System.out.println("Registros encontrados: " + todos.size());
+        log.debug("Registros encontrados: {}", todos.size());
 
         Map<String, List<DiscipuladoRelatorio>> porSemana = new LinkedHashMap<>();
         for (DiscipuladoRelatorio r : todos) {
@@ -285,7 +289,7 @@ public class DiscipuladoRelatorioService {
             porSemana.computeIfAbsent(chave, k -> new ArrayList<>()).add(r);
         }
 
-        System.out.println("Semanas agrupadas: " + porSemana.size());
+        log.debug("Semanas agrupadas: {}", porSemana.size());
 
         final int TOTAL_COLUNAS = 5;
         return porSemana.values().stream().map(registrosDaSemana -> {

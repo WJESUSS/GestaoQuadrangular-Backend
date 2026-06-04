@@ -7,6 +7,8 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioResumoDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.RelatorioPdfService;
 import com.gestaoigrejaemcelula.demo.aplication.service.RelatorioService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,9 @@ import java.util.List;
 @RequestMapping("/relatorios")
 @PreAuthorize("hasAnyRole('LIDER_CELULA', 'ADMIN', 'SECRETARIO', 'PASTOR')")  // ✅ adicionado PASTOR
 public class RelatorioController {
+
+    private static final Logger log = LoggerFactory.getLogger(RelatorioController.class);
+
     private final RelatorioService service;
     private final RelatorioPdfService pdfService;
 
@@ -95,8 +100,7 @@ public class RelatorioController {
             fim = LocalDate.parse(fimStr);
         } catch (DateTimeParseException e) {
             // Log para confirmar o que está chegando
-            System.out.println(">>> inicio recebido: '" + inicioStr + "'");
-            System.out.println(">>> fim recebido: '" + fimStr + "'");
+            log.warn("Formato de data inválido - inicio: '{}', fim: '{}'", inicioStr, fimStr);
             return ResponseEntity
                     .badRequest()
                     .body("Formato de data inválido. Use YYYY-MM-DD. Recebido: inicio=" + inicioStr + ", fim=" + fimStr);

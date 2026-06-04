@@ -8,9 +8,11 @@ import com.gestaoigrejaemcelula.demo.aplication.service.DiscipuladoRelatorioServ
 import com.gestaoigrejaemcelula.demo.domain.entity.DiscipuladoRelatorio;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -19,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/discipulado")
 @RequiredArgsConstructor
+@Validated
 @PreAuthorize("hasAnyRole('LIDER_CELULA', 'SECRETARIO', 'ADMIN', 'PASTOR')")
 public class DiscipuladoRelatorioController {
 
@@ -35,7 +38,7 @@ public class DiscipuladoRelatorioController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate fim,
 
-            @RequestBody List<DiscipuladoRequestDTO> lista
+            @RequestBody @Valid List<@Valid DiscipuladoRequestDTO> lista
     ) {
         service.salvarRelatorioSemanal(lista, inicio, fim);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -54,7 +57,7 @@ public class DiscipuladoRelatorioController {
     // Alternativo (corrigido o path)
     @PostMapping("/semana")
     public ResponseEntity<Void> salvarSemana(
-            @RequestBody List<DiscipuladoRequestDTO> lista,
+            @RequestBody @Valid List<@Valid DiscipuladoRequestDTO> lista,
             @RequestParam LocalDate inicio,
             @RequestParam LocalDate fim
     ) {
@@ -65,7 +68,7 @@ public class DiscipuladoRelatorioController {
     @PutMapping("/{id}")
     public ResponseEntity<RelatorioDiscipuladoDTO> atualizarUnico(
             @PathVariable Long id,
-            @RequestBody DiscipuladoRequestDTO dto
+            @RequestBody @Valid DiscipuladoRequestDTO dto
     ) {
         return ResponseEntity.ok(service.atualizarRelatorio(id, dto));
     }
@@ -79,7 +82,7 @@ public class DiscipuladoRelatorioController {
             @PathVariable Long id,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
-            @RequestBody List<DiscipuladoRequestDTO> lista
+            @RequestBody @Valid List<@Valid DiscipuladoRequestDTO> lista
     ) {
         service.atualizarRelatorioSemanal(id, lista, inicio, fim);
         return ResponseEntity.ok().build();

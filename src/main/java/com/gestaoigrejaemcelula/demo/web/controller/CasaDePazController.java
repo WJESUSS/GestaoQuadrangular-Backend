@@ -10,6 +10,7 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +34,7 @@ public class CasaDePazController {
 
     // POST /api/casas-de-paz
     @PostMapping
-    public ResponseEntity<CasaDePazResponseDTO> criar(@RequestBody CasaDePazRequestDTO dto) {
+    public ResponseEntity<CasaDePazResponseDTO> criar(@RequestBody @Valid CasaDePazRequestDTO dto) {
         return ResponseEntity.ok(CasaDePazResponseDTO.de(service.criar(dto)));
     }
 
@@ -107,7 +108,7 @@ public class CasaDePazController {
     @PutMapping("/{id}")
     public ResponseEntity<CasaDePazResponseDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody CasaDePazRequestDTO dto) {
+            @RequestBody @Valid CasaDePazRequestDTO dto) {
 
         return ResponseEntity.ok(
                 CasaDePazResponseDTO.de(service.atualizar(id, dto))
@@ -115,7 +116,7 @@ public class CasaDePazController {
     }
 
     @PostMapping("/relatorio/pdf")
-    public ResponseEntity<byte[]> gerarPdf(@RequestBody CasaDePazPdfRequestDTO request) {
+    public ResponseEntity<byte[]> gerarPdf(@RequestBody @Valid CasaDePazPdfRequestDTO request) {
         try {
             byte[] pdf = pdfService.gerar(request);
 

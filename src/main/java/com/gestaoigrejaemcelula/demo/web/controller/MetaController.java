@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.web.controller;
 import com.gestaoigrejaemcelula.demo.aplication.dto.MetaRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.MetaResponseDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.MetaService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class MetaController {
      * Criar nova meta
      */
     @PostMapping
-    public ResponseEntity<MetaResponseDTO> criar(@RequestBody MetaRequestDTO dto) {
+    public ResponseEntity<MetaResponseDTO> criar(@RequestBody @Valid MetaRequestDTO dto) {
         return ResponseEntity.ok(metaService.criarMeta(dto));
     }
 
@@ -96,7 +97,7 @@ public class MetaController {
     @PutMapping("/{id}")
     public ResponseEntity<MetaResponseDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody MetaRequestDTO dto) {
+            @RequestBody @Valid MetaRequestDTO dto) {
         return ResponseEntity.ok(metaService.atualizar(id, dto));
     }
 

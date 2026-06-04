@@ -1,15 +1,13 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-/**
- * DTO recebido no POST /api/casas-de-paz/relatorio/pdf
- * O front envia o grupo já montado (celulaName + lista de casas).
- */
 public class CasaDePazPdfRequestDTO {
-
-    private String celulaName;
-    private List<CasaDTO> casas;
+    @NotBlank private String celulaName;
+    @NotNull @Valid private List<CasaDTO> casas;
 
     // ── Getters / Setters ─────────────────────────────────────────────────────
 

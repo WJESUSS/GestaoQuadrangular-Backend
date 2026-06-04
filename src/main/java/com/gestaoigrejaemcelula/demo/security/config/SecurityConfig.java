@@ -79,7 +79,6 @@ public class SecurityConfig {
                         .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/membros/sem-celula").hasAnyAuthority("LIDER_CELULA", "PASTOR","SECRETARIO")
                         .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO","LIDER_CELULA")
-                        .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "PASTOR")
                         .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
                         .requestMatchers("/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
 
