@@ -51,6 +51,7 @@ public class DiscipuladoRelatorioService {
                                        LocalDate inicio,
                                        LocalDate fim) {
         Usuario lider = usuarioLogado();
+        List<DiscipuladoRelatorio> paraSalvar = new ArrayList<>();
 
         for (DiscipuladoRequestDTO dto : lista) {
             repository.findByMembroIdAndSemanaInicioAndSemanaFim(dto.membroId(), inicio, fim)
@@ -62,7 +63,7 @@ public class DiscipuladoRelatorioService {
                                 existente.setDomingoManha(dto.domingoManha());
                                 existente.setDomingoNoite(dto.domingoNoite());
                                 existente.calcularPresenca();
-                                repository.save(existente);
+                                paraSalvar.add(existente);
                             },
                             () -> {
                                 Membro membro = membroRepository.findById(dto.membroId())
@@ -85,10 +86,12 @@ public class DiscipuladoRelatorioService {
                                 relatorio.setLider(lider);
                                 relatorio.setDataEnvio(LocalDateTime.now());
                                 relatorio.calcularPresenca();
-                                repository.save(relatorio);
+                                paraSalvar.add(relatorio);
                             }
                     );
         }
+
+        repository.saveAll(paraSalvar);
     }
 
     // ════════════════════════════════════════════════════════════════════════

@@ -5,6 +5,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Evento;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoEvento;
 import com.gestaoigrejaemcelula.demo.domain.repository.EventoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -39,15 +40,18 @@ public class EventoService {
         return repository.save(evento);
     }
 
+    @Transactional(readOnly = true)
     public Evento buscarPorId(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Evento não encontrado"));
     }
 
+    @Transactional(readOnly = true)
     public List<Evento> listarTodos() {
         return repository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Evento> listarPorTipo(TipoEvento tipo) {
         return repository.findByTipo(tipo);
     }

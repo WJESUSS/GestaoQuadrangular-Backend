@@ -39,10 +39,11 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
             "WHERE r.dataReuniao BETWEEN :inicio AND :fim")
     Integer totalVisitantesNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
-    // Busca relatórios entre duas datas, carregando a célula junto (JOIN FETCH)
+    // Busca relatórios entre duas datas, carregando célula + líder junto (JOIN FETCH)
     @Query("""
     SELECT r FROM Relatorio r
-    JOIN FETCH r.celula
+    JOIN FETCH r.celula c
+    LEFT JOIN FETCH c.lider
     WHERE r.dataReuniao BETWEEN :inicio AND :fim
     ORDER BY r.dataReuniao DESC
     """)

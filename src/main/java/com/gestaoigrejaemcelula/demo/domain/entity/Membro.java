@@ -9,7 +9,11 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "membros")
+@Table(name = "membros", indexes = {
+    @Index(name = "idx_membros_celula_id", columnList = "celula_id"),
+    @Index(name = "idx_membros_data_nascimento", columnList = "dataNascimento"),
+    @Index(name = "idx_membros_status", columnList = "status")
+})
 
 public class Membro {
 

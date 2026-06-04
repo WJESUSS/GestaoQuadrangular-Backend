@@ -7,13 +7,12 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TesourariaService {
@@ -69,6 +68,7 @@ public class TesourariaService {
     // =========================
     // LISTAR TODOS
     // =========================
+    @Transactional(readOnly = true)
     public List<LancamentoTesouraria> listar() {
         return repository.findAll();
     }
@@ -76,61 +76,51 @@ public class TesourariaService {
     // =========================
     // RESUMO GERAL POR TIPO
     // =========================
+    @Transactional(readOnly = true)
     public Map<String, Object> getResumo() {
         Map<String, Object> resumo = new HashMap<>();
-        BigDecimal totalBronze = BigDecimal.ZERO;
-        BigDecimal totalPrata  = BigDecimal.ZERO;
-        BigDecimal totalOuro   = BigDecimal.ZERO;
+        resumo.put("BRONZE", BigDecimal.ZERO);
+        resumo.put("PRATA", BigDecimal.ZERO);
+        resumo.put("OURO", BigDecimal.ZERO);
 
-        for (LancamentoTesouraria l : repository.findAll()) {
-            BigDecimal valor = (l.getValorDizimo() != null ? l.getValorDizimo() : BigDecimal.ZERO)
-                    .add(l.getValorOferta() != null ? l.getValorOferta() : BigDecimal.ZERO);
-
-            if      ("BRONZE".equalsIgnoreCase(l.getTipoOferta())) totalBronze = totalBronze.add(valor);
-            else if ("PRATA".equalsIgnoreCase(l.getTipoOferta()))  totalPrata  = totalPrata.add(valor);
-            else if ("OURO".equalsIgnoreCase(l.getTipoOferta()))   totalOuro   = totalOuro.add(valor);
+        List<Object[]> resultados = repository.sumAgrupadoPorTipo();
+        for (Object[] row : resultados) {
+            String tipo = (String) row[0];
+            BigDecimal valor = (BigDecimal) row[1];
+            if (tipo != null && resumo.containsKey(tipo.toUpperCase())) {
+                resumo.put(tipo.toUpperCase(), valor);
+            }
         }
-
-        resumo.put("BRONZE", totalBronze);
-        resumo.put("PRATA",  totalPrata);
-        resumo.put("OURO",   totalOuro);
         return resumo;
     }
 
     // =========================
     // RESUMO POR MEMBRO
     // =========================
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> getResumoPorMembro() {
-        Map<String, Map<String, Object>> mapMembros = new HashMap<>();
+        List<Object[]> resultados = repository.sumAgrupadoPorMembro();
+        List<Map<String, Object>> lista = new ArrayList<>();
 
-        for (LancamentoTesouraria l : repository.findAll()) {
-            String membroNome = l.getMembroNome();
-            if (membroNome == null) continue;
-
-            Map<String, Object> membroMap = mapMembros.getOrDefault(membroNome, new HashMap<>());
-            membroMap.put("membroNome", membroNome);
-
-            BigDecimal totalDizimo = (BigDecimal) membroMap.getOrDefault("totalDizimo", BigDecimal.ZERO);
-            BigDecimal totalOferta = (BigDecimal) membroMap.getOrDefault("totalOferta", BigDecimal.ZERO);
-
-            totalDizimo = totalDizimo.add(l.getValorDizimo() != null ? l.getValorDizimo() : BigDecimal.ZERO);
-            totalOferta = totalOferta.add(l.getValorOferta() != null ? l.getValorOferta() : BigDecimal.ZERO);
-
-            membroMap.put("totalDizimo", totalDizimo);
-            membroMap.put("totalOferta", totalOferta);
-            mapMembros.put(membroNome, membroMap);
+        for (Object[] row : resultados) {
+            Map<String, Object> membroMap = new HashMap<>();
+            membroMap.put("membroNome", row[0]);
+            membroMap.put("totalDizimo", row[1] != null ? row[1] : BigDecimal.ZERO);
+            membroMap.put("totalOferta", row[2] != null ? row[2] : BigDecimal.ZERO);
+            lista.add(membroMap);
         }
-
-        return new ArrayList<>(mapMembros.values());
+        return lista;
     }
 
     // =========================
     // SELECTS
     // =========================
+    @Transactional(readOnly = true)
     public List<MembroSelectDTO> listarParaSelect() {
         return membroRepository.listarParaSelect();
     }
 
+    @Transactional(readOnly = true)
     public List<MembroSelectDTO> listarNomesParaSelect() {
         return membroRepository.listarNomesParaSelect();
     }
@@ -138,6 +128,7 @@ public class TesourariaService {
     // =========================
     // LISTAR POR MÊS/ANO
     // =========================
+    @Transactional(readOnly = true)
     public List<LancamentoTesouraria> listarPorMesAno(int mes, int ano) {
         return repository.findByMesAndAno(mes, ano);
     }
@@ -145,6 +136,7 @@ public class TesourariaService {
     // =========================
     // RESUMO MENSAL
     // =========================
+    @Transactional(readOnly = true)
     public Map<String, BigDecimal> resumoMensal(int mes, int ano) {
         BigDecimal totalDizimo = repository.totalDizimoPorMesAno(mes, ano);
         BigDecimal totalBronze = repository.totalOfertaPorMesAnoETipo(mes, ano, "BRONZE");
@@ -163,11 +155,13 @@ public class TesourariaService {
     // =========================
     // TOTAIS INDIVIDUAIS
     // =========================
+    @Transactional(readOnly = true)
     public BigDecimal totalDizimoPorMesAno(int mes, int ano) {
         BigDecimal total = repository.totalDizimoPorMesAno(mes, ano);
         return total != null ? total : BigDecimal.ZERO;
     }
 
+    @Transactional(readOnly = true)
     public BigDecimal totalOfertaPorMesAno(int mes, int ano) {
         BigDecimal total = repository.totalOfertaPorMesAno(mes, ano);
         return total != null ? total : BigDecimal.ZERO;
@@ -176,19 +170,23 @@ public class TesourariaService {
     // =========================
     // FIÉIS / INFIÉIS
     // =========================
+    @Transactional(readOnly = true)
     public FieisInfieisMes obterFieisInfieis(Integer mes, Integer ano) {
         LocalDate hoje   = LocalDate.now();
         int mesAtual     = (mes != null) ? mes : hoje.getMonthValue();
         int anoAtual     = (ano != null) ? ano : hoje.getYear();
 
+        Set<String> membrosComLancamento = new HashSet<>(
+                repository.findMembrosComLancamentoNoMes(mesAtual, anoAtual)
+        );
+
         List<Membro> todosMembros = membroRepository.findAll();
-        List<Membro> fieis        = new ArrayList<>();
-        List<Membro> infieis      = new ArrayList<>();
+        List<Membro> fieis   = new ArrayList<>();
+        List<Membro> infieis = new ArrayList<>();
 
         for (Membro m : todosMembros) {
-            long qtdLancamentos = repository.countByMembroAndMesAno(m.getNome(), mesAtual, anoAtual);
-            if (qtdLancamentos > 0) fieis.add(m);
-            else                    infieis.add(m);
+            if (membrosComLancamento.contains(m.getNome())) fieis.add(m);
+            else infieis.add(m);
         }
 
         return new FieisInfieisMes(fieis, infieis);

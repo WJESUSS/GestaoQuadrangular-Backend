@@ -28,10 +28,10 @@ public class AlertaCelulaService {
         LocalDate inicioAnterior = hoje.minusDays(60);
 
         List<Relatorio> atual =
-                repository.findByDataBetween(inicioAtual, hoje);
+                repository.findRelatoriosEntreDatasComCelula(inicioAtual, hoje);
 
         List<Relatorio> anterior =
-                repository.findByDataBetween(inicioAnterior, inicioAtual);
+                repository.findRelatoriosEntreDatasComCelula(inicioAnterior, inicioAtual);
 
         Map<Long, Double> mediaAtual = calcularMediaPorCelula(atual);
         Map<Long, Double> mediaAnterior = calcularMediaPorCelula(anterior);

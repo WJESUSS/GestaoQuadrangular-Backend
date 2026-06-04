@@ -34,6 +34,16 @@ public interface LancamentoTesourariaRepository extends JpaRepository<Lancamento
                                 @Param("mes") int mes,
                                 @Param("ano") int ano);
 
+    @Query("SELECT l.tipoOferta, SUM(COALESCE(l.valorDizimo, 0) + COALESCE(l.valorOferta, 0)) FROM LancamentoTesouraria l GROUP BY l.tipoOferta")
+    List<Object[]> sumAgrupadoPorTipo();
 
+    @Query("SELECT l.membroNome, SUM(COALESCE(l.valorDizimo, 0)), SUM(COALESCE(l.valorOferta, 0)) FROM LancamentoTesouraria l GROUP BY l.membroNome")
+    List<Object[]> sumAgrupadoPorMembro();
+
+    @Query("SELECT l.membroNome FROM LancamentoTesouraria l WHERE MONTH(l.dataLancamento) = :mes AND YEAR(l.dataLancamento) = :ano GROUP BY l.membroNome")
+    List<String> findMembrosComLancamentoNoMes(@Param("mes") int mes, @Param("ano") int ano);
+
+    @Query("SELECT MONTH(l.dataLancamento) as mes, SUM(COALESCE(l.valorDizimo, 0)), SUM(COALESCE(l.valorOferta, 0)) FROM LancamentoTesouraria l WHERE YEAR(l.dataLancamento) = :ano GROUP BY MONTH(l.dataLancamento) ORDER BY MONTH(l.dataLancamento)")
+    List<Object[]> comparativoAnual(@Param("ano") int ano);
 
 }

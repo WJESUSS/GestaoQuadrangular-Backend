@@ -6,7 +6,7 @@ import com.gestaoigrejaemcelula.demo.aplication.service.TesourariaService;
 import com.gestaoigrejaemcelula.demo.domain.entity.LancamentoTesouraria;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
-import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
+import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,14 +22,11 @@ import java.util.*;
 public class TesourariaController {
 
     private final TesourariaService service;
-    private final MembroRepository membroRepository;
     private final LancamentoTesourariaRepository lancamentoTesourariaRepository;
 
     public TesourariaController(TesourariaService service,
-                                MembroRepository membroRepository,
                                 LancamentoTesourariaRepository lancamentoTesourariaRepository) {
         this.service = service;
-        this.membroRepository = membroRepository;
         this.lancamentoTesourariaRepository = lancamentoTesourariaRepository;
     }
 
@@ -92,17 +89,19 @@ public class TesourariaController {
         LocalDate hoje = LocalDate.now();
         int anoAtual = (ano != null) ? ano : hoje.getYear();
 
+        List<Object[]> resultados = lancamentoTesourariaRepository.comparativoAnual(anoAtual);
+        Map<Integer, Object[]> porMes = new HashMap<>();
+        for (Object[] row : resultados) {
+            porMes.put(((Number) row[0]).intValue(), row);
+        }
+
         List<Map<String, Object>> comparativo = new ArrayList<>();
-
         for (int m = 1; m <= 12; m++) {
-            BigDecimal totalDizimo = service.totalDizimoPorMesAno(m, anoAtual);
-            BigDecimal totalOferta = service.totalOfertaPorMesAno(m, anoAtual);
-
+            Object[] row = porMes.get(m);
             Map<String, Object> mesMap = new HashMap<>();
             mesMap.put("mes", m);
-            mesMap.put("totalDizimo", totalDizimo != null ? totalDizimo : BigDecimal.ZERO);
-            mesMap.put("totalOferta", totalOferta != null ? totalOferta : BigDecimal.ZERO);
-
+            mesMap.put("totalDizimo", row != null ? row[1] : BigDecimal.ZERO);
+            mesMap.put("totalOferta", row != null ? row[2] : BigDecimal.ZERO);
             comparativo.add(mesMap);
         }
 
@@ -118,29 +117,12 @@ public class TesourariaController {
             @RequestParam(required = false) Integer mes,
             @RequestParam(required = false) Integer ano) {
 
-        LocalDate hoje = LocalDate.now();
-        int mesAtual = (mes != null) ? mes : hoje.getMonthValue();
-        int anoAtual = (ano != null) ? ano : hoje.getYear();
+        TesourariaService.FieisInfieisMes resultado = service.obterFieisInfieis(mes, ano);
 
-        List<Membro> todosMembros = membroRepository.findAll();
-        List<Membro> infieis = new ArrayList<>();
-        List<Membro> fieis = new ArrayList<>();
+        Map<String, List<Membro>> resposta = new HashMap<>();
+        resposta.put("fieis", resultado.getFieis());
+        resposta.put("infieis", resultado.getInfieis());
 
-        for (Membro m : todosMembros) {
-            long lancamentos = lancamentoTesourariaRepository
-                    .countByMembroAndMesAno(m.getNome(), mesAtual, anoAtual);
-
-            if (lancamentos > 0) {
-                fieis.add(m);
-            } else {
-                infieis.add(m);
-            }
-        }
-
-        Map<String, List<Membro>> resultado = new HashMap<>();
-        resultado.put("fieis", fieis);
-        resultado.put("infieis", infieis);
-
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(resposta);
     }
 }

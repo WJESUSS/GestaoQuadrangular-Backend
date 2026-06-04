@@ -40,6 +40,7 @@ public class MembroService {
      * Isso resolve o erro de duplicidade e traz todos para a chamada.
      */
 
+    @Transactional(readOnly = true)
     public List<MembroCelulaDTO> listarMembrosPorCelula(Long celulaId) {
         return repository.findByCelulaId(celulaId)
                 .stream()
@@ -95,6 +96,7 @@ public class MembroService {
 
     // --- MÉTODOS DE LISTAGEM ---
 
+    @Transactional(readOnly = true)
     public List<MembroResumoDTO> listarSemCelula() {
         return repository.findByCelulaIsNull()
                 .stream()
@@ -113,10 +115,12 @@ public class MembroService {
         return repository.findAll().stream().map(MembroResponseDTO::new).toList();
     }
 
+    @Transactional(readOnly = true)
     public MembroResponseDTO buscarPorId(Long id) {
         return new MembroResponseDTO(buscarEntidadePorId(id));
     }
 
+    @Transactional(readOnly = true)
     public List<MembroResponseDTO> buscarPorNome(String nome) {
         return repository.findByNomeContainingIgnoreCase(nome).stream().map(MembroResponseDTO::new).toList();
     }
@@ -157,6 +161,7 @@ public class MembroService {
                 .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
     }
     // Adicione este método dentro da classe MembroService
+    @Transactional(readOnly = true)
     public List<MembroResponseDTO> listarPorStatus(StatusMembro status) {
         return repository.findByStatus(status)
                 .stream()
@@ -166,12 +171,7 @@ public class MembroService {
 
     @Transactional(readOnly = true)
     public List<MembroResumoDTO> listarTodosAtivos() {
-        return repository.findAll()
-                .stream()
-                .map(membro -> new MembroResumoDTO(membro.getId(), membro.getNome()))
-                // Mude de a.nome() para a.getNome()
-                .sorted((a, b) -> a.getNome().compareToIgnoreCase(b.getNome()))
-                .collect(Collectors.toList());
+        return repository.listarAtivosOrdenados();
     }
     public List<MembroSelectDTO> listarParaSelect() {
         return repository.listarParaSelect();
@@ -222,6 +222,7 @@ public class MembroService {
 
         historicoRepository.save(historico);
     }
+    @Transactional(readOnly = true)
     public List<AlertaDTO> obterAlertasCriticos() {
         // Define o período de análise (últimos 21 dias para capturar até 3 domingos)
         LocalDate dataLimite = LocalDate.now().minusDays(21);
@@ -231,6 +232,7 @@ public class MembroService {
                 .filter(alerta -> alerta.getTotalFaltas() != null && alerta.getTotalFaltas() >= 2)
                 .collect(Collectors.toList());
     }
+    @Transactional(readOnly = true)
     public List<CelulaResponseDTO.MembroDTO> buscarAniversariantesHoje(Long celulaId) {
         int dia = LocalDate.now().getDayOfMonth();
         int mes = LocalDate.now().getMonthValue();

@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -113,9 +115,27 @@ public class MetaService {
      */
     public void recalcularTodasMetasCelula(Long celulaId) {
         List<Meta> metas = metaRepository.findByCelulaIdAndAtivaOrderByMesAnoDesc(celulaId, true);
+        if (metas.isEmpty()) return;
 
-        for (Meta meta : metas) {
-            sincronizarProgresso(meta, celulaId);
+        // Query agregada única para não fazer N count queries
+        List<DecisaoEspiritual> decisoesMapeadas = metas.stream()
+                .map(m -> mapearTipoMetaParaDecisao(m.getTipoMeta()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (!decisoesMapeadas.isEmpty()) {
+            List<Object[]> contagens = visitanteRepository.countPorDecisao(celulaId, decisoesMapeadas);
+            Map<DecisaoEspiritual, Integer> mapaContagens = new java.util.HashMap<>();
+            for (Object[] row : contagens) {
+                mapaContagens.put((DecisaoEspiritual) row[0], ((Number) row[1]).intValue());
+            }
+            for (Meta meta : metas) {
+                DecisaoEspiritual decisao = mapearTipoMetaParaDecisao(meta.getTipoMeta());
+                if (decisao != null) {
+                    meta.setMetaAlcancada(mapaContagens.getOrDefault(decisao, 0));
+                }
+            }
         }
 
         metaRepository.saveAll(metas);

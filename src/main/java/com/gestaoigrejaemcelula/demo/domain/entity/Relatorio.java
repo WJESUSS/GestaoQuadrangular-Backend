@@ -14,6 +14,10 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Table(indexes = {
+    @Index(name = "idx_relatorio_celula_id", columnList = "celula_id"),
+    @Index(name = "idx_relatorio_data_reuniao", columnList = "dataReuniao")
+})
 public class Relatorio {
 
     @Id

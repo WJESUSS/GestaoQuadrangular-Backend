@@ -81,8 +81,8 @@ public class JornadaEspiritualService {
 
                 for (Meta meta : metas) {
                     meta.setMetaAlcancada(meta.getMetaAlcancada() + 1);
-                    metaRepository.save(meta);
                 }
+                metaRepository.saveAll(metas);
             }
         }
 
@@ -137,8 +137,8 @@ public class JornadaEspiritualService {
 
                 for (Meta meta : metas) {
                     meta.decrementarProgresso();
-                    metaRepository.save(meta);
                 }
+                metaRepository.saveAll(metas);
             }
         }
 

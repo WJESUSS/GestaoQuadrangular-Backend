@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public interface CelulaRepository extends JpaRepository<Celula, Long> {
 
+    @Query("SELECT c FROM Celula c LEFT JOIN FETCH c.lider WHERE c.ativa = true")
     List<Celula> findAllByAtivaTrue();
 
     @Query("SELECT c FROM Celula c " +
@@ -34,6 +35,7 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
     @EntityGraph(attributePaths = {"membros"})
     Optional<Celula> findByLider_IdAndAtivaTrue(Long liderId);
 
+    @Query("SELECT c FROM Celula c LEFT JOIN FETCH c.lider WHERE c.ativa = true")
     List<Celula> findByAtivaTrue();
 
     List<Celula> findByStatusMultiplicacao(Celula.StatusMultiplicacao statusMultiplicacao);

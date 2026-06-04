@@ -353,12 +353,14 @@ public class CelulaService {
         );
     }
 
+    @Transactional(readOnly = true)
     public List<Membro> listarMembrosDaCelula(Long id) {
-        Celula celula = celulaRepository.findById(id)
+        Celula celula = celulaRepository.findByIdWithMembros(id)
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com o ID: " + id));
         return celula.getMembros();
     }
 
+    @Transactional(readOnly = true)
     public List<Membro> listarMembrosAtivosDaCelula(Long celulaId) {
         Celula celula = buscarPorId(celulaId);
         return celula.getMembros().stream()
@@ -453,7 +455,7 @@ public class CelulaService {
 
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> buscarMembrosPorCelula(Long celulaId) {
-        Celula celula = celulaRepository.findById(celulaId)
+        Celula celula = celulaRepository.findByIdWithMembros(celulaId)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
         return celula.getMembros()
                 .stream()

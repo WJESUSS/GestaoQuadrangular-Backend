@@ -87,10 +87,10 @@ public class RelatorioService {
                                             ? vdto.getDecisaoEspiritual()
                                             : DecisaoEspiritual.NENHUMA
                             );
-                            visitanteRepository.save(visitante);
                         });
             }
 
+            visitanteRepository.saveAll(visitantes);
             visitanteRepository.flush();
             relatorio.setVisitantesPresentes(visitantes);
         }
@@ -207,15 +207,11 @@ public class RelatorioService {
             dto.setVisitantesPresentes(
                     relatorio.getVisitantesPresentes().stream()
                             .map(v -> {
-                                // ?? Rebusca do banco para garantir decisão atualizada
-                                // (evita cache de primeiro nível do JPA retornar dado antigo)
-                                Visitante atualizado = visitanteRepository.findById(v.getId())
-                                        .orElse(v);
                                 return new PessoaPresencaDTO(
-                                        atualizado.getId(),
-                                        atualizado.getNome(),
-                                        atualizado.getDecisaoEspiritual() != null
-                                                ? atualizado.getDecisaoEspiritual()
+                                        v.getId(),
+                                        v.getNome(),
+                                        v.getDecisaoEspiritual() != null
+                                                ? v.getDecisaoEspiritual()
                                                 : DecisaoEspiritual.NENHUMA
                                 );
                             })
@@ -338,9 +334,9 @@ public class RelatorioService {
                                             ? vdto.getDecisaoEspiritual()
                                             : DecisaoEspiritual.NENHUMA
                             );
-                            visitanteRepository.save(visitante);
                         });
             }
+            visitanteRepository.saveAll(visitantes);
             visitanteRepository.flush();
             relatorio.setVisitantesPresentes(visitantes);
         }

@@ -48,9 +48,20 @@ public class NotificacaoService {
      */
     @Transactional
     public void enviarNotificacaoParaVarios(List<Long> usuarioIds, String titulo, String mensagem, Notificacao.TipoNotificacao tipo) {
-        for (Long id : usuarioIds) {
-            enviarNotificacao(id, titulo, mensagem, tipo); // Repassa o título aqui também
+        List<Usuario> usuarios = usuarioRepository.findAllById(usuarioIds);
+        List<Notificacao> notificacoes = new java.util.ArrayList<>();
+        LocalDateTime agora = LocalDateTime.now();
+        for (Usuario usuario : usuarios) {
+            Notificacao notificacao = new Notificacao();
+            notificacao.setUsuario(usuario);
+            notificacao.setTitulo(titulo);
+            notificacao.setMensagem(mensagem);
+            notificacao.setTipo(tipo);
+            notificacao.setDataEnvio(agora);
+            notificacao.setLida(false);
+            notificacoes.add(notificacao);
         }
+        notificacaoRepository.saveAll(notificacoes);
     }
 
     /**

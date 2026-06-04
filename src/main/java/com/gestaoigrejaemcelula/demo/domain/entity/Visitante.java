@@ -8,7 +8,10 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "visitantes")
+@Table(name = "visitantes", indexes = {
+    @Index(name = "idx_visitantes_celula_id", columnList = "celula_id"),
+    @Index(name = "idx_visitantes_decisao_ativo", columnList = "celula_id, decisao_espiritual, ativo")
+})
 
 public class Visitante {
     public boolean isAtivo() {

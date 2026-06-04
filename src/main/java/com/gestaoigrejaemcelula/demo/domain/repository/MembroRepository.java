@@ -2,6 +2,7 @@ package com.gestaoigrejaemcelula.demo.domain.repository;
 
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.AlertaDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.MembroResumoDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.MembroSelectDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
@@ -50,6 +51,9 @@ public interface MembroRepository extends JpaRepository<Membro, Long> {
     ORDER BY m.nome
 """)
     List<MembroSelectDTO> listarNomesParaSelect();
+
+    @Query("SELECT new com.gestaoigrejaemcelula.demo.aplication.dto.MembroResumoDTO(m.id, m.nome) FROM Membro m WHERE m.status = 'ATIVO' ORDER BY m.nome")
+    List<MembroResumoDTO> listarAtivosOrdenados();
 
     @Query("""
         SELECT m FROM Membro m
