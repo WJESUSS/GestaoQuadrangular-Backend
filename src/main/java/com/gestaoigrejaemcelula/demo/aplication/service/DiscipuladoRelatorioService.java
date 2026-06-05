@@ -270,7 +270,10 @@ public class DiscipuladoRelatorioService {
     @Transactional(readOnly = true)
     public List<DiscipuladoHistoricoItemDTO> listarHistorico() {
         Usuario lider = usuarioLogado();
-        Celula  celula = lider.getCelula();
+
+        // Busca célula onde o usuário é líder, com fallback para celula_id do usuário
+        Celula celula = celulaRepository.findByLider_Id(lider.getId())
+                .orElse(lider.getCelula());
 
         log.debug("=== HISTORICO DEBUG ===");
         log.debug("Lider ID: {} | Email: {}", lider.getId(), lider.getEmail());

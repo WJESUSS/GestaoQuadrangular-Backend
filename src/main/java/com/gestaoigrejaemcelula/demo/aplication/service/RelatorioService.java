@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -137,8 +138,19 @@ public class RelatorioService {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        Celula celula = celulaRepository.findByLider_Id(usuario.getId())
-                .orElseThrow(() -> new RuntimeException("Nenhuma célula vinculada"));
+        Celula celula;
+
+        // Tenta primeiro como líder
+        Optional<Celula> celulaComoLider = celulaRepository.findByLider_Id(usuario.getId());
+
+        if (celulaComoLider.isPresent()) {
+            celula = celulaComoLider.get();
+        } else if (usuario.getCelula() != null) {
+            // Secretário ou membro com célula vinculada diretamente
+            celula = usuario.getCelula();
+        } else {
+            return List.of(); // sem célula, retorna vazio sem lançar exceção
+        }
 
         return relatorioRepository.findByCelulaIdOrderByDataReuniaoDesc(celula.getId())
                 .stream()
