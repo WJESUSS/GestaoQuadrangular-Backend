@@ -4,6 +4,9 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.domain.entity.*;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
+import com.gestaoigrejaemcelula.demo.web.handler.BusinessException;
+import com.gestaoigrejaemcelula.demo.web.handler.ResourceNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
@@ -164,20 +168,34 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public RelatorioResumoDTO buscarResumoSemana(LocalDate inicio, LocalDate fim) {
-        List<Relatorio> relatorios = relatorioRepository.findByDataReuniaoBetween(inicio, fim);
 
-        int totalMembros = relatorios.stream()
-                .mapToInt(r -> r.getQuantidadeMembros())
-                .sum();
+        // Realizadas: filtra por dataReuniao no período
+        List<Relatorio> realizadas = relatorioRepository
+                .findByDataReuniaoBetween(inicio, fim)
+                .stream()
+                .filter(r -> r.getRealizada() == null || r.getRealizada())
+                .toList();
 
-        int totalVisitantes = relatorios.stream()
-                .mapToInt(r -> r.getTotalVisitantes())
-                .sum();
+        // Não realizadas: criadas no período (dataCadastro), independente da dataReuniao
+        List<Relatorio> naoRealizadas = relatorioRepository
+                .findByRealizadaFalseAndDataCadastroBetween(
+                        inicio.atStartOfDay(),
+                        fim.plusDays(1).atStartOfDay()
+                );
 
-        int totalCelulas = (int) relatorios.stream()
-                .map(r -> r.getCelula().getId())
-                .distinct()
-                .count();
+        // Junta sem duplicatas
+        List<Relatorio> todos = new java.util.ArrayList<>(realizadas);
+        naoRealizadas.forEach(nr -> {
+            if (todos.stream().noneMatch(r -> r.getId().equals(nr.getId()))) {
+                todos.add(nr);
+            }
+        });
+
+        // KPIs só das realizadas
+        int totalMembros    = realizadas.stream().mapToInt(Relatorio::getQuantidadeMembros).sum();
+        int totalVisitantes = realizadas.stream().mapToInt(Relatorio::getTotalVisitantes).sum();
+        int totalCelulas    = (int) realizadas.stream()
+                .map(r -> r.getCelula().getId()).distinct().count();
 
         RelatorioResumoDTO dto = new RelatorioResumoDTO();
         dto.setInicio(inicio);
@@ -185,8 +203,7 @@ public class RelatorioService {
         dto.setTotalCelulas(totalCelulas);
         dto.setTotalMembros(totalMembros);
         dto.setTotalVisitantes(totalVisitantes);
-        dto.setRelatorios(relatorios.stream().map(this::converterParaDTO).toList());
-
+        dto.setRelatorios(todos.stream().map(this::converterParaDTO).toList());
         return dto;
     }
 
@@ -218,15 +235,13 @@ public class RelatorioService {
         if (relatorio.getVisitantesPresentes() != null) {
             dto.setVisitantesPresentes(
                     relatorio.getVisitantesPresentes().stream()
-                            .map(v -> {
-                                return new PessoaPresencaDTO(
-                                        v.getId(),
-                                        v.getNome(),
-                                        v.getDecisaoEspiritual() != null
-                                                ? v.getDecisaoEspiritual()
-                                                : DecisaoEspiritual.NENHUMA
-                                );
-                            })
+                            .map(v -> new PessoaPresencaDTO(
+                                    v.getId(),
+                                    v.getNome(),
+                                    v.getDecisaoEspiritual() != null
+                                            ? v.getDecisaoEspiritual()
+                                            : DecisaoEspiritual.NENHUMA
+                            ))
                             .toList()
             );
         }
@@ -235,6 +250,15 @@ public class RelatorioService {
                 ? relatorio.getQuantidadeVisitantes() : 0;
         dto.setQuantidadeVisitantes(visitantesAvulsos);
         dto.setTotalPresentes(relatorio.getTotalPresentes());
+
+        // ✅ campos para célula não realizada
+        dto.setRealizada(relatorio.getRealizada() == null || relatorio.getRealizada());
+        dto.setMotivoNaoRealizacao(
+                relatorio.getMotivoNaoRealizacao() != null
+                        ? relatorio.getMotivoNaoRealizacao().name()
+                        : null
+        );
+
         return dto;
     }
 
@@ -285,11 +309,17 @@ public class RelatorioService {
                             .map(r -> new PresencaMembroDTO(
                                     r.getId(),
                                     r.getMembro().getNome(),
-                                    safe(r.isEscolaBiblica()),  // ✅ seguro contra null
-                                    safe(r.isQuartaNoite()),    // ✅ seguro contra null
-                                    safe(r.isQuintaNoite()),    // ✅ seguro contra null
-                                    safe(r.isDomingoManha()),   // ✅ seguro contra null
-                                    safe(r.isDomingoNoite())    // ✅ seguro contra null
+                                    safe(r.isEscolaBiblica()),      // ✅ seguro contra null
+                                    safe(r.isQuartaNoite()),        // ✅ seguro contra null
+                                    safe(r.isQuintaNoite()),        // ✅ seguro contra null
+                                    safe(r.isDomingoManha()),       // ✅ seguro contra null
+                                    safe(r.isDomingoNoite()),       // ✅ seguro contra null
+                                    // ✅ JUSTIFICATIVAS NA ORDEM CORRETA:
+                                    r.getJustEscolaBiblica(),       // 1️⃣
+                                    r.getJustQuartaNoite(),         // 2️⃣ (FALTAVA ESTE!)
+                                    r.getJustQuintaNoite(),         // 3️⃣
+                                    r.getJustDomingoManha(),        // 4️⃣
+                                    r.getJustDomingoNoite()         // 5️⃣
                             ))
                             .collect(Collectors.toList());
 
@@ -376,4 +406,43 @@ public class RelatorioService {
         relatorioRepository.deleteById(id);
         rankingCelulaService.limparCache(); // limpa o cache
     }
+    @Transactional
+    public RelatorioNaoRealizadaResponse registrarNaoRealizada(
+            RelatorioNaoRealizadaRequest request,
+            String username) {
+
+        // 1. Busca a célula
+        Celula celula = celulaRepository.findById(request.getCelulaId())
+                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
+
+        // 2. Verifica duplicata
+        boolean jaExiste = relatorioRepository
+                .existsByCelulaIdAndDataReuniao(request.getCelulaId(), request.getDataReuniao());
+        if (jaExiste) {
+            throw new IllegalStateException("Já existe um relatório para esta data.");
+        }
+
+        // 3. Cria o relatório
+        Relatorio relatorio = new Relatorio();
+        relatorio.setCelula(celula);
+        relatorio.setDataReuniao(request.getDataReuniao());
+        relatorio.setRealizada(false);
+        relatorio.setMotivoNaoRealizacao(request.getMotivoNaoRealizacao());
+
+
+        Relatorio salvo = relatorioRepository.save(relatorio);
+
+        // 4. Monta response
+        RelatorioNaoRealizadaResponse response = new RelatorioNaoRealizadaResponse();
+        response.setId(salvo.getId());
+        response.setCelulaId(celula.getId());
+        response.setNomeCelula(celula.getNome());
+        response.setDataReuniao(salvo.getDataReuniao());
+        response.setRealizada(false);
+        response.setMotivoNaoRealizacao(salvo.getMotivoNaoRealizacao());
+        response.setCriadoEm(salvo.getDataCadastro()); // ✅ campo correto da entidade
+
+        return response;
+    }
+
 }

@@ -18,7 +18,60 @@ public class DiscipuladoRelatorio {
     @ManyToOne // Verifique se esta anotação existe
     @JoinColumn(name = "celula_id")
     private Celula celula;
+    @Column(name = "just_escola_biblica")
+    private String justEscolaBiblica;
 
+    @Column(name = "just_quarta_noite")
+    private String justQuartaNoite;
+
+    @Column(name = "just_quinta_noite")
+    private String justQuintaNoite;
+
+    public String getJustEscolaBiblica() {
+        return justEscolaBiblica;
+    }
+
+    public void setJustEscolaBiblica(String justEscolaBiblica) {
+        this.justEscolaBiblica = justEscolaBiblica;
+    }
+
+    public String getJustQuartaNoite() {
+        return justQuartaNoite;
+    }
+
+    public void setJustQuartaNoite(String justQuartaNoite) {
+        this.justQuartaNoite = justQuartaNoite;
+    }
+
+    public String getJustQuintaNoite() {
+        return justQuintaNoite;
+    }
+
+    public void setJustQuintaNoite(String justQuintaNoite) {
+        this.justQuintaNoite = justQuintaNoite;
+    }
+
+    public String getJustDomingoManha() {
+        return justDomingoManha;
+    }
+
+    public void setJustDomingoManha(String justDomingoManha) {
+        this.justDomingoManha = justDomingoManha;
+    }
+
+    public String getJustDomingoNoite() {
+        return justDomingoNoite;
+    }
+
+    public void setJustDomingoNoite(String justDomingoNoite) {
+        this.justDomingoNoite = justDomingoNoite;
+    }
+
+    @Column(name = "just_domingo_manha")
+    private String justDomingoManha;
+
+    @Column(name = "just_domingo_noite")
+    private String justDomingoNoite;
     private LocalDate semanaInicio;
     private LocalDate semanaFim;
 

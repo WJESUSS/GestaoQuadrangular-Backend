@@ -4,6 +4,9 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 
 // DTO Auxiliar para a lista de membros dentro do card
+
+
+// DTO Auxiliar para a lista de membros dentro do card - COM JUSTIFICATIVAS
 public record PresencaMembroDTO(
         Long id,
         String nomeMembro,
@@ -11,5 +14,11 @@ public record PresencaMembroDTO(
         boolean quartaNoite,
         boolean quintaNoite,
         boolean domingoManha,
-        boolean domingoNoite
+        boolean domingoNoite,
+        // ✅ ADICIONADOS OS CAMPOS DE JUSTIFICATIVA:
+        String justEscolaBiblica,
+        String justQuartaNoite,
+        String justQuintaNoite,
+        String justDomingoManha,
+        String justDomingoNoite
 ) {}

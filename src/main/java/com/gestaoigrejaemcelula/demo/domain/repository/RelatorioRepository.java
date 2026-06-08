@@ -62,5 +62,10 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
     List<Relatorio> findByDataBetween(LocalDate inicio, LocalDate fim);
 
 
+    boolean existsByCelulaIdAndDataReuniao(Long celulaId, LocalDate dataReuniao);
 
+    List<Relatorio> findByRealizadaFalseAndDataCadastroBetween(
+            LocalDateTime inicio,
+            LocalDateTime fim
+    );
 }

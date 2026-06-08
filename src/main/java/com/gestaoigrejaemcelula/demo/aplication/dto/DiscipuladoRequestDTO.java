@@ -1,5 +1,4 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
-
 import jakarta.validation.constraints.NotNull;
 
 public record DiscipuladoRequestDTO(
@@ -9,5 +8,10 @@ public record DiscipuladoRequestDTO(
         boolean quartaNoite,
         boolean quintaNoite,
         boolean domingoManha,
-        boolean domingoNoite
+        boolean domingoNoite,
+        String justEscolaBiblica,
+        String justQuartaNoite,
+        String justQuintaNoite,
+        String justDomingoManha,
+        String justDomingoNoite
 ) {}

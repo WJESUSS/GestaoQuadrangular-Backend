@@ -1,9 +1,6 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
-import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioDiscipuladoDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioRequestDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioResponseDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.RelatorioResumoDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.aplication.service.RelatorioPdfService;
 import com.gestaoigrejaemcelula.demo.aplication.service.RelatorioService;
 import jakarta.validation.Valid;
@@ -15,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -144,5 +143,16 @@ public class RelatorioController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+    }
+    @PostMapping("/nao-realizada")
+    @PreAuthorize("hasRole('LIDER')")
+    public ResponseEntity<RelatorioNaoRealizadaResponse> registrarNaoRealizada(
+            @RequestBody @Valid RelatorioNaoRealizadaRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        RelatorioNaoRealizadaResponse response =
+                service.registrarNaoRealizada(request, userDetails.getUsername());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

@@ -66,6 +66,12 @@ public class DiscipuladoRelatorioService {
                                 existente.setQuintaNoite(dto.quintaNoite());
                                 existente.setDomingoManha(dto.domingoManha());
                                 existente.setDomingoNoite(dto.domingoNoite());
+
+                                existente.setJustEscolaBiblica(dto.justEscolaBiblica());
+                                existente.setJustQuartaNoite(dto.justQuartaNoite());
+                                existente.setJustQuintaNoite(dto.justQuintaNoite());
+                                existente.setJustDomingoManha(dto.justDomingoManha());
+                                existente.setJustDomingoNoite(dto.justDomingoNoite());
                                 existente.calcularPresenca();
                                 paraSalvar.add(existente);
                             },
@@ -87,6 +93,11 @@ public class DiscipuladoRelatorioService {
                                 relatorio.setQuintaNoite(dto.quintaNoite());
                                 relatorio.setDomingoManha(dto.domingoManha());
                                 relatorio.setDomingoNoite(dto.domingoNoite());
+                                relatorio.setJustEscolaBiblica(dto.justEscolaBiblica());
+                                relatorio.setJustQuartaNoite(dto.justQuartaNoite());
+                                relatorio.setJustQuintaNoite(dto.justQuintaNoite());
+                                relatorio.setJustDomingoManha(dto.justDomingoManha());
+                                relatorio.setJustDomingoNoite(dto.justDomingoNoite());
                                 relatorio.setLider(lider);
                                 relatorio.setDataEnvio(LocalDateTime.now());
                                 relatorio.calcularPresenca();
@@ -118,7 +129,13 @@ public class DiscipuladoRelatorioService {
                     safe(r.isQuartaNoite()),
                     safe(r.isQuintaNoite()),
                     safe(r.isDomingoManha()),
-                    safe(r.isDomingoNoite())
+                    safe(r.isDomingoNoite()),
+                    // ✅ ADICIONE ESSAS 5 LINHAS:
+                    r.getJustEscolaBiblica(),
+                    r.getJustQuartaNoite(),
+                    r.getJustQuintaNoite(),
+                    r.getJustDomingoManha(),
+                    r.getJustDomingoNoite()
             ));
             Celula cel = r.getCelula();
             Usuario lid = r.getLider();
@@ -160,6 +177,7 @@ public class DiscipuladoRelatorioService {
                         celulaId = lider.getCelula().getId();
                         nomeCelula = lider.getCelula().getNome();
                     }
+// ✅ CÓDIGO CORRIGIDO - Para o método listarTodosOsRelatorios()
 
                     List<PresencaMembroDTO> presencas = listaDoGrupo.stream()
                             .map(r -> new PresencaMembroDTO(
@@ -169,7 +187,13 @@ public class DiscipuladoRelatorioService {
                                     safe(r.isQuartaNoite()),
                                     safe(r.isQuintaNoite()),
                                     safe(r.isDomingoManha()),
-                                    safe(r.isDomingoNoite())
+                                    safe(r.isDomingoNoite()),
+                                    // ✅ ADICIONADAS ESSAS 5 LINHAS:
+                                    r.getJustEscolaBiblica(),
+                                    r.getJustQuartaNoite(),
+                                    r.getJustQuintaNoite(),
+                                    r.getJustDomingoManha(),
+                                    r.getJustDomingoNoite()
                             ))
                             .collect(Collectors.toList());
 
@@ -225,22 +249,33 @@ public class DiscipuladoRelatorioService {
     // ════════════════════════════════════════════════════════════════════════
     //  ATUALIZAR um único registro (endpoint legado PUT /{id})
     // ════════════════════════════════════════════════════════════════════════
+    // ✅ CÓDIGO CORRIGIDO - Método atualizarRelatorio()
+
     @Transactional
     public RelatorioDiscipuladoDTO atualizarRelatorio(Long id, DiscipuladoRequestDTO dto) {
         DiscipuladoRelatorio relatorio = repository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
                         "Relatório não encontrado com ID: " + id));
 
+        // Presença
         relatorio.setEscolaBiblica(dto.escolaBiblica());
         relatorio.setQuartaNoite(dto.quartaNoite());
         relatorio.setQuintaNoite(dto.quintaNoite());
         relatorio.setDomingoManha(dto.domingoManha());
         relatorio.setDomingoNoite(dto.domingoNoite());
+
+        // ✅ ADICIONADAS: Justificativas
+        relatorio.setJustEscolaBiblica(dto.justEscolaBiblica());
+        relatorio.setJustQuartaNoite(dto.justQuartaNoite());
+        relatorio.setJustQuintaNoite(dto.justQuintaNoite());
+        relatorio.setJustDomingoManha(dto.justDomingoManha());
+        relatorio.setJustDomingoNoite(dto.justDomingoNoite());
+
         relatorio.calcularPresenca();
         repository.save(relatorio);
 
         Celula celula = relatorio.getCelula();
-        Usuario lider  = relatorio.getLider();
+        Usuario lider = relatorio.getLider();
 
         return new RelatorioDiscipuladoDTO(
                 relatorio.getId(),
@@ -256,11 +291,16 @@ public class DiscipuladoRelatorioService {
                         safe(relatorio.isQuartaNoite()),
                         safe(relatorio.isQuintaNoite()),
                         safe(relatorio.isDomingoManha()),
-                        safe(relatorio.isDomingoNoite())
+                        safe(relatorio.isDomingoNoite()),
+                        // ✅ ADICIONADAS: Justificativas no retorno
+                        relatorio.getJustEscolaBiblica(),
+                        relatorio.getJustQuartaNoite(),
+                        relatorio.getJustQuintaNoite(),
+                        relatorio.getJustDomingoManha(),
+                        relatorio.getJustDomingoNoite()
                 ))
         );
     }
-
     // ════════════════════════════════════════════════════════════════════════
     //  HISTÓRICO — lista resumida de semanas da célula do líder logado
     //
@@ -355,7 +395,12 @@ public class DiscipuladoRelatorioService {
                         safe(r.isQuartaNoite()),
                         safe(r.isQuintaNoite()),
                         safe(r.isDomingoManha()),
-                        safe(r.isDomingoNoite())
+                        safe(r.isDomingoNoite()),
+                        r.getJustEscolaBiblica(),
+                        r.getJustQuartaNoite(),
+                        r.getJustQuintaNoite(),
+                        r.getJustDomingoManha(),
+                        r.getJustDomingoNoite()
                 ))
                 .collect(Collectors.toList());
 
