@@ -8,7 +8,7 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.Tipo;
 import com.gestaoigrejaemcelula.demo.domain.repository.HistoricoStatusMembroRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
-import com.gestaoigrejaemcelula.demo.domain.repository.VisitanteRepository; // Import necessário
+import com.gestaoigrejaemcelula.demo.domain.repository.VisitanteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,23 +22,22 @@ public class MembroService {
 
     private final MembroRepository repository;
     private final HistoricoStatusMembroRepository historicoRepository;
-    private  final  VisitanteRepository visitanteRepository;
+    private final VisitanteRepository visitanteRepository;
     private final AuditoriaHelper auditoria;
 
     public MembroService(MembroRepository repository,
-                         HistoricoStatusMembroRepository historicoRepository, VisitanteRepository visitanteRepository, AuditoriaHelper auditoria) {
+                         HistoricoStatusMembroRepository historicoRepository,
+                         VisitanteRepository visitanteRepository,
+                         AuditoriaHelper auditoria) {
         this.repository = repository;
         this.historicoRepository = historicoRepository;
         this.visitanteRepository = visitanteRepository;
         this.auditoria = auditoria;
     }
 
-
-
-    /**
-     * MÉTODO UNIFICADO: Busca Membros e Visitantes da mesma célula
-     * Isso resolve o erro de duplicidade e traz todos para a chamada.
-     */
+    // -------------------------------------------------------
+    // LISTAGEM POR CÉLULA
+    // -------------------------------------------------------
 
     @Transactional(readOnly = true)
     public List<MembroCelulaDTO> listarMembrosPorCelula(Long celulaId) {
@@ -55,22 +54,23 @@ public class MembroService {
                 }).toList();
     }
 
-    // --- MÉTODOS DE CRIAÇÃO E ATUALIZAÇÃO ---
+    // -------------------------------------------------------
+    // CRIAÇÃO E ATUALIZAÇÃO
+    // -------------------------------------------------------
 
     public MembroResponseDTO criar(MembroRequestDTO dto) {
         Membro membro = new Membro();
         copiarDtoParaEntidade(dto, membro);
         Membro salvo = repository.save(membro);
-
         auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "CREATE", null);
-
         return new MembroResponseDTO(salvo);
     }
+
     @Transactional
     public MembroResponseDTO atualizar(Long id, MembroRequestDTO dto) {
         Membro membro = buscarEntidadePorId(id);
 
-        // Monta diff ANTES de alterar
+        // Diff dos campos principais para auditoria
         Map<String, Object> diff = new LinkedHashMap<>();
         if (!Objects.equals(membro.getNome(), dto.getNome()))
             diff.put("nome", Map.of("de", str(membro.getNome()), "para", str(dto.getNome())));
@@ -94,7 +94,9 @@ public class MembroService {
         return new MembroResponseDTO(salvo);
     }
 
-    // --- MÉTODOS DE LISTAGEM ---
+    // -------------------------------------------------------
+    // LISTAGENS
+    // -------------------------------------------------------
 
     @Transactional(readOnly = true)
     public List<MembroResumoDTO> listarSemCelula() {
@@ -110,6 +112,7 @@ public class MembroService {
                 })
                 .collect(Collectors.toList());
     }
+
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> listarTodos() {
         return repository.findAll().stream().map(MembroResponseDTO::new).toList();
@@ -131,36 +134,68 @@ public class MembroService {
         auditoria.registrar("MEMBRO", id, m.getNome(), "DELETE", null);
     }
 
-    // --- MÉTODOS AUXILIARES ---
-
-// --- MÉTODOS AUXILIARES ---
+    // -------------------------------------------------------
+    // MAPEAMENTO DTO → ENTIDADE
+    // -------------------------------------------------------
 
     private void copiarDtoParaEntidade(MembroRequestDTO dto, Membro membro) {
 
+        // Dados básicos
         membro.setNome(dto.getNome());
         membro.setTelefone(dto.getTelefone());
         membro.setEmail(dto.getEmail());
         membro.setStatus(dto.getStatus());
-
-        membro.setEndereco(dto.getEndereco());
+        membro.setEstadoCivil(dto.getEstadoCivil());
         membro.setDataNascimento(dto.getDataNascimento());
         membro.setDataConversao(dto.getDataConversao());
         membro.setDataBatismo(dto.getDataBatismo());
 
-        // CPF opcional
-        if(dto.getCpf() != null && !dto.getCpf().isBlank()){
+        if (dto.getCpf() != null && !dto.getCpf().isBlank()) {
             membro.setCpf(dto.getCpf());
         }
+        if (dto.getRg() != null && !dto.getRg().isBlank()) {
+            membro.setRg(dto.getRg());
+        }
 
-        membro.setEstadoCivil(dto.getEstadoCivil());
+        // Filiação e naturalidade
+        membro.setNomeMae(dto.getNomeMae());
+        membro.setNomePai(dto.getNomePai());
+        membro.setNomeCônjuge(dto.getNomeCônjuge());
+        membro.setNaturalidade(dto.getNaturalidade());
+
+        // Escolaridade e profissão
+        membro.setGrauEscolaridade(dto.getGrauEscolaridade());
+        membro.setCurso(dto.getCurso());
+        membro.setProfissao(dto.getProfissao());
+
+        // Endereço detalhado
+        membro.setEndereco(dto.getEndereco());
+        membro.setNumero(dto.getNumero());
+        membro.setBairro(dto.getBairro());
+        membro.setCidade(dto.getCidade());
+        membro.setCep(dto.getCep());
+
+        // Dados espirituais
+        membro.setPertenceOutraReligiao(dto.getPertenceOutraReligiao());
+        membro.setQualReligiao(dto.getQualReligiao());
+        membro.setBatizadoNasAguas(dto.getBatizadoNasAguas());
+        membro.setDataBatizadoNasAguas(dto.getDataBatizadoNasAguas());
+        membro.setIgrejaBatizadoNasAguas(dto.getIgrejaBatizadoNasAguas());
+        membro.setBatizadoEspiritoSanto(dto.getBatizadoEspiritoSanto());
+
+        // Arrolamento
+        membro.setTipoArrolamento(dto.getTipoArrolamento());
+        membro.setJurisdicaoArrolamento(dto.getJurisdicaoArrolamento());
+        membro.setArroladoPor(dto.getArroladoPor());
+
+        // Observações
+        membro.setObservacoes(dto.getObservacoes());
     }
 
+    // -------------------------------------------------------
+    // STATUS
+    // -------------------------------------------------------
 
-    private Membro buscarEntidadePorId(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
-    }
-    // Adicione este método dentro da classe MembroService
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> listarPorStatus(StatusMembro status) {
         return repository.findByStatus(status)
@@ -168,18 +203,6 @@ public class MembroService {
                 .map(MembroResponseDTO::new)
                 .collect(Collectors.toList());
     }
-
-    @Transactional(readOnly = true)
-    public List<MembroResumoDTO> listarTodosAtivos() {
-        return repository.listarAtivosOrdenados();
-    }
-    public List<MembroSelectDTO> listarParaSelect() {
-        return repository.listarParaSelect();
-    }
-
-
-
-
 
     @Transactional
     public void alterarStatus(Long membroId, StatusMembro novoStatus, String observacao) {
@@ -197,41 +220,28 @@ public class MembroService {
         auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
                 Map.of("status", Map.of("de", str(statusAnterior), "para", str(novoStatus))));
     }
-    private String str(Object o) { return o != null ? o.toString() : ""; }
 
-    private void removerVinculos(Membro membro) {
+    // -------------------------------------------------------
+    // AUXILIARES
+    // -------------------------------------------------------
 
-        // Remove da célula
-        membro.setCelula(null);
-
-        // Remove departamentos
-
+    @Transactional(readOnly = true)
+    public List<MembroResumoDTO> listarTodosAtivos() {
+        return repository.listarAtivosOrdenados();
     }
 
-    private void registrarHistorico(Membro membro,
-                                    StatusMembro anterior,
-                                    StatusMembro novo,
-                                    String observacao) {
-
-        HistoricoStatusMembro historico = new HistoricoStatusMembro();
-        historico.setMembro(membro);
-        historico.setStatusAnterior(anterior);
-        historico.setStatusNovo(novo);
-        historico.setDataAlteracao(LocalDateTime.now());
-        historico.setObservacao(observacao);
-
-        historicoRepository.save(historico);
+    public List<MembroSelectDTO> listarParaSelect() {
+        return repository.listarParaSelect();
     }
+
     @Transactional(readOnly = true)
     public List<AlertaDTO> obterAlertasCriticos() {
-        // Define o período de análise (últimos 21 dias para capturar até 3 domingos)
         LocalDate dataLimite = LocalDate.now().minusDays(21);
-
-        // Usamos 'repository' que é o seu MembroRepository injetado no construtor
         return repository.findAlertasMembros(dataLimite).stream()
                 .filter(alerta -> alerta.getTotalFaltas() != null && alerta.getTotalFaltas() >= 2)
                 .collect(Collectors.toList());
     }
+
     @Transactional(readOnly = true)
     public List<CelulaResponseDTO.MembroDTO> buscarAniversariantesHoje(Long celulaId) {
         int dia = LocalDate.now().getDayOfMonth();
@@ -250,4 +260,26 @@ public class MembroService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    private Membro buscarEntidadePorId(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+    }
+
+    private void removerVinculos(Membro membro) {
+        membro.setCelula(null);
+    }
+
+    private void registrarHistorico(Membro membro, StatusMembro anterior,
+                                    StatusMembro novo, String observacao) {
+        HistoricoStatusMembro historico = new HistoricoStatusMembro();
+        historico.setMembro(membro);
+        historico.setStatusAnterior(anterior);
+        historico.setStatusNovo(novo);
+        historico.setDataAlteracao(LocalDateTime.now());
+        historico.setObservacao(observacao);
+        historicoRepository.save(historico);
+    }
+
+    private String str(Object o) { return o != null ? o.toString() : ""; }
 }
