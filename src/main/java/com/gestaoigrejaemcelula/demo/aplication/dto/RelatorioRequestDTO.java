@@ -3,7 +3,6 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -16,4 +15,5 @@ public class RelatorioRequestDTO {
     private List<Long> membrosPresentesIds;
     private List<VisitantePresencaDTO> visitantesPresentes;
     private Integer quantidadeVisitantes = 0;
+    private List<MembroAusenteDTO> membrosAusentes;
 }

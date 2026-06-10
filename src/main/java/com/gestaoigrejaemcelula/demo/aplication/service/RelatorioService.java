@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.domain.entity.*;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
+import com.gestaoigrejaemcelula.demo.domain.enums.JustificativaFalta;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
 import com.gestaoigrejaemcelula.demo.web.handler.BusinessException;
 import com.gestaoigrejaemcelula.demo.web.handler.ResourceNotFoundException;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
 public class RelatorioService {
 
     @Autowired
+    private PresencaRepository presencaRepository;
+    @Autowired
     private RelatorioRepository relatorioRepository;
     @Autowired
     private CelulaRepository celulaRepository;
@@ -39,8 +42,9 @@ public class RelatorioService {
     private UsuarioService usuarioService;
     @Autowired
     private DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
+    @Autowired
+    private RankingCelulaService rankingCelulaService;
 
-    // ✅ Helper para evitar NullPointerException em campos Boolean do banco
     private boolean safe(Boolean value) {
         return Boolean.TRUE.equals(value);
     }
@@ -101,6 +105,9 @@ public class RelatorioService {
         }
 
         relatorioRepository.save(relatorio);
+
+        // Salvar membros ausentes com justificativa
+        salvarMembrosAusentes(dto, relatorio);
     }
 
     /* =========================
@@ -144,16 +151,14 @@ public class RelatorioService {
 
         Celula celula;
 
-        // Tenta primeiro como líder
         Optional<Celula> celulaComoLider = celulaRepository.findByLider_Id(usuario.getId());
 
         if (celulaComoLider.isPresent()) {
             celula = celulaComoLider.get();
         } else if (usuario.getCelula() != null) {
-            // Secretário ou membro com célula vinculada diretamente
             celula = usuario.getCelula();
         } else {
-            return List.of(); // sem célula, retorna vazio sem lançar exceção
+            return List.of();
         }
 
         return relatorioRepository.findByCelulaIdOrderByDataReuniaoDesc(celula.getId())
@@ -169,21 +174,18 @@ public class RelatorioService {
     @Transactional(readOnly = true)
     public RelatorioResumoDTO buscarResumoSemana(LocalDate inicio, LocalDate fim) {
 
-        // Realizadas: filtra por dataReuniao no período
         List<Relatorio> realizadas = relatorioRepository
                 .findByDataReuniaoBetween(inicio, fim)
                 .stream()
                 .filter(r -> r.getRealizada() == null || r.getRealizada())
                 .toList();
 
-        // Não realizadas: criadas no período (dataCadastro), independente da dataReuniao
         List<Relatorio> naoRealizadas = relatorioRepository
                 .findByRealizadaFalseAndDataCadastroBetween(
                         inicio.atStartOfDay(),
                         fim.plusDays(1).atStartOfDay()
                 );
 
-        // Junta sem duplicatas
         List<Relatorio> todos = new java.util.ArrayList<>(realizadas);
         naoRealizadas.forEach(nr -> {
             if (todos.stream().noneMatch(r -> r.getId().equals(nr.getId()))) {
@@ -191,7 +193,6 @@ public class RelatorioService {
             }
         });
 
-        // KPIs só das realizadas
         int totalMembros    = realizadas.stream().mapToInt(Relatorio::getQuantidadeMembros).sum();
         int totalVisitantes = realizadas.stream().mapToInt(Relatorio::getTotalVisitantes).sum();
         int totalCelulas    = (int) realizadas.stream()
@@ -208,7 +209,7 @@ public class RelatorioService {
     }
 
     /* =========================
-       CONVERTER DTO FINAL
+       CONVERTER DTO
        ========================= */
 
     private RelatorioResponseDTO converterParaDTO(Relatorio relatorio) {
@@ -246,28 +247,39 @@ public class RelatorioService {
             );
         }
 
+        // Buscar membros ausentes com justificativa
+        if (relatorio.getId() != null) {
+            List<Presenca> ausencias = presencaRepository.findByRelatorioIdAndPresenteFalse(relatorio.getId());
+            if (!ausencias.isEmpty()) {
+                dto.setMembrosAusentes(
+                        ausencias.stream()
+                                .map(p -> new PessoaPresencaDTO(
+                                        p.getMembro().getId(),
+                                        p.getMembro().getNome(),
+                                        DecisaoEspiritual.NENHUMA,
+                                        p.getJustificativaFalta()
+                                ))
+                                .toList()
+                );
+            }
+        }
+
         int visitantesAvulsos = relatorio.getQuantidadeVisitantes() != null
                 ? relatorio.getQuantidadeVisitantes() : 0;
         dto.setQuantidadeVisitantes(visitantesAvulsos);
         dto.setTotalPresentes(relatorio.getTotalPresentes());
-
-        // ✅ campos para célula não realizada
-        dto.setRealizada(relatorio.getRealizada() == null || relatorio.getRealizada());
-        dto.setMotivoNaoRealizacao(
-                relatorio.getMotivoNaoRealizacao() != null
-                        ? relatorio.getMotivoNaoRealizacao().name()
-                        : null
-        );
-
+        dto.setRealizada(relatorio.getRealizada());
+        if (relatorio.getMotivoNaoRealizacao() != null) {
+            dto.setMotivoNaoRealizacao(relatorio.getMotivoNaoRealizacao().name());
+        }
         return dto;
     }
 
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> buscarPorSemana(String data) {
         LocalDate dataBase = LocalDate.parse(data);
-        // ✅ domingo a sábado, igual ao frontend
         LocalDate inicioSemana = dataBase.with(DayOfWeek.SUNDAY);
-        LocalDate fimSemana    = inicioSemana.plusDays(6); // sábado
+        LocalDate fimSemana    = inicioSemana.plusDays(6);
 
         return relatorioRepository
                 .findByDataReuniaoBetween(inicioSemana, fimSemana)
@@ -309,17 +321,16 @@ public class RelatorioService {
                             .map(r -> new PresencaMembroDTO(
                                     r.getId(),
                                     r.getMembro().getNome(),
-                                    safe(r.isEscolaBiblica()),      // ✅ seguro contra null
-                                    safe(r.isQuartaNoite()),        // ✅ seguro contra null
-                                    safe(r.isQuintaNoite()),        // ✅ seguro contra null
-                                    safe(r.isDomingoManha()),       // ✅ seguro contra null
-                                    safe(r.isDomingoNoite()),       // ✅ seguro contra null
-                                    // ✅ JUSTIFICATIVAS NA ORDEM CORRETA:
-                                    r.getJustEscolaBiblica(),       // 1️⃣
-                                    r.getJustQuartaNoite(),         // 2️⃣ (FALTAVA ESTE!)
-                                    r.getJustQuintaNoite(),         // 3️⃣
-                                    r.getJustDomingoManha(),        // 4️⃣
-                                    r.getJustDomingoNoite()         // 5️⃣
+                                    safe(r.isEscolaBiblica()),
+                                    safe(r.isQuartaNoite()),
+                                    safe(r.isQuintaNoite()),
+                                    safe(r.isDomingoManha()),
+                                    safe(r.isDomingoNoite()),
+                                    r.getJustEscolaBiblica(),
+                                    r.getJustQuartaNoite(),
+                                    r.getJustQuintaNoite(),
+                                    r.getJustDomingoManha(),
+                                    r.getJustDomingoNoite()
                             ))
                             .collect(Collectors.toList());
 
@@ -335,6 +346,7 @@ public class RelatorioService {
                 })
                 .collect(Collectors.toList());
     }
+
     @Transactional
     public void atualizarRelatorio(Long id, RelatorioRequestDTO dto) throws AccessDeniedException {
         Usuario lider = usuarioService.getUsuarioLogado();
@@ -365,7 +377,6 @@ public class RelatorioService {
                     .map(v -> v.getId()).toList();
             List<Visitante> visitantes = visitanteRepository.findAllById(ids);
 
-            // ✅ CORREÇÃO: atualiza a decisão espiritual de cada visitante
             for (Visitante visitante : visitantes) {
                 dto.getVisitantesPresentes().stream()
                         .filter(v -> v.getId().equals(visitante.getId()))
@@ -384,55 +395,52 @@ public class RelatorioService {
         }
 
         relatorioRepository.save(relatorio);
+
+        // Atualizar ausentes: remove os anteriores e salva os novos
+        presencaRepository.deleteAll(presencaRepository.findByRelatorioId(relatorio.getId()));
+        salvarMembrosAusentes(dto, relatorio);
     }
+
     @Transactional(readOnly = true)
     public RelatorioResponseDTO buscarPorId(Long id) {
         Relatorio relatorio = relatorioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Relatório não encontrado"));
         return converterParaDTO(relatorio);
     }
-    @Autowired
-    private RankingCelulaService rankingCelulaService;
 
-    // No método de salvar
     public Relatorio salvar(Relatorio relatorio) {
         Relatorio salvo = relatorioRepository.save(relatorio);
-        rankingCelulaService.limparCache(); // limpa o cache
+        rankingCelulaService.limparCache();
         return salvo;
     }
 
-    // No método de deletar
     public void deletar(Long id) {
         relatorioRepository.deleteById(id);
-        rankingCelulaService.limparCache(); // limpa o cache
+        rankingCelulaService.limparCache();
     }
+
     @Transactional
     public RelatorioNaoRealizadaResponse registrarNaoRealizada(
             RelatorioNaoRealizadaRequest request,
             String username) {
 
-        // 1. Busca a célula
         Celula celula = celulaRepository.findById(request.getCelulaId())
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
 
-        // 2. Verifica duplicata
         boolean jaExiste = relatorioRepository
                 .existsByCelulaIdAndDataReuniao(request.getCelulaId(), request.getDataReuniao());
         if (jaExiste) {
             throw new IllegalStateException("Já existe um relatório para esta data.");
         }
 
-        // 3. Cria o relatório
         Relatorio relatorio = new Relatorio();
         relatorio.setCelula(celula);
         relatorio.setDataReuniao(request.getDataReuniao());
         relatorio.setRealizada(false);
         relatorio.setMotivoNaoRealizacao(request.getMotivoNaoRealizacao());
 
-
         Relatorio salvo = relatorioRepository.save(relatorio);
 
-        // 4. Monta response
         RelatorioNaoRealizadaResponse response = new RelatorioNaoRealizadaResponse();
         response.setId(salvo.getId());
         response.setCelulaId(celula.getId());
@@ -440,9 +448,34 @@ public class RelatorioService {
         response.setDataReuniao(salvo.getDataReuniao());
         response.setRealizada(false);
         response.setMotivoNaoRealizacao(salvo.getMotivoNaoRealizacao());
-        response.setCriadoEm(salvo.getDataCadastro()); // ✅ campo correto da entidade
+        response.setCriadoEm(salvo.getDataCadastro());
 
         return response;
     }
 
+    /* =========================
+       MÉTODO AUXILIAR - AUSENTES
+       ========================= */
+
+    private void salvarMembrosAusentes(RelatorioRequestDTO dto, Relatorio relatorio) {
+        if (dto.getMembrosAusentes() == null || dto.getMembrosAusentes().isEmpty()) return;
+
+        List<Presenca> ausencias = dto.getMembrosAusentes().stream()
+                .map(ausenteDTO -> {
+                    Membro membro = membroRepository.findById(ausenteDTO.getMembroId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Membro não encontrado: " + ausenteDTO.getMembroId()));
+                    Presenca p = new Presenca();
+                    p.setMembro(membro);
+                    p.setData(relatorio.getDataReuniao());
+                    p.setPresente(false);
+                    p.setTipoEvento("CELULA");
+                    p.setRelatorio(relatorio);
+                    p.setJustificativaFalta(ausenteDTO.getJustificativa());
+                    return p;
+                })
+                .toList();
+
+        presencaRepository.saveAll(ausencias);
+    }
 }

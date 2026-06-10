@@ -2,13 +2,11 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
 @Setter
-
 public class RelatorioResponseDTO {
     private Long id;
     private Long celulaId;
@@ -19,13 +17,13 @@ public class RelatorioResponseDTO {
 
     private List<PessoaPresencaDTO> membrosPresentes;
     private List<PessoaPresencaDTO> visitantesPresentes;
+    private List<PessoaPresencaDTO> membrosAusentes;
 
     private Integer quantidadeVisitantes;
     private Integer totalMembros;
     private Integer totalVisitantes;
     private Integer totalPresentes;
 
-    // ✅ ADICIONAR:
     private Boolean realizada;
     private String motivoNaoRealizacao;
 }

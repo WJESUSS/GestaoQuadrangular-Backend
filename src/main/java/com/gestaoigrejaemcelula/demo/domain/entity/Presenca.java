@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.domain.entity;
 
+import com.gestaoigrejaemcelula.demo.domain.enums.JustificativaFalta;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,9 +22,15 @@ public class Presenca {
 
     private LocalDate data;
 
-    // Se true = presente, se false = falta
     private boolean presente;
     private String status;
-    // Opcional: para saber se foi Culto de Domingo ou Célula
     private String tipoEvento;
+
+    @ManyToOne
+    @JoinColumn(name = "relatorio_id")
+    private Relatorio relatorio;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "justificativa_falta")
+    private JustificativaFalta justificativaFalta;
 }
