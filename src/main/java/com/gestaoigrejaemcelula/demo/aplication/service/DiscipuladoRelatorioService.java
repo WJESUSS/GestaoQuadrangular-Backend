@@ -393,6 +393,7 @@ public class DiscipuladoRelatorioService {
                         celula.getId(),
                         safe(r.isEscolaBiblica()),
                         safe(r.isQuartaNoite()),
+                        r.getMembro().getNome(),
                         safe(r.isQuintaNoite()),
                         safe(r.isDomingoManha()),
                         safe(r.isDomingoNoite()),

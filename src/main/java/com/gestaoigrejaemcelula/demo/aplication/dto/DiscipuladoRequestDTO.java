@@ -6,6 +6,7 @@ public record DiscipuladoRequestDTO(
         @NotNull Long celulaId,
         boolean escolaBiblica,
         boolean quartaNoite,
+        String nomeMembro,
         boolean quintaNoite,
         boolean domingoManha,
         boolean domingoNoite,
