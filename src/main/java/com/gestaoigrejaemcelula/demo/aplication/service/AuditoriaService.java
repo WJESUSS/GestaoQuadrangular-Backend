@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Map;
 
 @Service
@@ -95,7 +96,10 @@ public class AuditoriaService {
                 .usuarioEmail(r.getUsuarioEmail())
                 .aprovadorNome(r.getAprovadorNome())
                 .aprovadorEmail(r.getAprovadorEmail())
-                .dataHora(r.getDataHora().toLocalDateTime())
+                // ✅ Converte explicitamente para o fuso de São Paulo
+                .dataHora(r.getDataHora()
+                        .withOffsetSameInstant(ZoneOffset.of("-03:00"))
+                        .toLocalDateTime())
                 .ipOrigem(r.getIpOrigem())
                 .build();
     }
