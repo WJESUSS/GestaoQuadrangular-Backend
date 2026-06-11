@@ -17,10 +17,7 @@ import java.util.TimeZone;
 public class GestaoquadrangularApplication {
 
 	public static void main(String[] args) {
-		String profile = System.getenv("SPRING_PROFILES_ACTIVE");
-		if ("prod".equals(profile)) {
-			TimeZone.setDefault(TimeZone.getTimeZone("America/Sao_Paulo"));
-		}
+		TimeZone.setDefault(TimeZone.getTimeZone("America/Sao_Paulo"));
 		SpringApplication.run(GestaoquadrangularApplication.class, args);
 	}
 
