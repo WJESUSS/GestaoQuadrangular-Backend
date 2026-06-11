@@ -65,39 +65,54 @@ public class MembroService {
         auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "CREATE", null);
         return new MembroResponseDTO(salvo);
     }
-
+    private void addDiff(Map<String, Object> diff, String campo, Object antes, Object depois) {
+        if (!Objects.equals(antes, depois))
+            diff.put(campo, Map.of("de", str(antes), "para", str(depois)));
+    }
     @Transactional
     public MembroResponseDTO atualizar(Long id, MembroRequestDTO dto) {
-        Membro membro = buscarEntidadePorId(id);
-
-        // Diff dos campos principais para auditoria
+        Membro m = buscarEntidadePorId(id);
         Map<String, Object> diff = new LinkedHashMap<>();
-        if (!Objects.equals(membro.getNome(), dto.getNome()))
-            diff.put("nome", Map.of("de", str(membro.getNome()), "para", str(dto.getNome())));
-        if (!Objects.equals(membro.getTelefone(), dto.getTelefone()))
-            diff.put("telefone", Map.of("de", str(membro.getTelefone()), "para", str(dto.getTelefone())));
-        if (!Objects.equals(membro.getEmail(), dto.getEmail()))
-            diff.put("email", Map.of("de", str(membro.getEmail()), "para", str(dto.getEmail())));
-        if (!Objects.equals(membro.getStatus(), dto.getStatus()))
-            diff.put("status", Map.of("de", str(membro.getStatus()), "para", str(dto.getStatus())));
-        if (!Objects.equals(membro.getEndereco(), dto.getEndereco()))
-            diff.put("endereco", Map.of("de", str(membro.getEndereco()), "para", str(dto.getEndereco())));
-        if (!Objects.equals(membro.getEstadoCivil(), dto.getEstadoCivil()))
-            diff.put("estadoCivil", Map.of("de", str(membro.getEstadoCivil()), "para", str(dto.getEstadoCivil())));
 
-        copiarDtoParaEntidade(dto, membro);
-        Membro salvo = repository.save(membro);
+        // Dados básicos
+        addDiff(diff, "nome",                  m.getNome(),                  dto.getNome());
+        addDiff(diff, "telefone",              m.getTelefone(),              dto.getTelefone());
+        addDiff(diff, "email",                 m.getEmail(),                 dto.getEmail());
+        addDiff(diff, "status",                m.getStatus(),                dto.getStatus());
+        addDiff(diff, "estadoCivil",           m.getEstadoCivil(),           dto.getEstadoCivil());
+
+        // Filiação
+        addDiff(diff, "nomeConjuge",           m.getNomeConjuge(),           dto.getNomeConjuge());
+        addDiff(diff, "nomeMae",               m.getNomeMae(),               dto.getNomeMae());
+        addDiff(diff, "nomePai",               m.getNomePai(),               dto.getNomePai());
+
+        // Endereço
+        addDiff(diff, "endereco",              m.getEndereco(),              dto.getEndereco());
+        addDiff(diff, "bairro",                m.getBairro(),                dto.getBairro());
+        addDiff(diff, "cidade",                m.getCidade(),                dto.getCidade());
+        addDiff(diff, "cep",                   m.getCep(),                   dto.getCep());
+
+        // Profissão / Escolaridade
+        addDiff(diff, "profissao",             m.getProfissao(),             dto.getProfissao());
+        addDiff(diff, "grauEscolaridade",      m.getGrauEscolaridade(),      dto.getGrauEscolaridade());
+
+        // Dados espirituais
+        addDiff(diff, "batizadoNasAguas",      m.getBatizadoNasAguas(),      dto.getBatizadoNasAguas());
+        addDiff(diff, "batizadoEspiritoSanto", m.getBatizadoEspiritoSanto(), dto.getBatizadoEspiritoSanto());
+
+        // Datas
+        addDiff(diff, "dataNascimento",        m.getDataNascimento(),        dto.getDataNascimento());
+        addDiff(diff, "dataConversao",         m.getDataConversao(),         dto.getDataConversao());
+        addDiff(diff, "dataBatismo",           m.getDataBatismo(),           dto.getDataBatismo());
+
+        copiarDtoParaEntidade(dto, m);
+        Membro salvo = repository.save(m);
 
         if (!diff.isEmpty())
             auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "UPDATE", diff);
 
         return new MembroResponseDTO(salvo);
     }
-
-    // -------------------------------------------------------
-    // LISTAGENS
-    // -------------------------------------------------------
-
     @Transactional(readOnly = true)
     public List<MembroResumoDTO> listarSemCelula() {
         return repository.findByCelulaIsNull()
