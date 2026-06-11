@@ -38,7 +38,7 @@ public record MembroResponseDTO(
         // -------------------------------------------------------
         String nomeMae,
         String nomePai,
-        String nomeCônjuge,
+        String nomeConjuge,
         String naturalidade,
 
         // -------------------------------------------------------
@@ -56,6 +56,7 @@ public record MembroResponseDTO(
         String bairro,
         String cidade,
         String cep,
+        String uf,  // ✅ adicionado
 
         // -------------------------------------------------------
         // DADOS ESPIRITUAIS
@@ -80,7 +81,6 @@ public record MembroResponseDTO(
         String observacoes
 
 ) {
-    /** Construtor de conveniência a partir da entidade */
     public MembroResponseDTO(Membro m) {
         this(
                 m.getId(),
@@ -95,40 +95,34 @@ public record MembroResponseDTO(
                 m.getDataConversao(),
                 m.getDataBatismo(),
                 m.getDataCadastro(),
-
                 m.getCelula() != null ? m.getCelula().getId() : null,
                 m.getCelula() != null ? m.getCelula().getNome() : "Sem célula",
                 m.getCelula() != null && m.getCelula().getLider() != null
                         ? m.getCelula().getLider().getId() : null,
                 m.getCelula() != null && m.getCelula().getLider() != null
                         ? m.getCelula().getLider().getNome() : "Sem líder",
-
                 m.getNomeMae(),
                 m.getNomePai(),
-                m.getNomeCônjuge(),
+                m.getNomeConjuge(),
                 m.getNaturalidade(),
-
                 m.getGrauEscolaridade(),
                 m.getCurso(),
                 m.getProfissao(),
-
                 m.getEndereco(),
                 m.getNumero(),
                 m.getBairro(),
                 m.getCidade(),
                 m.getCep(),
-
+                m.getUf(),
                 m.getPertenceOutraReligiao(),
                 m.getQualReligiao(),
                 m.getBatizadoNasAguas(),
                 m.getDataBatizadoNasAguas(),
                 m.getIgrejaBatizadoNasAguas(),
                 m.getBatizadoEspiritoSanto(),
-
                 m.getTipoArrolamento(),
                 m.getJurisdicaoArrolamento(),
                 m.getArroladoPor(),
-
                 m.getObservacoes()
         );
     }

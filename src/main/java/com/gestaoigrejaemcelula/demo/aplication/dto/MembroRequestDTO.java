@@ -39,7 +39,7 @@ public class MembroRequestDTO {
 
     private String nomeMae;
     private String nomePai;
-    private String nomeCônjuge;
+    private String nomeConjuge;
     private String naturalidade;
 
     // -------------------------------------------------------
@@ -59,6 +59,7 @@ public class MembroRequestDTO {
     private String bairro;
     private String cidade;
     private String cep;
+    private String uf;
 
     // -------------------------------------------------------
     // DADOS ESPIRITUAIS
@@ -127,8 +128,8 @@ public class MembroRequestDTO {
     public String getNomePai() { return nomePai; }
     public void setNomePai(String nomePai) { this.nomePai = nomePai; }
 
-    public String getNomeCônjuge() { return nomeCônjuge; }
-    public void setNomeCônjuge(String nomeCônjuge) { this.nomeCônjuge = nomeCônjuge; }
+    public String getNomeConjuge() { return nomeConjuge; }
+    public void setNomeConjuge(String nomeConjuge) { this.nomeConjuge = nomeConjuge; }
 
     public String getNaturalidade() { return naturalidade; }
     public void setNaturalidade(String naturalidade) { this.naturalidade = naturalidade; }
@@ -156,6 +157,9 @@ public class MembroRequestDTO {
 
     public String getCep() { return cep; }
     public void setCep(String cep) { this.cep = cep; }
+
+    public String getUf() { return uf; }
+    public void setUf(String uf) { this.uf = uf; }
 
     public Boolean getPertenceOutraReligiao() { return pertenceOutraReligiao; }
     public void setPertenceOutraReligiao(Boolean pertenceOutraReligiao) { this.pertenceOutraReligiao = pertenceOutraReligiao; }

@@ -160,7 +160,7 @@ public class MembroService {
         // Filiação e naturalidade
         membro.setNomeMae(dto.getNomeMae());
         membro.setNomePai(dto.getNomePai());
-        membro.setNomeCônjuge(dto.getNomeCônjuge());
+        membro.setNomeConjuge(dto.getNomeConjuge());
         membro.setNaturalidade(dto.getNaturalidade());
 
         // Escolaridade e profissão
@@ -174,6 +174,7 @@ public class MembroService {
         membro.setBairro(dto.getBairro());
         membro.setCidade(dto.getCidade());
         membro.setCep(dto.getCep());
+        membro.setUf(dto.getUf());
 
         // Dados espirituais
         membro.setPertenceOutraReligiao(dto.getPertenceOutraReligiao());

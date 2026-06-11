@@ -21,7 +21,7 @@ public class Membro {
     private Long id;
 
     // -------------------------------------------------------
-    // DADOS BÁSICOS (já existiam)
+    // DADOS BÁSICOS
     // -------------------------------------------------------
 
     @Column(nullable = false)
@@ -60,7 +60,7 @@ public class Membro {
 
     private String nomeMae;
     private String nomePai;
-    private String nomeCônjuge;
+    private String nomeConjuge; // ✅ sem acento
     private String naturalidade;
 
     // -------------------------------------------------------
@@ -75,7 +75,6 @@ public class Membro {
     // ENDEREÇO DETALHADO
     // -------------------------------------------------------
 
-    /** Logradouro / rua */
     private String endereco;
     private String numero;
     private String bairro;
@@ -83,6 +82,9 @@ public class Membro {
 
     @Column(length = 9)
     private String cep;
+
+    @Column(length = 2)
+    private String uf; // ✅ junto com endereço
 
     // -------------------------------------------------------
     // DADOS ESPIRITUAIS
@@ -172,8 +174,8 @@ public class Membro {
     public String getNomePai() { return nomePai; }
     public void setNomePai(String nomePai) { this.nomePai = nomePai; }
 
-    public String getNomeCônjuge() { return nomeCônjuge; }
-    public void setNomeCônjuge(String nomeCônjuge) { this.nomeCônjuge = nomeCônjuge; }
+    public String getNomeConjuge() { return nomeConjuge; } // ✅ sem acento
+    public void setNomeConjuge(String nomeConjuge) { this.nomeConjuge = nomeConjuge; }
 
     public String getNaturalidade() { return naturalidade; }
     public void setNaturalidade(String naturalidade) { this.naturalidade = naturalidade; }
@@ -201,6 +203,9 @@ public class Membro {
 
     public String getCep() { return cep; }
     public void setCep(String cep) { this.cep = cep; }
+
+    public String getUf() { return uf; }
+    public void setUf(String uf) { this.uf = uf; }
 
     public Boolean getPertenceOutraReligiao() { return pertenceOutraReligiao; }
     public void setPertenceOutraReligiao(Boolean pertenceOutraReligiao) { this.pertenceOutraReligiao = pertenceOutraReligiao; }
