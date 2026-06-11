@@ -7,6 +7,8 @@ import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.TimeZone;
+
 @SpringBootApplication
 @EnableCaching
 @EnableAsync
@@ -15,6 +17,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class GestaoquadrangularApplication {
 
 	public static void main(String[] args) {
+		String profile = System.getenv("SPRING_PROFILES_ACTIVE");
+		if ("prod".equals(profile)) {
+			TimeZone.setDefault(TimeZone.getTimeZone("America/Sao_Paulo"));
+		}
 		SpringApplication.run(GestaoquadrangularApplication.class, args);
 	}
 

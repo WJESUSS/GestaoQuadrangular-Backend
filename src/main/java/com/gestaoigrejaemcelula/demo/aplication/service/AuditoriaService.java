@@ -14,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 
 @Service
@@ -50,7 +52,7 @@ public class AuditoriaService {
                     .usuarioEmail(usuarioEmail)
                     .aprovadorNome(aprovadorNome)
                     .aprovadorEmail(aprovadorEmail)
-                    .dataHora(LocalDateTime.now())
+                    .dataHora(OffsetDateTime.now(ZoneId.of("America/Sao_Paulo")))
                     .ipOrigem(ipOrigem)
                     .build();
             repo.save(reg);
@@ -93,7 +95,7 @@ public class AuditoriaService {
                 .usuarioEmail(r.getUsuarioEmail())
                 .aprovadorNome(r.getAprovadorNome())
                 .aprovadorEmail(r.getAprovadorEmail())
-                .dataHora(r.getDataHora())
+                .dataHora(r.getDataHora().toLocalDateTime())
                 .ipOrigem(r.getIpOrigem())
                 .build();
     }

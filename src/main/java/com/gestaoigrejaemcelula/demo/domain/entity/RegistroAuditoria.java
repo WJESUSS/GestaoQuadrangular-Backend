@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "registro_auditoria", indexes = {
@@ -57,7 +58,7 @@ public class RegistroAuditoria {
     private String aprovadorEmail;
 
     @Column(nullable = false)
-    private LocalDateTime dataHora;
+    private OffsetDateTime dataHora;
 
     /** IP de origem da requisição */
     @Column(length = 50)
