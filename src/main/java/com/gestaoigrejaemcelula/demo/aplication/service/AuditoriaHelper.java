@@ -15,28 +15,32 @@ public class AuditoriaHelper {
 
     public void registrar(String entidade, Long id, String nome,
                           String acao, Map<String, Object> diff) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        String nomeUsuario  = auth != null ? auth.getName() : "sistema";
-        // Se seu UserDetails customizado tiver getNome(), faça o cast aqui
-        String emailUsuario = nomeUsuario; // email é o principal no Spring Security
-
+        String nomeUsuario = resolverUsuario();
         auditoriaService.registrar(
                 entidade, id, nome, acao, diff,
-                nomeUsuario, emailUsuario,
+                nomeUsuario, nomeUsuario,
                 null, null, null
         );
     }
 
-    // Sobrecarga para aprovações/rejeições (tem aprovador explícito)
     public void registrarComAprovador(String entidade, Long id, String nome,
                                       String acao, String aprovadorNome, String aprovadorEmail) {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        String nomeUsuario = auth != null ? auth.getName() : "sistema";
-
+        String nomeUsuario = resolverUsuario();
         auditoriaService.registrar(
                 entidade, id, nome, acao, null,
                 nomeUsuario, nomeUsuario,
                 aprovadorNome, aprovadorEmail, null
         );
+    }
+
+    private String resolverUsuario() {
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()
+                    && !"anonymousUser".equals(auth.getPrincipal())) {
+                return auth.getName();
+            }
+        } catch (Exception ignored) {}
+        return "sistema";
     }
 }
