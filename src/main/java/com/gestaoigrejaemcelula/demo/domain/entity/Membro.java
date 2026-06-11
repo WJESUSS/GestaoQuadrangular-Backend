@@ -60,7 +60,7 @@ public class Membro {
 
     private String nomeMae;
     private String nomePai;
-    private String nomeConjuge; // ✅ sem acento
+
     private String naturalidade;
 
     // -------------------------------------------------------
@@ -82,7 +82,8 @@ public class Membro {
 
     @Column(length = 9)
     private String cep;
-
+    @Column(name = "nome_conjuge")
+    private String nomeConjuge;
     @Column(length = 2)
     private String uf; // ✅ junto com endereço
 
