@@ -3,47 +3,38 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.domain.entity.*;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
-import com.gestaoigrejaemcelula.demo.domain.enums.JustificativaFalta;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
-import com.gestaoigrejaemcelula.demo.web.handler.BusinessException;
-import com.gestaoigrejaemcelula.demo.web.handler.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class RelatorioService {
 
-    @Autowired
-    private PresencaRepository presencaRepository;
-    @Autowired
-    private RelatorioRepository relatorioRepository;
-    @Autowired
-    private CelulaRepository celulaRepository;
-    @Autowired
-    private MembroRepository membroRepository;
-    @Autowired
-    private VisitanteRepository visitanteRepository;
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-    @Autowired
-    private UsuarioService usuarioService;
-    @Autowired
-    private DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
-    @Autowired
-    private RankingCelulaService rankingCelulaService;
+    @Autowired private PresencaRepository presencaRepository;
+    @Autowired private RelatorioRepository relatorioRepository;
+    @Autowired private CelulaRepository celulaRepository;
+    @Autowired private MembroRepository membroRepository;
+    @Autowired private VisitanteRepository visitanteRepository;
+    @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private UsuarioService usuarioService;
+    @Autowired private DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
+    @Autowired private RankingCelulaService rankingCelulaService;
 
     private boolean safe(Boolean value) {
         return Boolean.TRUE.equals(value);
@@ -55,7 +46,6 @@ public class RelatorioService {
 
     @Transactional
     public void salvarRelatorio(@Valid RelatorioRequestDTO dto) throws AccessDeniedException {
-
         Usuario lider = usuarioService.getUsuarioLogado();
 
         Celula celula = celulaRepository.findByLider_Id(lider.getId())
@@ -65,10 +55,7 @@ public class RelatorioService {
         relatorio.setCelula(celula);
         relatorio.setDataReuniao(dto.getDataReuniao());
         relatorio.setEstudo(dto.getEstudo());
-
-        relatorio.setQuantidadeVisitantes(
-                dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0
-        );
+        relatorio.setQuantidadeVisitantes(dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0);
 
         if (dto.getMembrosPresentesIds() != null && !dto.getMembrosPresentesIds().isEmpty()) {
             List<Membro> membros = membroRepository.findAllById(dto.getMembrosPresentesIds());
@@ -79,34 +66,10 @@ public class RelatorioService {
         }
 
         if (dto.getVisitantesPresentes() != null && !dto.getVisitantesPresentes().isEmpty()) {
-            List<Long> ids = dto.getVisitantesPresentes()
-                    .stream()
-                    .map(v -> v.getId())
-                    .toList();
-
-            List<Visitante> visitantes = visitanteRepository.findAllById(ids);
-
-            for (Visitante visitante : visitantes) {
-                dto.getVisitantesPresentes().stream()
-                        .filter(v -> v.getId().equals(visitante.getId()))
-                        .findFirst()
-                        .ifPresent(vdto -> {
-                            visitante.setDecisaoEspiritual(
-                                    vdto.getDecisaoEspiritual() != null
-                                            ? vdto.getDecisaoEspiritual()
-                                            : DecisaoEspiritual.NENHUMA
-                            );
-                        });
-            }
-
-            visitanteRepository.saveAll(visitantes);
-            visitanteRepository.flush();
-            relatorio.setVisitantesPresentes(visitantes);
+            relatorio.setVisitantesPresentes(resolverVisitantes(dto));
         }
 
         relatorioRepository.save(relatorio);
-
-        // Salvar membros ausentes com justificativa
         salvarMembrosAusentes(dto, relatorio);
     }
 
@@ -116,10 +79,7 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> listarRelatoriosUltimosSeteDias() {
-        ZoneId zoneId = ZoneId.of("America/Sao_Paulo");
-        LocalDate hoje = LocalDate.now(zoneId);
-        LocalDate seteDiasAtras = hoje.minusDays(7);
-
+        LocalDate seteDiasAtras = LocalDate.now(ZoneId.of("America/Sao_Paulo")).minusDays(7);
         return relatorioRepository
                 .findByDataReuniaoGreaterThanEqual(seteDiasAtras)
                 .stream()
@@ -128,12 +88,13 @@ public class RelatorioService {
                 .toList();
     }
 
+    /**
+     * Listagem paginada — use ?page=0&size=20 no controller.
+     * Evita carregar todos os registros na memória de uma vez.
+     */
     @Transactional(readOnly = true)
-    public List<RelatorioResponseDTO> listarTodosComoDTO() {
-        return relatorioRepository.findAll()
-                .stream()
-                .map(this::converterParaDTO)
-                .toList();
+    public Page<RelatorioResponseDTO> listarTodosComoDTO(Pageable pageable) {
+        return relatorioRepository.findAll(pageable).map(this::converterParaDTO);
     }
 
     @Transactional(readOnly = true)
@@ -149,10 +110,9 @@ public class RelatorioService {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        Celula celula;
-
         Optional<Celula> celulaComoLider = celulaRepository.findByLider_Id(usuario.getId());
 
+        Celula celula;
         if (celulaComoLider.isPresent()) {
             celula = celulaComoLider.get();
         } else if (usuario.getCelula() != null) {
@@ -173,30 +133,16 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public RelatorioResumoDTO buscarResumoSemana(LocalDate inicio, LocalDate fim) {
+        // Uma query só com JOIN FETCH em vez de duas queries + merge manual em RAM
+        List<Relatorio> todos = relatorioRepository.findRelatoriosEntreDatasComCelula(inicio, fim);
 
-        List<Relatorio> realizadas = relatorioRepository
-                .findByDataReuniaoBetween(inicio, fim)
-                .stream()
+        List<Relatorio> realizadas = todos.stream()
                 .filter(r -> r.getRealizada() == null || r.getRealizada())
                 .toList();
 
-        List<Relatorio> naoRealizadas = relatorioRepository
-                .findByRealizadaFalseAndDataCadastroBetween(
-                        inicio.atStartOfDay(),
-                        fim.plusDays(1).atStartOfDay()
-                );
-
-        List<Relatorio> todos = new java.util.ArrayList<>(realizadas);
-        naoRealizadas.forEach(nr -> {
-            if (todos.stream().noneMatch(r -> r.getId().equals(nr.getId()))) {
-                todos.add(nr);
-            }
-        });
-
         int totalMembros    = realizadas.stream().mapToInt(Relatorio::getQuantidadeMembros).sum();
         int totalVisitantes = realizadas.stream().mapToInt(Relatorio::getTotalVisitantes).sum();
-        int totalCelulas    = (int) realizadas.stream()
-                .map(r -> r.getCelula().getId()).distinct().count();
+        int totalCelulas    = (int) realizadas.stream().map(r -> r.getCelula().getId()).distinct().count();
 
         RelatorioResumoDTO dto = new RelatorioResumoDTO();
         dto.setInicio(inicio);
@@ -217,56 +163,41 @@ public class RelatorioService {
         dto.setId(relatorio.getId());
         dto.setCelulaId(relatorio.getCelula().getId());
         dto.setNomeCelula(relatorio.getCelula().getNome());
-        dto.setNomeLider(
-                relatorio.getCelula().getLider() != null
-                        ? relatorio.getCelula().getLider().getNome()
-                        : "Sem líder"
-        );
+        dto.setNomeLider(relatorio.getCelula().getLider() != null
+                ? relatorio.getCelula().getLider().getNome()
+                : "Sem líder");
         dto.setDataReuniao(relatorio.getDataReuniao());
         dto.setEstudo(relatorio.getEstudo());
 
         if (relatorio.getPresentes() != null) {
-            dto.setMembrosPresentes(
-                    relatorio.getPresentes().stream()
-                            .map(m -> new PessoaPresencaDTO(m.getId(), m.getNome(), DecisaoEspiritual.NENHUMA))
-                            .toList()
-            );
+            dto.setMembrosPresentes(relatorio.getPresentes().stream()
+                    .map(m -> new PessoaPresencaDTO(m.getId(), m.getNome(), DecisaoEspiritual.NENHUMA))
+                    .toList());
         }
 
         if (relatorio.getVisitantesPresentes() != null) {
-            dto.setVisitantesPresentes(
-                    relatorio.getVisitantesPresentes().stream()
-                            .map(v -> new PessoaPresencaDTO(
-                                    v.getId(),
-                                    v.getNome(),
-                                    v.getDecisaoEspiritual() != null
-                                            ? v.getDecisaoEspiritual()
-                                            : DecisaoEspiritual.NENHUMA
-                            ))
-                            .toList()
-            );
+            dto.setVisitantesPresentes(relatorio.getVisitantesPresentes().stream()
+                    .map(v -> new PessoaPresencaDTO(
+                            v.getId(),
+                            v.getNome(),
+                            v.getDecisaoEspiritual() != null ? v.getDecisaoEspiritual() : DecisaoEspiritual.NENHUMA))
+                    .toList());
         }
 
-        // Buscar membros ausentes com justificativa
         if (relatorio.getId() != null) {
             List<Presenca> ausencias = presencaRepository.findByRelatorioIdAndPresenteFalse(relatorio.getId());
             if (!ausencias.isEmpty()) {
-                dto.setMembrosAusentes(
-                        ausencias.stream()
-                                .map(p -> new PessoaPresencaDTO(
-                                        p.getMembro().getId(),
-                                        p.getMembro().getNome(),
-                                        DecisaoEspiritual.NENHUMA,
-                                        p.getJustificativaFalta()
-                                ))
-                                .toList()
-                );
+                dto.setMembrosAusentes(ausencias.stream()
+                        .map(p -> new PessoaPresencaDTO(
+                                p.getMembro().getId(),
+                                p.getMembro().getNome(),
+                                DecisaoEspiritual.NENHUMA,
+                                p.getJustificativaFalta()))
+                        .toList());
             }
         }
 
-        int visitantesAvulsos = relatorio.getQuantidadeVisitantes() != null
-                ? relatorio.getQuantidadeVisitantes() : 0;
-        dto.setQuantidadeVisitantes(visitantesAvulsos);
+        dto.setQuantidadeVisitantes(relatorio.getQuantidadeVisitantes() != null ? relatorio.getQuantidadeVisitantes() : 0);
         dto.setTotalPresentes(relatorio.getTotalPresentes());
         dto.setRealizada(relatorio.getRealizada());
         if (relatorio.getMotivoNaoRealizacao() != null) {
@@ -277,7 +208,7 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public List<RelatorioResponseDTO> buscarPorSemana(String data) {
-        LocalDate dataBase = LocalDate.parse(data);
+        LocalDate dataBase     = LocalDate.parse(data);
         LocalDate inicioSemana = dataBase.with(DayOfWeek.SUNDAY);
         LocalDate fimSemana    = inicioSemana.plusDays(6);
 
@@ -293,31 +224,30 @@ public class RelatorioService {
     public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
         List<DiscipuladoRelatorio> todos = discipuladoRelatorioRepository.findAllWithEagerRelationships();
 
-        return todos.stream()
+        // Agrupamento em memória mantido, mas com Map.Entry para evitar criação de chaves intermediárias
+        Map<String, List<DiscipuladoRelatorio>> agrupado = todos.stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getLider().getId() + "-" + r.getSemanaInicio()
-                ))
-                .values().stream()
-                .map(listaDoGrupo -> {
-                    DiscipuladoRelatorio primeiro = listaDoGrupo.get(0);
-                    Usuario lider = primeiro.getLider();
+                ));
 
+        return agrupado.values().stream()
+                .map(grupo -> {
+                    DiscipuladoRelatorio primeiro = grupo.get(0);
+                    Usuario lider = primeiro.getLider();
                     Celula celulaDoRelatorio = primeiro.getCelula();
 
                     Long celulaId = null;
                     String nomeCelula = "Célula não informada";
 
                     if (celulaDoRelatorio != null) {
-                        celulaId = celulaDoRelatorio.getId();
+                        celulaId  = celulaDoRelatorio.getId();
                         nomeCelula = celulaDoRelatorio.getNome();
-                    } else {
-                        if (lider != null && lider.getCelula() != null) {
-                            celulaId = lider.getCelula().getId();
-                            nomeCelula = lider.getCelula().getNome();
-                        }
+                    } else if (lider != null && lider.getCelula() != null) {
+                        celulaId  = lider.getCelula().getId();
+                        nomeCelula = lider.getCelula().getNome();
                     }
 
-                    List<PresencaMembroDTO> presencas = listaDoGrupo.stream()
+                    List<PresencaMembroDTO> presencas = grupo.stream()
                             .map(r -> new PresencaMembroDTO(
                                     r.getId(),
                                     r.getMembro().getNome(),
@@ -363,40 +293,18 @@ public class RelatorioService {
 
         relatorio.setDataReuniao(dto.getDataReuniao());
         relatorio.setEstudo(dto.getEstudo());
-        relatorio.setQuantidadeVisitantes(
-                dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0
-        );
+        relatorio.setQuantidadeVisitantes(dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0);
 
         if (dto.getMembrosPresentesIds() != null) {
-            List<Membro> membros = membroRepository.findAllById(dto.getMembrosPresentesIds());
-            relatorio.setPresentes(membros);
+            relatorio.setPresentes(membroRepository.findAllById(dto.getMembrosPresentesIds()));
         }
 
         if (dto.getVisitantesPresentes() != null) {
-            List<Long> ids = dto.getVisitantesPresentes().stream()
-                    .map(v -> v.getId()).toList();
-            List<Visitante> visitantes = visitanteRepository.findAllById(ids);
-
-            for (Visitante visitante : visitantes) {
-                dto.getVisitantesPresentes().stream()
-                        .filter(v -> v.getId().equals(visitante.getId()))
-                        .findFirst()
-                        .ifPresent(vdto -> {
-                            visitante.setDecisaoEspiritual(
-                                    vdto.getDecisaoEspiritual() != null
-                                            ? vdto.getDecisaoEspiritual()
-                                            : DecisaoEspiritual.NENHUMA
-                            );
-                        });
-            }
-            visitanteRepository.saveAll(visitantes);
-            visitanteRepository.flush();
-            relatorio.setVisitantesPresentes(visitantes);
+            relatorio.setVisitantesPresentes(resolverVisitantes(dto));
         }
 
         relatorioRepository.save(relatorio);
 
-        // Atualizar ausentes: remove os anteriores e salva os novos
         presencaRepository.deleteAll(presencaRepository.findByRelatorioId(relatorio.getId()));
         salvarMembrosAusentes(dto, relatorio);
     }
@@ -408,28 +316,25 @@ public class RelatorioService {
         return converterParaDTO(relatorio);
     }
 
+    @Transactional
     public Relatorio salvar(Relatorio relatorio) {
         Relatorio salvo = relatorioRepository.save(relatorio);
         rankingCelulaService.limparCache();
         return salvo;
     }
 
+    @Transactional
     public void deletar(Long id) {
         relatorioRepository.deleteById(id);
         rankingCelulaService.limparCache();
     }
 
     @Transactional
-    public RelatorioNaoRealizadaResponse registrarNaoRealizada(
-            RelatorioNaoRealizadaRequest request,
-            String username) {
-
+    public RelatorioNaoRealizadaResponse registrarNaoRealizada(RelatorioNaoRealizadaRequest request, String username) {
         Celula celula = celulaRepository.findById(request.getCelulaId())
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
 
-        boolean jaExiste = relatorioRepository
-                .existsByCelulaIdAndDataReuniao(request.getCelulaId(), request.getDataReuniao());
-        if (jaExiste) {
+        if (relatorioRepository.existsByCelulaIdAndDataReuniao(request.getCelulaId(), request.getDataReuniao())) {
             throw new IllegalStateException("Já existe um relatório para esta data.");
         }
 
@@ -449,13 +354,37 @@ public class RelatorioService {
         response.setRealizada(false);
         response.setMotivoNaoRealizacao(salvo.getMotivoNaoRealizacao());
         response.setCriadoEm(salvo.getDataCadastro());
-
         return response;
     }
 
     /* =========================
-       MÉTODO AUXILIAR - AUSENTES
+       MÉTODOS AUXILIARES
        ========================= */
+
+    /**
+     * Extrai lógica duplicada de resolução de visitantes (usada em salvar e atualizar).
+     */
+    private List<Visitante> resolverVisitantes(RelatorioRequestDTO dto) {
+        List<Long> ids = dto.getVisitantesPresentes().stream()
+                .map(VisitantePresencaDTO::getId)  // ✅
+                .toList();
+
+        Map<Long, DecisaoEspiritual> decisoes = dto.getVisitantesPresentes().stream()
+                .collect(Collectors.toMap(
+                        VisitantePresencaDTO::getId,       // ✅
+                        v -> v.getDecisaoEspiritual() != null
+                                ? v.getDecisaoEspiritual()
+                                : DecisaoEspiritual.NENHUMA
+                ));
+
+        List<Visitante> visitantes = visitanteRepository.findAllById(ids);
+        visitantes.forEach(v -> v.setDecisaoEspiritual(
+                decisoes.getOrDefault(v.getId(), DecisaoEspiritual.NENHUMA)));
+
+        visitanteRepository.saveAll(visitantes);
+        visitanteRepository.flush();
+        return visitantes;
+    }
 
     private void salvarMembrosAusentes(RelatorioRequestDTO dto, Relatorio relatorio) {
         if (dto.getMembrosAusentes() == null || dto.getMembrosAusentes().isEmpty()) return;
@@ -463,8 +392,7 @@ public class RelatorioService {
         List<Presenca> ausencias = dto.getMembrosAusentes().stream()
                 .map(ausenteDTO -> {
                     Membro membro = membroRepository.findById(ausenteDTO.getMembroId())
-                            .orElseThrow(() -> new RuntimeException(
-                                    "Membro não encontrado: " + ausenteDTO.getMembroId()));
+                            .orElseThrow(() -> new RuntimeException("Membro não encontrado: " + ausenteDTO.getMembroId()));
                     Presenca p = new Presenca();
                     p.setMembro(membro);
                     p.setData(relatorio.getDataReuniao());

@@ -89,27 +89,19 @@ public class DiscipuladoService {
     @Cacheable(value = "secretaria-discipulado", key = "'todos'")
     @Transactional(readOnly = true)
     public List<DiscipuladoRelatorioResponseDTO> listarTodosParaSecretaria() {
-
-        return relatorioRepo.findAllComDetalhes()
+        return relatorioRepo.findAllWithEagerRelationships() // ← era findAllComDetalhes()
                 .stream()
                 .map(rel -> new DiscipuladoRelatorioResponseDTO(
-                        // 1. Identificadores e Strings básicas
                         rel.getId(),
                         rel.getCelula() != null ? rel.getCelula().getNome() : "Sem célula",
                         rel.getLider() != null ? rel.getLider().getNome() : "Líder não informado",
                         rel.getMembro() != null ? rel.getMembro().getNome() : "Membro não informado",
-
-                        // 2. Datas
                         rel.getSemanaInicio(),
                         rel.getSemanaFim(),
-
-                        // 3. Booleanos (Ajustado para bater com as posições do Record)
                         rel.isQuartaNoite(),
                         rel.isQuintaNoite(),
                         rel.isDomingoManha(),
-                        rel.isDomingoNoite(), // -> Faltava este booleano!
-
-                        // 4. Justificativas (Strings na ordem exata do Record)
+                        rel.isDomingoNoite(),
                         rel.getJustEscolaBiblica(),
                         rel.getJustQuartaNoite(),
                         rel.getJustQuintaNoite(),
