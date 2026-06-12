@@ -18,32 +18,32 @@ public class CacheConfig {
 
         CaffeineCache metricasCache = new CaffeineCache("metricas-pastor",
                 Caffeine.newBuilder()
-                        .maximumSize(50)
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(10)                          // 50 → 10
+                        .expireAfterWrite(3, TimeUnit.MINUTES)    // 5m → 3m
                         .build());
 
         CaffeineCache rankingCache = new CaffeineCache("ranking-celulas",
                 Caffeine.newBuilder()
-                        .maximumSize(50)
-                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .maximumSize(5)                           // 50 → 5
+                        .expireAfterWrite(5, TimeUnit.MINUTES)    // mantido
                         .build());
 
         CaffeineCache aniversariantesCache = new CaffeineCache("aniversariantes",
                 Caffeine.newBuilder()
-                        .maximumSize(10)
-                        .expireAfterWrite(1, TimeUnit.HOURS)
+                        .maximumSize(5)                           // 10 → 5
+                        .expireAfterWrite(30, TimeUnit.MINUTES)   // 1h → 30min
                         .build());
 
         CaffeineCache alertasCache = new CaffeineCache("alertas-discipulado",
                 Caffeine.newBuilder()
-                        .maximumSize(50)
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .maximumSize(20)                          // 50 → 20
+                        .expireAfterWrite(3, TimeUnit.MINUTES)    // 5m → 3m
                         .build());
 
         CaffeineCache secretariaCache = new CaffeineCache("secretaria-discipulado",
                 Caffeine.newBuilder()
-                        .maximumSize(10)
-                        .expireAfterWrite(3, TimeUnit.MINUTES)
+                        .maximumSize(5)                           // 10 → 5
+                        .expireAfterWrite(2, TimeUnit.MINUTES)    // 3m → 2m
                         .build());
 
         SimpleCacheManager manager = new SimpleCacheManager();
