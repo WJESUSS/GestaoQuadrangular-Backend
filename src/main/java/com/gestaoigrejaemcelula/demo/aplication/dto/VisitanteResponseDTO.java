@@ -2,8 +2,6 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
 import com.gestaoigrejaemcelula.demo.domain.enums.OrigemVisitante;
-// Se você usar um Enum para DecisaoEspiritual, importe-o aqui. Exemplo:
-// import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 
 import java.time.LocalDate;
 
@@ -16,9 +14,12 @@ public class VisitanteResponseDTO {
     private LocalDate dataPrimeiraVisita;
     private OrigemVisitante origem;
     private String responsavelAcompanhamento;
-    // Adicionado aqui (Ajuste o tipo para o seu Enum se não for String)
     private String decisaoEspiritual;
     private boolean ativo;
+    private boolean arquivado;
+    private LocalDate dataArquivamento;
+    private String motivoArquivamento;
+    private String celula; // ← nome da célula para o frontend
 
     public VisitanteResponseDTO() {}
 
@@ -30,12 +31,17 @@ public class VisitanteResponseDTO {
         this.dataPrimeiraVisita        = visitante.getDataPrimeiraVisita();
         this.origem                    = visitante.getOrigem();
         this.responsavelAcompanhamento = visitante.getResponsavelAcompanhamento();
-        // Mapeia o campo da entidade para o DTO (Trate para String se na Entidade for Enum)
-        this.decisaoEspiritual         = visitante.getDecisaoEspiritual() != null ? visitante.getDecisaoEspiritual().toString() : "NENHUMA";
+        this.decisaoEspiritual         = visitante.getDecisaoEspiritual() != null
+                ? visitante.getDecisaoEspiritual().toString() : "NENHUMA";
         this.ativo                     = visitante.isAtivo();
+        this.arquivado                 = visitante.isArquivado();
+        this.dataArquivamento          = visitante.getDataArquivamento();
+        // Pega o nome da célula se o visitante estiver vinculado
+        this.celula                    = visitante.getCelula() != null
+                ? visitante.getCelula().getNome() : null;
     }
 
-    // ── getters / setters ───────────────────────────────────────
+    // ── getters / setters ────────────────────────────────────────────────────
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -50,7 +56,7 @@ public class VisitanteResponseDTO {
     public void setEmail(String email) { this.email = email; }
 
     public LocalDate getDataPrimeiraVisita() { return dataPrimeiraVisita; }
-    public void setDataPrimeiraVisita(LocalDate dataPrimeiraVisita) { this.dataPrimeiraVisita = dataPrimeiraVisita; }
+    public void setDataPrimeiraVisita(LocalDate d) { this.dataPrimeiraVisita = d; }
 
     public OrigemVisitante getOrigem() { return origem; }
     public void setOrigem(OrigemVisitante origem) { this.origem = origem; }
@@ -58,10 +64,21 @@ public class VisitanteResponseDTO {
     public String getResponsavelAcompanhamento() { return responsavelAcompanhamento; }
     public void setResponsavelAcompanhamento(String r) { this.responsavelAcompanhamento = r; }
 
-    // Getter e Setter adicionados
     public String getDecisaoEspiritual() { return decisaoEspiritual; }
-    public void setDecisaoEspiritual(String decisaoEspiritual) { this.decisaoEspiritual = decisaoEspiritual; }
+    public void setDecisaoEspiritual(String d) { this.decisaoEspiritual = d; }
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
+    public boolean isArquivado() { return arquivado; }
+    public void setArquivado(boolean arquivado) { this.arquivado = arquivado; }
+
+    public LocalDate getDataArquivamento() { return dataArquivamento; }
+    public void setDataArquivamento(LocalDate d) { this.dataArquivamento = d; }
+
+    public String getMotivoArquivamento() { return motivoArquivamento; }
+    public void setMotivoArquivamento(String m) { this.motivoArquivamento = m; }
+
+    public String getCelula() { return celula; }
+    public void setCelula(String celula) { this.celula = celula; }
 }

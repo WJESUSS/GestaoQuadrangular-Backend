@@ -15,7 +15,11 @@ public interface VisitanteRepository extends JpaRepository<Visitante, Long> {
 
     List<Visitante> findByNomeContainingIgnoreCase(String nome);
     List<Visitante> findByCelulaIdAndAtivoTrue(Long celulaId);
+    List<Visitante> findByCelulaIdAndAtivoTrueAndArquivadoFalse(Long celulaId);
 
+    List<Visitante> findByArquivadoTrue();
+
+    List<Visitante> findAllByArquivadoFalse();
     List<Visitante> findByCelulaId(Long celulaId);
     long countByCelulaIdAndDecisaoEspiritualAndAtivoTrue(Long celulaId, DecisaoEspiritual decisaoEspiritual);
 

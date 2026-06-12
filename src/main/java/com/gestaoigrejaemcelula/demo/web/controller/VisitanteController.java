@@ -64,5 +64,20 @@ public class VisitanteController {
         service.deletar(id);
         return ResponseEntity.noContent().build(); // 204 No Content
     }
+    @PatchMapping("/{id}/arquivar")
+    public ResponseEntity<Void> arquivar(@PathVariable Long id) {
+        service.arquivar(id);
+        return ResponseEntity.noContent().build();
+    }
 
+    @PatchMapping("/{id}/desarquivar")
+    public ResponseEntity<Void> desarquivar(@PathVariable Long id) {
+        service.desarquivar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/arquivados")
+    public ResponseEntity<List<VisitanteResponseDTO>> listarArquivados() {
+        return ResponseEntity.ok(service.listarArquivados());
+    }
 }

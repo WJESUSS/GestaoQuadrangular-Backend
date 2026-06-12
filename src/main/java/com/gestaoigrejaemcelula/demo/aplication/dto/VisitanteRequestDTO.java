@@ -11,6 +11,16 @@ public class VisitanteRequestDTO {
     @NotNull private Long celulaId;
     @NotBlank private String nome;
     private String telefone;
+    private String motivoArquivamento;
+
+    public String getMotivoArquivamento() {
+        return motivoArquivamento;
+    }
+
+    public void setMotivoArquivamento(String motivoArquivamento) {
+        this.motivoArquivamento = motivoArquivamento;
+    }
+
     private String email;
     private LocalDate dataPrimeiraVisita;
     private OrigemVisitante origem;

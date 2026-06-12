@@ -10,6 +10,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,14 +29,16 @@ public class VisitanteService {
                             CelulaRepository celulaRepository,
                             AuditoriaHelper auditoria,
                             MetaService metaService) {
-        this.repository       = repository;
+        this.repository = repository;
         this.celulaRepository = celulaRepository;
-        this.auditoria        = auditoria;
-        this.metaService      = metaService;
+        this.auditoria = auditoria;
+        this.metaService = metaService;
     }
 
-    // ?? Helper
-    private String str(Object o) { return o != null ? o.toString() : ""; }
+    // Helper
+    private String str(Object o) {
+        return o != null ? o.toString() : "";
+    }
 
     // =========================
     // CADASTRAR
@@ -45,18 +48,18 @@ public class VisitanteService {
         Visitante visitante = new Visitante();
         preencher(visitante, dto);
         visitante.setAtivo(true);
+        visitante.setArquivado(false);
 
         Visitante salvo = repository.save(visitante);
 
         auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "CREATE",
                 Map.of(
                         "telefone", Map.of("para", str(salvo.getTelefone())),
-                        "email",    Map.of("para", str(salvo.getEmail())),
-                        "origem",   Map.of("para", str(salvo.getOrigem()))
+                        "email", Map.of("para", str(salvo.getEmail())),
+                        "origem", Map.of("para", str(salvo.getOrigem()))
                 )
         );
 
-        // ?? Recalcula metas automaticamente ao cadastrar
         if (salvo.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(salvo.getCelula().getId());
         }
@@ -65,11 +68,11 @@ public class VisitanteService {
     }
 
     // =========================
-    // LISTAR TODOS
+    // LISTAR TODOS (exclui arquivados)
     // =========================
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> listar() {
-        return repository.findAll()
+        return repository.findAllByArquivadoFalse()
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -94,22 +97,21 @@ public class VisitanteService {
         Visitante visitante = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
 
-        // Monta diff ANTES de alterar
         Map<String, Object> diff = new LinkedHashMap<>();
         if (!Objects.equals(visitante.getNome(), dto.getNome()))
-            diff.put("nome",        Map.of("de", str(visitante.getNome()),                      "para", str(dto.getNome())));
+            diff.put("nome", Map.of("de", str(visitante.getNome()), "para", str(dto.getNome())));
         if (!Objects.equals(visitante.getTelefone(), dto.getTelefone()))
-            diff.put("telefone",    Map.of("de", str(visitante.getTelefone()),                  "para", str(dto.getTelefone())));
+            diff.put("telefone", Map.of("de", str(visitante.getTelefone()), "para", str(dto.getTelefone())));
         if (!Objects.equals(visitante.getEmail(), dto.getEmail()))
-            diff.put("email",       Map.of("de", str(visitante.getEmail()),                     "para", str(dto.getEmail())));
+            diff.put("email", Map.of("de", str(visitante.getEmail()), "para", str(dto.getEmail())));
         if (!Objects.equals(visitante.getOrigem(), dto.getOrigem()))
-            diff.put("origem",      Map.of("de", str(visitante.getOrigem()),                    "para", str(dto.getOrigem())));
+            diff.put("origem", Map.of("de", str(visitante.getOrigem()), "para", str(dto.getOrigem())));
         if (!Objects.equals(visitante.getResponsavelAcompanhamento(), dto.getResponsavelAcompanhamento()))
             diff.put("responsavel", Map.of("de", str(visitante.getResponsavelAcompanhamento()), "para", str(dto.getResponsavelAcompanhamento())));
         if (visitante.isAtivo() != dto.isAtivo())
-            diff.put("ativo",       Map.of("de", str(visitante.isAtivo()),                      "para", str(dto.isAtivo())));
+            diff.put("ativo", Map.of("de", str(visitante.isAtivo()), "para", str(dto.isAtivo())));
         if (!Objects.equals(visitante.getDecisaoEspiritual(), dto.getDecisaoEspiritual()))
-            diff.put("decisaoEspiritual", Map.of("de", str(visitante.getDecisaoEspiritual()),   "para", str(dto.getDecisaoEspiritual())));
+            diff.put("decisaoEspiritual", Map.of("de", str(visitante.getDecisaoEspiritual()), "para", str(dto.getDecisaoEspiritual())));
 
         preencher(visitante, dto);
         visitante.setDecisaoEspiritual(dto.getDecisaoEspiritual());
@@ -119,7 +121,6 @@ public class VisitanteService {
         if (!diff.isEmpty())
             auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "UPDATE", diff);
 
-        // ?? Recalcula metas automaticamente ao atualizar
         if (salvo.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(salvo.getCelula().getId());
         }
@@ -137,18 +138,17 @@ public class VisitanteService {
         visitante.setAtivo(false);
         repository.save(visitante);
 
-        // ?? Recalcula metas para remover visitante inativo da contagem
         if (visitante.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(visitante.getCelula().getId());
         }
     }
 
     // =========================
-    // LISTAR POR CÉLULA
+    // LISTAR POR CÉLULA (exclui arquivados)
     // =========================
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> listarVisitantesPorCelula(Long celulaId) {
-        return repository.findByCelulaIdAndAtivoTrue(celulaId)
+        return repository.findByCelulaIdAndAtivoTrueAndArquivadoFalse(celulaId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -156,7 +156,7 @@ public class VisitanteService {
 
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> listarAtivosPorCelula(Long celulaId) {
-        return repository.findByCelulaIdAndAtivoTrue(celulaId)
+        return repository.findByCelulaIdAndAtivoTrueAndArquivadoFalse(celulaId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -184,6 +184,64 @@ public class VisitanteService {
                 v.getNome(),
                 v.getDecisaoEspiritual() != null ? v.getDecisaoEspiritual().name() : null
         );
+    }
+
+    // =========================
+    // ARQUIVAR
+    // =========================
+    @Transactional
+    public void arquivar(Long id) {
+        Visitante visitante = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+
+        visitante.setArquivado(true);
+        visitante.setDataArquivamento(LocalDate.now());
+        repository.save(visitante);
+
+        // Motivo derivado da decisão espiritual — sem campo extra
+        String motivo = visitante.getDecisaoEspiritual() != null
+                ? visitante.getDecisaoEspiritual().name()
+                : "SEM_DECISAO";
+
+        auditoria.registrar("VISITANTE", visitante.getId(), visitante.getNome(), "ARQUIVAR",
+                Map.of("motivo", Map.of("para", motivo))
+        );
+
+        if (visitante.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(visitante.getCelula().getId());
+        }
+    }
+
+    // =========================
+    // DESARQUIVAR
+    // =========================
+    @Transactional
+    public void desarquivar(Long id) {
+        Visitante visitante = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+
+        visitante.setArquivado(false);
+        visitante.setDataArquivamento(null);
+        repository.save(visitante);
+
+        auditoria.registrar("VISITANTE", visitante.getId(), visitante.getNome(), "DESARQUIVAR",
+                Map.of()
+        );
+
+        if (visitante.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(visitante.getCelula().getId());
+        }
+    }
+
+    // =========================
+    // LISTAR ARQUIVADOS
+    // =========================
+    @Transactional(readOnly = true)
+    public List<VisitanteResponseDTO> listarArquivados() {
+        return repository.findByArquivadoTrue()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     // =========================
@@ -215,11 +273,21 @@ public class VisitanteService {
         dto.setOrigem(visitante.getOrigem());
         dto.setResponsavelAcompanhamento(visitante.getResponsavelAcompanhamento());
         dto.setAtivo(visitante.isAtivo());
+        dto.setArquivado(visitante.isArquivado());
+        dto.setDataArquivamento(visitante.getDataArquivamento());
         dto.setDecisaoEspiritual(
                 visitante.getDecisaoEspiritual() != null
                         ? visitante.getDecisaoEspiritual().name()
                         : "NENHUMA"
         );
+        dto.setMotivoArquivamento(
+                visitante.isArquivado()
+                        ? (visitante.getDecisaoEspiritual() != null
+                           ? visitante.getDecisaoEspiritual().name()
+                           : "SEM_DECISAO")
+                        : null
+        );
+        dto.setCelula(visitante.getCelula() != null ? visitante.getCelula().getNome() : null); // ← só isso
         return dto;
     }
 }
