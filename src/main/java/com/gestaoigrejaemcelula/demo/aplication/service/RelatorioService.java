@@ -16,11 +16,7 @@ import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,7 +62,7 @@ public class RelatorioService {
         }
 
         if (dto.getVisitantesPresentes() != null && !dto.getVisitantesPresentes().isEmpty()) {
-            relatorio.setVisitantesPresentes(resolverVisitantes(dto));
+            relatorio.setVisitantesPresentes(new HashSet<>(resolverVisitantes(dto)));
         }
 
         relatorioRepository.save(relatorio);
@@ -300,7 +296,7 @@ public class RelatorioService {
         }
 
         if (dto.getVisitantesPresentes() != null) {
-            relatorio.setVisitantesPresentes(resolverVisitantes(dto));
+            relatorio.setVisitantesPresentes(new HashSet<>(resolverVisitantes(dto)));
         }
 
         relatorioRepository.save(relatorio);
