@@ -4,6 +4,9 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteRequestDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.VisitanteResponseDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.VisitanteService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,10 +30,7 @@ public class VisitanteController {
         return ResponseEntity.ok(service.cadastrar(dto));
     }
 
-    @GetMapping
-    public ResponseEntity<List<VisitanteResponseDTO>> listar() {
-        return ResponseEntity.ok(service.listar());
-    }
+
 
     @GetMapping("/buscar")
     public ResponseEntity<List<VisitanteResponseDTO>> buscar(@RequestParam String nome) {
@@ -76,8 +76,15 @@ public class VisitanteController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @GetMapping
+    public ResponseEntity<Page<VisitanteResponseDTO>> listar(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.listarPaginado(pageable));
+    }
     @GetMapping("/arquivados")
-    public ResponseEntity<List<VisitanteResponseDTO>> listarArquivados() {
-        return ResponseEntity.ok(service.listarArquivados());
+    public ResponseEntity<Page<VisitanteResponseDTO>> listarArquivados(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.listarArquivadosPaginado(pageable));
     }
 }

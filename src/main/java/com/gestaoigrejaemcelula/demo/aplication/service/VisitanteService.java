@@ -7,6 +7,8 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
 import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.repository.VisitanteRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -289,5 +291,17 @@ public class VisitanteService {
         );
         dto.setCelula(visitante.getCelula() != null ? visitante.getCelula().getNome() : null); // ← só isso
         return dto;
+    }
+    @Transactional(readOnly = true)
+    public Page<VisitanteResponseDTO> listarPaginado(Pageable pageable) {
+        return repository.findAllByArquivadoFalse(pageable).map(this::toDTO);
+    }
+
+    // =========================
+// LISTAR ARQUIVADOS (paginado)
+// =========================
+    @Transactional(readOnly = true)
+    public Page<VisitanteResponseDTO> listarArquivadosPaginado(Pageable pageable) {
+        return repository.findByArquivadoTrue(pageable).map(this::toDTO);
     }
 }

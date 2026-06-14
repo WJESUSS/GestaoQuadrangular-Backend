@@ -4,6 +4,8 @@ package com.gestaoigrejaemcelula.demo.domain.repository;
 import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,7 +16,8 @@ import java.util.List;
 public interface VisitanteRepository extends JpaRepository<Visitante, Long> {
 
     List<Visitante> findByNomeContainingIgnoreCase(String nome);
-    List<Visitante> findByCelulaIdAndAtivoTrue(Long celulaId);
+    Page<Visitante> findAllByArquivadoFalse(Pageable pageable);
+    Page<Visitante> findByArquivadoTrue(Pageable pageable);
     List<Visitante> findByCelulaIdAndAtivoTrueAndArquivadoFalse(Long celulaId);
 
     List<Visitante> findByArquivadoTrue();
