@@ -39,11 +39,10 @@ public class CacheConfig {
                         .maximumSize(20)                          // 50 → 20
                         .expireAfterWrite(3, TimeUnit.MINUTES)    // 5m → 3m
                         .build());
-
         CaffeineCache secretariaCache = new CaffeineCache("secretaria-discipulado",
                 Caffeine.newBuilder()
-                        .maximumSize(5)                           // 10 → 5
-                        .expireAfterWrite(2, TimeUnit.MINUTES)    // 3m → 2m
+                        .maximumSize(1)
+                        .expireAfterWrite(2, TimeUnit.MINUTES)
                         .build());
 
         SimpleCacheManager manager = new SimpleCacheManager();

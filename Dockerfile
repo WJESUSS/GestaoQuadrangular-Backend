@@ -19,9 +19,9 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 10000
 
 ENTRYPOINT ["sh","-c","java \
--Xms128m \
--Xmx384m \
+-XX:MaxRAMPercentage=75.0 \
 -XX:+UseG1GC \
--XX:MaxGCPauseMillis=100 \
+-XX:MaxGCPauseMillis=200 \
+-XX:+ExitOnOutOfMemoryError \
 -Dserver.port=${PORT:-10000} \
 -jar app.jar"]
