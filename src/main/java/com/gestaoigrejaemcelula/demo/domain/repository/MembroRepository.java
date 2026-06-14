@@ -6,8 +6,6 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.MembroResumoDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.MembroSelectDTO;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,9 +19,8 @@ public interface MembroRepository extends JpaRepository<Membro, Long> {
     // Buscar por nome (tela de busca)
     List<Membro> findByNomeContainingIgnoreCase(String nome);
     Optional<Membro> findByNomeIgnoreCase(String nome);
-    @Query(value = "SELECT m FROM Membro m LEFT JOIN FETCH m.celula c LEFT JOIN FETCH c.lider",
-            countQuery = "SELECT count(m) FROM Membro m")
-    Page<Membro> findAllComCelulaELider(Pageable pageable);
+
+    // Listar membros SEM célula (para adicionar em célula)
     List<Membro> findByCelulaIsNull();
 
     // Listar membros de uma célula específica

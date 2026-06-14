@@ -9,8 +9,6 @@ import com.gestaoigrejaemcelula.demo.domain.enums.Tipo;
 import com.gestaoigrejaemcelula.demo.domain.repository.HistoricoStatusMembroRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.VisitanteRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -131,9 +129,10 @@ public class MembroService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MembroResponseDTO> listarTodos(Pageable pageable) {
-        return repository.findAllComCelulaELider(pageable).map(MembroResponseDTO::new);
+    public List<MembroResponseDTO> listarTodos() {
+        return repository.findAll().stream().map(MembroResponseDTO::new).toList();
     }
+
     @Transactional(readOnly = true)
     public MembroResponseDTO buscarPorId(Long id) {
         return new MembroResponseDTO(buscarEntidadePorId(id));
