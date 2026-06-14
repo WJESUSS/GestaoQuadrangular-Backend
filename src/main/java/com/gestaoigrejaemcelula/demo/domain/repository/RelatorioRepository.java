@@ -3,7 +3,6 @@ package com.gestaoigrejaemcelula.demo.domain.repository;
 import com.gestaoigrejaemcelula.demo.domain.entity.Relatorio;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -64,12 +63,13 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
      * Query principal para intervalos de data — com JOIN FETCH.
      * Usada em buscarResumoSemana e buscarPorSemana.
      */
-    @EntityGraph(attributePaths = {"celula", "celula.lider", "presentes", "visitantesPresentes"})
     @Query("""
-    SELECT r FROM Relatorio r
-    WHERE r.dataReuniao BETWEEN :inicio AND :fim
-    ORDER BY r.dataReuniao DESC
-""")
+        SELECT r FROM Relatorio r
+        JOIN FETCH r.celula c
+        LEFT JOIN FETCH c.lider
+        WHERE r.dataReuniao BETWEEN :inicio AND :fim
+        ORDER BY r.dataReuniao DESC
+    """)
     List<Relatorio> findRelatoriosEntreDatasComCelula(
             @Param("inicio") LocalDate inicio,
             @Param("fim") LocalDate fim);
