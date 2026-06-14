@@ -1,7 +1,6 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.*;
-import com.gestaoigrejaemcelula.demo.aplication.service.RelatorioPdfService;
 import com.gestaoigrejaemcelula.demo.aplication.service.RelatorioService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -32,12 +31,11 @@ public class RelatorioController {
     private static final Logger log = LoggerFactory.getLogger(RelatorioController.class);
 
     private final RelatorioService service;
-    private final RelatorioPdfService pdfService;
 
-    public RelatorioController(RelatorioService service, RelatorioPdfService pdfService) {
+    public RelatorioController(RelatorioService service) {
         this.service = service;
-        this.pdfService = pdfService;
     }
+
 
     // ── Criar ────────────────────────────────────────────────────────────────
 
@@ -145,34 +143,4 @@ public class RelatorioController {
 
     // ── PDF ──────────────────────────────────────────────────────────────────
 
-    /**
-     * PDF semanal — recebe a data e busca a semana correspondente.
-     * GET /relatorios/pdf-semanal?data=2024-06-10
-     */
-    @GetMapping("/pdf-semanal")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'PASTOR')")
-    public ResponseEntity<byte[]> baixarPdfSemanal(@RequestParam String data) {
-        List<RelatorioResponseDTO> relatorios = service.buscarPorSemana(data);
-        byte[] pdf = pdfService.gerarPdf(relatorios);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio_celulas.pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
-    /**
-     * PDF geral paginado — gera apenas a página atual, não todos os registros.
-     * GET /relatorios/pdf?page=0&size=100
-     */
-    @GetMapping("/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIO', 'PASTOR')")
-    public ResponseEntity<byte[]> baixarPdfGeral(
-            @PageableDefault(size = 100) Pageable pageable) {
-        List<RelatorioResponseDTO> relatorios = service.listarTodosComoDTO(pageable).getContent();
-        byte[] pdf = pdfService.gerarPdf(relatorios);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorios.pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
 }
