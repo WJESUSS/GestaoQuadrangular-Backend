@@ -25,7 +25,7 @@ public class CasaDePazService {
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
     private final VisitanteRepository visitanteRepository;
-    private final MetaService metaService; // ← injeção para recalcular metas
+    private final MetaService metaService;
 
     public CasaDePazService(CasaDePazRepository casaDePazRepository,
                             EncontroCasaDePazRepository encontroRepository,
@@ -113,8 +113,6 @@ public class CasaDePazService {
         if (!casa.getVisitantes().contains(visitante)) {
             casa.getVisitantes().add(visitante);
 
-            // Garante que o visitante conhece a célula da casa
-            // (necessário para que countByCelulaIdAndDecisaoEspiritual funcione)
             if (visitante.getCelula() == null) {
                 visitante.setCelula(casa.getCelula());
                 visitanteRepository.save(visitante);
@@ -138,6 +136,15 @@ public class CasaDePazService {
             throw new RuntimeException("Todos os encontros já foram realizados.");
         }
 
+        // ── Validação: impede dois encontros na mesma data ───────
+        boolean dataJaRegistrada = encontroRepository
+                .existsByCasaDePazIdAndDataEncontro(casaId, dto.getDataEncontro());
+        if (dataJaRegistrada) {
+            throw new RuntimeException(
+                    "Já existe um encontro registrado nesta data: " + dto.getDataEncontro()
+                            + ". Escolha outra data.");
+        }
+
         // ── Cria o encontro ──────────────────────────────────────
         EncontroCasaDePaz encontro = new EncontroCasaDePaz();
         encontro.setDataEncontro(dto.getDataEncontro());
@@ -151,15 +158,12 @@ public class CasaDePazService {
                 Visitante visitante = visitanteRepository.findById(decisaoDTO.getVisitanteId())
                         .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
 
-                // Registra a decisão no encontro
                 DecisaoEncontro decisao = new DecisaoEncontro();
                 decisao.setTipoDecisao(decisaoDTO.getTipoDecisao());
                 decisao.setVisitante(visitante);
                 decisao.setEncontro(encontro);
                 encontro.getDecisoes().add(decisao);
 
-                // Atualiza o campo decisaoEspiritual do Visitante
-                // (só altera se ainda não tem uma decisão registrada)
                 DecisaoEspiritual atual = visitante.getDecisaoEspiritual();
                 boolean jaTemDecisao = atual == DecisaoEspiritual.ACEITOU_JESUS
                         || atual == DecisaoEspiritual.RECONCILIOU
@@ -167,12 +171,9 @@ public class CasaDePazService {
 
                 if (!jaTemDecisao) {
                     visitante.setDecisaoEspiritual(decisaoDTO.getTipoDecisao());
-
-                    // Garante vínculo com a célula para que o recálculo funcione
                     if (visitante.getCelula() == null) {
                         visitante.setCelula(casa.getCelula());
                     }
-
                     visitanteRepository.save(visitante);
                     houveDecisao = true;
                 }
@@ -188,9 +189,6 @@ public class CasaDePazService {
         }
         casaDePazRepository.save(casa);
 
-        // ── Recalcula metas da célula se houve decisão espiritual ─
-        // Isso garante que o frontend reflita o novo progresso
-        // mesmo sem o evento JavaScript (fallback server-side)
         if (houveDecisao) {
             metaService.recalcularTodasMetasCelula(casa.getCelula().getId());
         }

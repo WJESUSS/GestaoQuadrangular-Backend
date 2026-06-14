@@ -1,11 +1,9 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.*;
-import com.gestaoigrejaemcelula.demo.aplication.service.CasaDePazPdfService;
 import com.gestaoigrejaemcelula.demo.aplication.service.CasaDePazService;
 
 
-import com.gestaoigrejaemcelula.demo.domain.entity.CasaDePaz;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -25,11 +23,9 @@ import java.util.Map;
 public class CasaDePazController {
 
     private final CasaDePazService service;
-    private final CasaDePazPdfService  pdfService;
 
-    public CasaDePazController(CasaDePazService service, CasaDePazPdfService pdfService) {
+    public CasaDePazController(CasaDePazService service) {
         this.service = service;
-        this.pdfService = pdfService;
     }
 
     // POST /api/casas-de-paz
@@ -115,36 +111,5 @@ public class CasaDePazController {
         );
     }
 
-    @PostMapping("/relatorio/pdf")
-    public ResponseEntity<byte[]> gerarPdf(@RequestBody @Valid CasaDePazPdfRequestDTO request) {
-        try {
-            byte[] pdf = pdfService.gerar(request);
-
-            String nomeArquivo = "Relatorio_CasasDePaz";
-            if (request.getCelulaName() != null && !request.getCelulaName().isBlank()) {
-                // Remove caracteres especiais para o nome do arquivo
-                String celulaSafe = request.getCelulaName()
-                        .replaceAll("[^a-zA-ZÀ-ú0-9 ]", "")
-                        .trim()
-                        .replace(" ", "_");
-                nomeArquivo += "_" + celulaSafe;
-            }
-            nomeArquivo += "_" + LocalDate.now() + ".pdf";
-
-            // Encode para suportar caracteres especiais no header
-            String encodedName = URLEncoder.encode(nomeArquivo, StandardCharsets.UTF_8)
-                    .replace("+", "%20");
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + nomeArquivo + "\"; filename*=UTF-8''" + encodedName)
-                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(pdf.length))
-                    .body(pdf);
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
 
 }
