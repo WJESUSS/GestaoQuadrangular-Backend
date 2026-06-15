@@ -6,6 +6,9 @@ import com.gestaoigrejaemcelula.demo.domain.entity.LancamentoTesouraria;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.MembroRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +27,9 @@ public class TesourariaService {
     public TesourariaService(LancamentoTesourariaRepository repository,
                              MembroRepository membroRepository,
                              AuditoriaHelper auditoria) {
-        this.repository      = repository;
+        this.repository       = repository;
         this.membroRepository = membroRepository;
-        this.auditoria       = auditoria;
+        this.auditoria        = auditoria;
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────────
@@ -51,14 +54,13 @@ public class TesourariaService {
 
         LancamentoTesouraria salvo = repository.save(lancamento);
 
-        // Monta detalhes do lançamento para auditoria
         Map<String, Object> detalhes = new HashMap<>();
-        detalhes.put("membro",   Map.of("para", str(salvo.getMembroNome())));
-        detalhes.put("data",     Map.of("para", str(salvo.getDataLancamento())));
+        detalhes.put("membro", Map.of("para", str(salvo.getMembroNome())));
+        detalhes.put("data",   Map.of("para", str(salvo.getDataLancamento())));
         if (vDizimo.compareTo(BigDecimal.ZERO) > 0)
-            detalhes.put("dizimo",  Map.of("para", str(vDizimo)));
+            detalhes.put("dizimo", Map.of("para", str(vDizimo)));
         if (vOferta.compareTo(BigDecimal.ZERO) > 0) {
-            detalhes.put("oferta",    Map.of("para", str(vOferta)));
+            detalhes.put("oferta",     Map.of("para", str(vOferta)));
             detalhes.put("tipoOferta", Map.of("para", str(salvo.getTipoOferta())));
         }
 
@@ -66,11 +68,11 @@ public class TesourariaService {
     }
 
     // =========================
-    // LISTAR TODOS
+    // LISTAR TODOS (paginado)
     // =========================
     @Transactional(readOnly = true)
-    public List<LancamentoTesouraria> listar() {
-        return repository.findAll();
+    public Page<LancamentoTesouraria> listar(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     // =========================
@@ -80,8 +82,8 @@ public class TesourariaService {
     public Map<String, Object> getResumo() {
         Map<String, Object> resumo = new HashMap<>();
         resumo.put("BRONZE", BigDecimal.ZERO);
-        resumo.put("PRATA", BigDecimal.ZERO);
-        resumo.put("OURO", BigDecimal.ZERO);
+        resumo.put("PRATA",  BigDecimal.ZERO);
+        resumo.put("OURO",   BigDecimal.ZERO);
 
         List<Object[]> resultados = repository.sumAgrupadoPorTipo();
         for (Object[] row : resultados) {
@@ -95,25 +97,28 @@ public class TesourariaService {
     }
 
     // =========================
-    // RESUMO POR MEMBRO
+    // RESUMO POR MEMBRO (paginado)
     // =========================
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getResumoPorMembro() {
-        List<Object[]> resultados = repository.sumAgrupadoPorMembro();
-        List<Map<String, Object>> lista = new ArrayList<>();
+    public Page<Map<String, Object>> getResumoPorMembro(Pageable pageable) {
+        // Busca a página de resultados nativos com offset/limit
+        Page<Object[]> paginaRaw = repository.sumAgrupadoPorMembroPaginado(pageable);
 
-        for (Object[] row : resultados) {
-            Map<String, Object> membroMap = new HashMap<>();
-            membroMap.put("membroNome", row[0]);
-            membroMap.put("totalDizimo", row[1] != null ? row[1] : BigDecimal.ZERO);
-            membroMap.put("totalOferta", row[2] != null ? row[2] : BigDecimal.ZERO);
-            lista.add(membroMap);
-        }
-        return lista;
+        List<Map<String, Object>> lista = paginaRaw.getContent().stream()
+                .map(row -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("membroNome",  row[0]);
+                    m.put("totalDizimo", row[1] != null ? row[1] : BigDecimal.ZERO);
+                    m.put("totalOferta", row[2] != null ? row[2] : BigDecimal.ZERO);
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(lista, pageable, paginaRaw.getTotalElements());
     }
 
     // =========================
-    // SELECTS
+    // SELECTS (sem paginação — uso em dropdowns)
     // =========================
     @Transactional(readOnly = true)
     public List<MembroSelectDTO> listarParaSelect() {
@@ -126,11 +131,11 @@ public class TesourariaService {
     }
 
     // =========================
-    // LISTAR POR MÊS/ANO
+    // LISTAR POR MÊS/ANO (paginado)
     // =========================
     @Transactional(readOnly = true)
-    public List<LancamentoTesouraria> listarPorMesAno(int mes, int ano) {
-        return repository.findByMesAndAno(mes, ano);
+    public Page<LancamentoTesouraria> listarPorMesAno(int mes, int ano, Pageable pageable) {
+        return repository.findByMesAndAno(mes, ano, pageable);
     }
 
     // =========================
@@ -168,21 +173,21 @@ public class TesourariaService {
     }
 
     // =========================
-    // FIÉIS / INFIÉIS
+    // FIÉIS / INFIÉIS (paginado)
     // =========================
     @Transactional(readOnly = true)
     public FieisInfieisMes obterFieisInfieis(Integer mes, Integer ano) {
-        LocalDate hoje   = LocalDate.now();
-        int mesAtual     = (mes != null) ? mes : hoje.getMonthValue();
-        int anoAtual     = (ano != null) ? ano : hoje.getYear();
+        LocalDate hoje  = LocalDate.now();
+        int mesAtual    = (mes != null) ? mes : hoje.getMonthValue();
+        int anoAtual    = (ano != null) ? ano : hoje.getYear();
 
         Set<String> membrosComLancamento = new HashSet<>(
                 repository.findMembrosComLancamentoNoMes(mesAtual, anoAtual)
         );
 
         List<Membro> todosMembros = membroRepository.findAll();
-        List<Membro> fieis   = new ArrayList<>();
-        List<Membro> infieis = new ArrayList<>();
+        List<Membro> fieis        = new ArrayList<>();
+        List<Membro> infieis      = new ArrayList<>();
 
         for (Membro m : todosMembros) {
             if (membrosComLancamento.contains(m.getNome())) fieis.add(m);
@@ -190,6 +195,22 @@ public class TesourariaService {
         }
 
         return new FieisInfieisMes(fieis, infieis);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Membro> obterFieisPaginado(Integer mes, Integer ano, Pageable pageable) {
+        LocalDate hoje = LocalDate.now();
+        int mesAtual   = (mes != null) ? mes : hoje.getMonthValue();
+        int anoAtual   = (ano != null) ? ano : hoje.getYear();
+        return repository.findMembrosFieis(mesAtual, anoAtual, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Membro> obterInfieisPaginado(Integer mes, Integer ano, Pageable pageable) {
+        LocalDate hoje = LocalDate.now();
+        int mesAtual   = (mes != null) ? mes : hoje.getMonthValue();
+        int anoAtual   = (ano != null) ? ano : hoje.getYear();
+        return repository.findMembrosInfieis(mesAtual, anoAtual, pageable);
     }
 
     // =========================

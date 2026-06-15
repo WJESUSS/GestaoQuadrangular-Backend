@@ -8,6 +8,10 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -37,20 +41,13 @@ public class TesourariaController {
         return ResponseEntity.ok("Lançamento registrado com sucesso!");
     }
 
-    @GetMapping("/listar")
-    public ResponseEntity<List<LancamentoTesouraria>> listar() {
-        return ResponseEntity.ok(service.listar());
-    }
+
 
     @GetMapping("/resumo")
     public Map<String, Object> resumo() {
         return service.getResumo();
     }
 
-    @GetMapping("/membros-resumo")
-    public List<Map<String, Object>> membrosResumo() {
-        return service.getResumoPorMembro();
-    }
 
     @GetMapping("/select")
     public ResponseEntity<List<MembroSelectDTO>> listarParaSelect() {
@@ -62,26 +59,7 @@ public class TesourariaController {
         return ResponseEntity.ok(service.listarNomesParaSelect());
     }
 
-    @GetMapping("/relatorio-tesouraria")
-    public ResponseEntity<Map<String, Object>> relatorioMensal(
-            @RequestParam(required = false) Integer mes,
-            @RequestParam(required = false) Integer ano) {
 
-        LocalDate hoje = LocalDate.now();
-        int mesAtual = mes != null ? mes : hoje.getMonthValue();
-        int anoAtual = ano != null ? ano : hoje.getYear();
-
-        List<LancamentoTesouraria> registros = service.listarPorMesAno(mesAtual, anoAtual);
-        Map<String, BigDecimal> resumo = service.resumoMensal(mesAtual, anoAtual);
-
-        Map<String, Object> resposta = new HashMap<>();
-        resposta.put("registros", registros);
-        resposta.put("resumo", resumo);
-        resposta.put("mes", mesAtual);
-        resposta.put("ano", anoAtual);
-
-        return ResponseEntity.ok(resposta);
-    }
 
     @GetMapping("/comparativo-anual")
     public ResponseEntity<Map<String, Object>> comparativoAnual(
@@ -123,6 +101,53 @@ public class TesourariaController {
         Map<String, List<Membro>> resposta = new HashMap<>();
         resposta.put("fieis", resultado.getFieis());
         resposta.put("infieis", resultado.getInfieis());
+
+        return ResponseEntity.ok(resposta);
+    }
+    @GetMapping("/listar")
+    public ResponseEntity<Page<LancamentoTesouraria>> listar(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "dataLancamento") String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        Sort.Direction dir = direction.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(dir, sort));
+        return ResponseEntity.ok(service.listar(pageable));
+    }
+
+    @GetMapping("/membros-resumo")
+    public ResponseEntity<Page<Map<String, Object>>> membrosResumo(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(service.getResumoPorMembro(pageable));
+    }
+
+    @GetMapping("/relatorio-tesouraria")
+    public ResponseEntity<Map<String, Object>> relatorioMensal(
+            @RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) Integer ano,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        LocalDate hoje   = LocalDate.now();
+        int mesAtual     = mes != null ? mes : hoje.getMonthValue();
+        int anoAtual     = ano != null ? ano : hoje.getYear();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dataLancamento"));
+
+        Page<LancamentoTesouraria> registros = service.listarPorMesAno(mesAtual, anoAtual, pageable);
+        Map<String, BigDecimal>    resumo    = service.resumoMensal(mesAtual, anoAtual);
+
+        Map<String, Object> resposta = new HashMap<>();
+        resposta.put("registros",      registros.getContent());
+        resposta.put("resumo",         resumo);
+        resposta.put("mes",            mesAtual);
+        resposta.put("ano",            anoAtual);
+        resposta.put("totalRegistros", registros.getTotalElements());
+        resposta.put("totalPaginas",   registros.getTotalPages());
+        resposta.put("paginaAtual",    registros.getNumber());
 
         return ResponseEntity.ok(resposta);
     }
