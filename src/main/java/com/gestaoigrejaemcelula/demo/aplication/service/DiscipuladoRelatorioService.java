@@ -12,6 +12,10 @@ import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,22 +33,23 @@ public class DiscipuladoRelatorioService {
     private static final Logger log = LoggerFactory.getLogger(DiscipuladoRelatorioService.class);
 
     private final DiscipuladoRelatorioRepository repository;
-    private final MembroRepository membroRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final CelulaRepository celulaRepository;
+    private final MembroRepository               membroRepository;
+    private final UsuarioRepository              usuarioRepository;
+    private final CelulaRepository               celulaRepository;
 
-    // ─── Helper seguro para Boolean nullable ────────────────────────────────
+    // ── helpers ─────────────────────────────────────────────────────────────
+
     private boolean safe(Boolean value) {
         return Boolean.TRUE.equals(value);
     }
 
-    // ─── Usuário autenticado ─────────────────────────────────────────────────
     private Usuario usuarioLogado() {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();
         return usuarioRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado: " + email));
+                .orElseThrow(() -> new RuntimeException(
+                        "Usuário autenticado não encontrado: " + email));
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -66,7 +71,6 @@ public class DiscipuladoRelatorioService {
                                 existente.setQuintaNoite(dto.quintaNoite());
                                 existente.setDomingoManha(dto.domingoManha());
                                 existente.setDomingoNoite(dto.domingoNoite());
-
                                 existente.setJustEscolaBiblica(dto.justEscolaBiblica());
                                 existente.setJustQuartaNoite(dto.justQuartaNoite());
                                 existente.setJustQuintaNoite(dto.justQuintaNoite());
@@ -86,7 +90,8 @@ public class DiscipuladoRelatorioService {
                                 relatorio.setMembro(membro);
                                 relatorio.setCelula(dto.celulaId() != null
                                         ? celulaRepository.findById(dto.celulaId())
-                                        .orElseThrow(() -> new RuntimeException("Célula não encontrada: " + dto.celulaId()))
+                                        .orElseThrow(() -> new RuntimeException(
+                                                "Célula não encontrada: " + dto.celulaId()))
                                         : membro.getCelula());
                                 relatorio.setEscolaBiblica(dto.escolaBiblica());
                                 relatorio.setQuartaNoite(dto.quartaNoite());
@@ -114,41 +119,41 @@ public class DiscipuladoRelatorioService {
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
     public List<RelatorioDiscipuladoDTO> listarSemana(LocalDate inicio, LocalDate fim) {
-        Usuario lider = usuarioLogado();
-        Celula celula = lider.getCelula();
+        Usuario lider  = usuarioLogado();
+        Celula  celula = lider.getCelula();
         if (celula == null) return List.of();
 
-        List<DiscipuladoRelatorio> lista =
-                repository.findBySemanaInicioAndSemanaFimAndCelulaId(inicio, fim, celula.getId());
-
-        return lista.stream().map(r -> {
-            List<PresencaMembroDTO> presencas = List.of(new PresencaMembroDTO(
-                    r.getId(),
-                    r.getMembro().getNome(),
-                    safe(r.isEscolaBiblica()),
-                    safe(r.isQuartaNoite()),
-                    safe(r.isQuintaNoite()),
-                    safe(r.isDomingoManha()),
-                    safe(r.isDomingoNoite()),
-                    // ✅ ADICIONE ESSAS 5 LINHAS:
-                    r.getJustEscolaBiblica(),
-                    r.getJustQuartaNoite(),
-                    r.getJustQuintaNoite(),
-                    r.getJustDomingoManha(),
-                    r.getJustDomingoNoite()
-            ));
-            Celula cel = r.getCelula();
-            Usuario lid = r.getLider();
-            return new RelatorioDiscipuladoDTO(
-                    r.getId(),
-                    cel != null ? cel.getId() : null,
-                    cel != null ? cel.getNome() : "Célula não informada",
-                    lid != null ? lid.getNome() : "Líder desconhecido",
-                    r.getSemanaInicio(),
-                    r.getSemanaFim(),
-                    presencas
-            );
-        }).collect(Collectors.toList());
+        return repository
+                .findBySemanaInicioAndSemanaFimAndCelulaId(inicio, fim, celula.getId())
+                .stream()
+                .map(r -> {
+                    List<PresencaMembroDTO> presencas = List.of(new PresencaMembroDTO(
+                            r.getId(),
+                            r.getMembro().getNome(),
+                            safe(r.isEscolaBiblica()),
+                            safe(r.isQuartaNoite()),
+                            safe(r.isQuintaNoite()),
+                            safe(r.isDomingoManha()),
+                            safe(r.isDomingoNoite()),
+                            r.getJustEscolaBiblica(),
+                            r.getJustQuartaNoite(),
+                            r.getJustQuintaNoite(),
+                            r.getJustDomingoManha(),
+                            r.getJustDomingoNoite()
+                    ));
+                    Celula  cel = r.getCelula();
+                    Usuario lid = r.getLider();
+                    return new RelatorioDiscipuladoDTO(
+                            r.getId(),
+                            cel != null ? cel.getId()   : null,
+                            cel != null ? cel.getNome() : "Célula não informada",
+                            lid != null ? lid.getNome() : "Líder desconhecido",
+                            r.getSemanaInicio(),
+                            r.getSemanaFim(),
+                            presencas
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -156,30 +161,28 @@ public class DiscipuladoRelatorioService {
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
     public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
-        List<DiscipuladoRelatorio> todos = repository.findAllWithEagerRelationships();
-
-        return todos.stream()
+        return repository.findAllWithEagerRelationships()
+                .stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getLider().getId() + "-" + r.getSemanaInicio()
                 ))
                 .values().stream()
-                .map(listaDoGrupo -> {
-                    DiscipuladoRelatorio primeiro = listaDoGrupo.get(0);
-                    Usuario lider = primeiro.getLider();
-                    Celula celulaDoRelatorio = primeiro.getCelula();
+                .map(grupo -> {
+                    DiscipuladoRelatorio primeiro = grupo.get(0);
+                    Usuario lider  = primeiro.getLider();
+                    Celula  celula = primeiro.getCelula();
 
-                    Long celulaId = null;
+                    Long   celulaId   = null;
                     String nomeCelula = "Célula não informada";
-                    if (celulaDoRelatorio != null) {
-                        celulaId = celulaDoRelatorio.getId();
-                        nomeCelula = celulaDoRelatorio.getNome();
+                    if (celula != null) {
+                        celulaId   = celula.getId();
+                        nomeCelula = celula.getNome();
                     } else if (lider != null && lider.getCelula() != null) {
-                        celulaId = lider.getCelula().getId();
+                        celulaId   = lider.getCelula().getId();
                         nomeCelula = lider.getCelula().getNome();
                     }
-// ✅ CÓDIGO CORRIGIDO - Para o método listarTodosOsRelatorios()
 
-                    List<PresencaMembroDTO> presencas = listaDoGrupo.stream()
+                    List<PresencaMembroDTO> presencas = grupo.stream()
                             .map(r -> new PresencaMembroDTO(
                                     r.getId(),
                                     r.getMembro().getNome(),
@@ -188,7 +191,6 @@ public class DiscipuladoRelatorioService {
                                     safe(r.isQuintaNoite()),
                                     safe(r.isDomingoManha()),
                                     safe(r.isDomingoNoite()),
-                                    // ✅ ADICIONADAS ESSAS 5 LINHAS:
                                     r.getJustEscolaBiblica(),
                                     r.getJustQuartaNoite(),
                                     r.getJustQuintaNoite(),
@@ -214,14 +216,12 @@ public class DiscipuladoRelatorioService {
     //  ALERTAS CRÍTICOS
     // ════════════════════════════════════════════════════════════════════════
     public List<AlertaDTO> obterAlertasCriticos() {
-        LocalDate hoje = LocalDate.now();
+        LocalDate hoje        = LocalDate.now();
         LocalDate inicioSemana = hoje.with(DayOfWeek.MONDAY);
-        LocalDate fimSemana    = hoje.with(DayOfWeek.SUNDAY);
+        LocalDate fimSemana   = hoje.with(DayOfWeek.SUNDAY);
 
-        List<DiscipuladoRelatorio> relatorios =
-                repository.findBySemanaInicioAndSemanaFim(inicioSemana, fimSemana);
-
-        return relatorios.stream()
+        return repository.findBySemanaInicioAndSemanaFim(inicioSemana, fimSemana)
+                .stream()
                 .map(r -> {
                     int faltas = 0;
                     if (!safe(r.isEscolaBiblica())) faltas++;
@@ -234,54 +234,47 @@ public class DiscipuladoRelatorioService {
                 .filter(obj -> (int) obj[1] >= 2)
                 .map(obj -> {
                     DiscipuladoRelatorio r = (DiscipuladoRelatorio) obj[0];
-                    int faltas = (int) obj[1];
                     return new AlertaDTO(
                             r.getMembro().getId(),
                             r.getMembro().getNome(),
                             r.getMembro().getTelefone(),
                             r.getCelula() != null ? r.getCelula().getNome() : "Sem célula",
-                            faltas
+                            (int) obj[1]
                     );
                 })
                 .collect(Collectors.toList());
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  ATUALIZAR um único registro (endpoint legado PUT /{id})
+    //  ATUALIZAR um único registro (PUT /{id})
     // ════════════════════════════════════════════════════════════════════════
-    // ✅ CÓDIGO CORRIGIDO - Método atualizarRelatorio()
-
     @Transactional
     public RelatorioDiscipuladoDTO atualizarRelatorio(Long id, DiscipuladoRequestDTO dto) {
         DiscipuladoRelatorio relatorio = repository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
                         "Relatório não encontrado com ID: " + id));
 
-        // Presença
         relatorio.setEscolaBiblica(dto.escolaBiblica());
         relatorio.setQuartaNoite(dto.quartaNoite());
         relatorio.setQuintaNoite(dto.quintaNoite());
         relatorio.setDomingoManha(dto.domingoManha());
         relatorio.setDomingoNoite(dto.domingoNoite());
-
-        // ✅ ADICIONADAS: Justificativas
         relatorio.setJustEscolaBiblica(dto.justEscolaBiblica());
         relatorio.setJustQuartaNoite(dto.justQuartaNoite());
         relatorio.setJustQuintaNoite(dto.justQuintaNoite());
         relatorio.setJustDomingoManha(dto.justDomingoManha());
         relatorio.setJustDomingoNoite(dto.justDomingoNoite());
-
         relatorio.calcularPresenca();
         repository.save(relatorio);
 
-        Celula celula = relatorio.getCelula();
-        Usuario lider = relatorio.getLider();
+        Celula  celula = relatorio.getCelula();
+        Usuario lider  = relatorio.getLider();
 
         return new RelatorioDiscipuladoDTO(
                 relatorio.getId(),
-                celula != null ? celula.getId() : null,
+                celula != null ? celula.getId()   : null,
                 celula != null ? celula.getNome() : "Célula não informada",
-                lider != null ? lider.getNome() : "Líder desconhecido",
+                lider  != null ? lider.getNome()  : "Líder desconhecido",
                 relatorio.getSemanaInicio(),
                 relatorio.getSemanaFim(),
                 List.of(new PresencaMembroDTO(
@@ -292,7 +285,6 @@ public class DiscipuladoRelatorioService {
                         safe(relatorio.isQuintaNoite()),
                         safe(relatorio.isDomingoManha()),
                         safe(relatorio.isDomingoNoite()),
-                        // ✅ ADICIONADAS: Justificativas no retorno
                         relatorio.getJustEscolaBiblica(),
                         relatorio.getJustQuartaNoite(),
                         relatorio.getJustQuintaNoite(),
@@ -301,70 +293,87 @@ public class DiscipuladoRelatorioService {
                 ))
         );
     }
+
     // ════════════════════════════════════════════════════════════════════════
-    //  HISTÓRICO — lista resumida de semanas da célula do líder logado
+    //  HISTÓRICO PAGINADO
     //
-    //  Modelo real: cada DiscipuladoRelatorio = 1 membro × 1 semana.
-    //  Agrupa por (semanaInicio, semanaFim) para montar um item por semana.
+    //  Fluxo:
+    //    1. Busca as semanas distintas da célula com paginação no banco
+    //       → Page<Object[]> onde Object[0]=semanaInicio, Object[1]=semanaFim
+    //    2. Para cada semana da página, faz um fetch dos registros (JOIN FETCH)
+    //    3. Agrupa e monta o DiscipuladoHistoricoItemDTO
+    //    4. Retorna Page<DiscipuladoHistoricoItemDTO> com os metadados corretos
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
-    public List<DiscipuladoHistoricoItemDTO> listarHistorico() {
+    public Page<DiscipuladoHistoricoItemDTO> listarHistorico(int page, int size) {
+
         Usuario lider = usuarioLogado();
 
-        // Busca célula onde o usuário é líder, com fallback para celula_id do usuário
+        // Célula do líder (com fallback)
         Celula celula = celulaRepository.findByLider_Id(lider.getId())
                 .orElse(lider.getCelula());
 
-        log.debug("=== HISTORICO DEBUG ===");
-        log.debug("Lider ID: {} | Email: {}", lider.getId(), lider.getEmail());
-        log.debug("Celula: {}", celula != null ? celula.getId() + " - " + celula.getNome() : "NULL");
+        log.debug("=== HISTORICO PAGINADO === lider={} celula={}",
+                lider.getId(), celula != null ? celula.getId() : "NULL");
 
-        if (celula == null) return List.of();
-
-        List<DiscipuladoRelatorio> todos =
-                repository.findByCelulaIdOrderBySemanaInicioDesc(celula.getId());
-
-        log.debug("Registros encontrados: {}", todos.size());
-
-        Map<String, List<DiscipuladoRelatorio>> porSemana = new LinkedHashMap<>();
-        for (DiscipuladoRelatorio r : todos) {
-            String chave = r.getSemanaInicio() + "|" + r.getSemanaFim();
-            porSemana.computeIfAbsent(chave, k -> new ArrayList<>()).add(r);
+        if (celula == null) {
+            return Page.empty(PageRequest.of(page, size));
         }
 
-        log.debug("Semanas agrupadas: {}", porSemana.size());
+        // 1) Semanas distintas — paginação feita no banco
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Object[]> semanasPaginadas =
+                repository.findSemanasPaginadas(celula.getId(), pageable);
+
+        log.debug("Semanas na página {}: {}", page, semanasPaginadas.getNumberOfElements());
 
         final int TOTAL_COLUNAS = 5;
-        return porSemana.values().stream().map(registrosDaSemana -> {
-            DiscipuladoRelatorio primeiro = registrosDaSemana.get(0);
-            int totalPresencas = registrosDaSemana.stream().mapToInt(r ->
-                    (safe(r.isEscolaBiblica()) ? 1 : 0) +
-                            (safe(r.isQuartaNoite())   ? 1 : 0) +
-                            (safe(r.isQuintaNoite())   ? 1 : 0) +
-                            (safe(r.isDomingoManha())  ? 1 : 0) +
-                            (safe(r.isDomingoNoite())  ? 1 : 0)
-            ).sum();
-            int totalPossivel = registrosDaSemana.size() * TOTAL_COLUNAS;
-            int frequencia    = totalPossivel > 0
-                    ? (int) Math.round((totalPresencas * 100.0) / totalPossivel)
-                    : 0;
-            return DiscipuladoHistoricoItemDTO.builder()
-                    .id(primeiro.getId())
-                    .inicio(primeiro.getSemanaInicio())
-                    .fim(primeiro.getSemanaFim())
-                    .totalMembros(registrosDaSemana.size())
-                    .totalPresencas(totalPresencas)
-                    .totalPossivel(totalPossivel)
-                    .frequencia(frequencia)
-                    .build();
-        }).collect(Collectors.toList());
+        final Long celulaId = celula.getId();
+
+        // 2) Para cada semana da página, busca os registros e monta o DTO
+        List<DiscipuladoHistoricoItemDTO> itens = semanasPaginadas.getContent()
+                .stream()
+                .map(row -> {
+                    LocalDate inicio = (LocalDate) row[0];
+                    LocalDate fim    = (LocalDate) row[1];
+
+                    List<DiscipuladoRelatorio> registros =
+                            repository.findRegistrosDaSemana(celulaId, inicio, fim);
+
+                    // Pega o primeiro para usar como referência de ID
+                    DiscipuladoRelatorio primeiro = registros.get(0);
+
+                    int totalPresencas = registros.stream().mapToInt(r ->
+                            (safe(r.isEscolaBiblica()) ? 1 : 0) +
+                                    (safe(r.isQuartaNoite())   ? 1 : 0) +
+                                    (safe(r.isQuintaNoite())   ? 1 : 0) +
+                                    (safe(r.isDomingoManha())  ? 1 : 0) +
+                                    (safe(r.isDomingoNoite())  ? 1 : 0)
+                    ).sum();
+
+                    int totalPossivel = registros.size() * TOTAL_COLUNAS;
+                    int frequencia    = totalPossivel > 0
+                            ? (int) Math.round((totalPresencas * 100.0) / totalPossivel)
+                            : 0;
+
+                    return DiscipuladoHistoricoItemDTO.builder()
+                            .id(primeiro.getId())
+                            .inicio(inicio)
+                            .fim(fim)
+                            .totalMembros(registros.size())
+                            .totalPresencas(totalPresencas)
+                            .totalPossivel(totalPossivel)
+                            .frequencia(frequencia)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        // 3) Monta o Page com os metadados corretos (total vem da query de semanas)
+        return new PageImpl<>(itens, pageable, semanasPaginadas.getTotalElements());
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  DETALHE DE UMA SEMANA por ID (tela de edição)
-    //
-    //  Recebe o ID de qualquer registro da semana, descobre início+fim,
-    //  e devolve TODOS os registros daquela semana para aquela célula.
+    //  DETALHE DE UMA SEMANA por ID
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
     public DiscipuladoSemanaDetalheDTO buscarDetalhe(Long id) {
@@ -372,11 +381,10 @@ public class DiscipuladoRelatorioService {
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
                         "Relatório não encontrado com ID: " + id));
 
-        LocalDate inicio  = referencia.getSemanaInicio();
-        LocalDate fim     = referencia.getSemanaFim();
-        Celula    celula  = referencia.getCelula();
+        LocalDate inicio = referencia.getSemanaInicio();
+        LocalDate fim    = referencia.getSemanaFim();
+        Celula    celula = referencia.getCelula();
 
-        // Todos os membros da semana (mesma célula, mesmo período)
         List<DiscipuladoRelatorio> registrosDaSemana =
                 repository.findBySemanaInicioAndSemanaFimAndCelulaId(inicio, fim, celula.getId());
 
@@ -417,22 +425,15 @@ public class DiscipuladoRelatorioService {
 
     // ════════════════════════════════════════════════════════════════════════
     //  ATUALIZAR semana completa (PUT /relatorio-semanal/{id})
-    //
-    //  Reutiliza salvarRelatorioSemanal que já faz upsert por membro,
-    //  então não precisa deletar nada — atualiza quem existe e ignora
-    //  membros que saíram (sem registro novo = sem dano).
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
     public void atualizarRelatorioSemanal(Long id,
                                           List<DiscipuladoRequestDTO> lista,
                                           LocalDate inicio,
                                           LocalDate fim) {
-        // Valida que o relatório de referência existe
         repository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
                         "Relatório não encontrado com ID: " + id));
-
-        // salvarRelatorioSemanal já faz upsert (atualiza se existe, cria se não existe)
         salvarRelatorioSemanal(lista, inicio, fim);
     }
 }
