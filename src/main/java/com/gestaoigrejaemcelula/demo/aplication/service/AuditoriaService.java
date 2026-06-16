@@ -97,9 +97,7 @@ public class AuditoriaService {
                 .usuarioEmail(r.getUsuarioEmail())
                 .aprovadorNome(r.getAprovadorNome())
                 .aprovadorEmail(r.getAprovadorEmail())
-                .dataHora(r.getDataHora()
-                        .withOffsetSameInstant(OFFSET_SP) // ✅ converte UTC → Brasília para exibição
-                        .toLocalDateTime())
+                .dataHora(r.getDataHora().withOffsetSameInstant(OFFSET_SP))
                 .ipOrigem(r.getIpOrigem())
                 .build();
     }

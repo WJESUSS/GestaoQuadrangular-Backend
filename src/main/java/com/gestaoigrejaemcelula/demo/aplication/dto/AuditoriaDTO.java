@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -20,7 +21,8 @@ public class AuditoriaDTO {
     private String        usuarioEmail;
     private String        aprovadorNome;
     private String        aprovadorEmail;
-    private LocalDateTime dataHora;
+    // AuditoriaDTO.java
+    private OffsetDateTime dataHora;  // era LocalDateTime
     private String        ipOrigem;
 }
 
