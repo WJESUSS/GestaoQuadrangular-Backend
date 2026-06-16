@@ -32,8 +32,8 @@ public class AuditoriaController {
             @RequestParam(required = false) Long   entidadeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime de,  // ✅
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime ate, // ✅
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam int size
     ) {
         return ResponseEntity.ok(
                 service.listar(entidade, acao, usuario, entidadeId, de, ate, page, size)
@@ -50,8 +50,8 @@ public class AuditoriaController {
     public ResponseEntity<Page<AuditoriaDTO>> historico(
             @PathVariable String entidade,
             @PathVariable Long   id,
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam int size
     ) {
         return ResponseEntity.ok(
                 service.historicoPorRegistro(entidade, id, page, size)
