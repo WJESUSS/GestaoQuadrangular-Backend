@@ -24,17 +24,18 @@ import java.util.Map;
 public class AuditoriaService {
 
     private static final Logger log = LoggerFactory.getLogger(AuditoriaService.class);
+    private static final ZoneOffset OFFSET_SP = ZoneOffset.of("-03:00");
 
     private final AuditoriaRepository repo;
     private final ObjectMapper mapper;
 
-    // ── Registrar evento (chamado pelos outros Services) ─────────────────────
+    // ── Registrar evento ─────────────────────────────────────────────────────
     public void registrar(
             String entidade,
             Long   entidadeId,
             String entidadeNome,
             String acao,
-            Map<String, Object> detalhes,   // {"campo": {"de": "x", "para": "y"}}
+            Map<String, Object> detalhes,
             String usuarioNome,
             String usuarioEmail,
             String aprovadorNome,
@@ -58,7 +59,6 @@ public class AuditoriaService {
                     .build();
             repo.save(reg);
         } catch (Exception e) {
-            // Nunca deixar auditoria derrubar a operação principal
             log.error("Erro ao registrar auditoria", e);
         }
     }
@@ -69,8 +69,12 @@ public class AuditoriaService {
             Long entidadeId, LocalDateTime de, LocalDateTime ate,
             int page, int size
     ) {
+        // ✅ Converte para OffsetDateTime em SP antes de comparar com o banco
+        OffsetDateTime deOffset  = de  != null ? de.atOffset(OFFSET_SP)  : null;
+        OffsetDateTime ateOffset = ate != null ? ate.atOffset(OFFSET_SP) : null;
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("dataHora").descending());
-        return repo.filtrar(entidade, acao, usuario, entidadeId, de, ate, pageable)
+        return repo.filtrar(entidade, acao, usuario, entidadeId, deOffset, ateOffset, pageable)
                 .map(this::toDTO);
     }
 
@@ -96,9 +100,8 @@ public class AuditoriaService {
                 .usuarioEmail(r.getUsuarioEmail())
                 .aprovadorNome(r.getAprovadorNome())
                 .aprovadorEmail(r.getAprovadorEmail())
-                // ✅ Converte explicitamente para o fuso de São Paulo
                 .dataHora(r.getDataHora()
-                        .withOffsetSameInstant(ZoneOffset.of("-03:00"))
+                        .withOffsetSameInstant(OFFSET_SP)
                         .toLocalDateTime())
                 .ipOrigem(r.getIpOrigem())
                 .build();

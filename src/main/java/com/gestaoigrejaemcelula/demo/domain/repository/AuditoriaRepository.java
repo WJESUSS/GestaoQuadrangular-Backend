@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public interface AuditoriaRepository extends JpaRepository<RegistroAuditoria, Long> {
 
@@ -20,13 +21,12 @@ public interface AuditoriaRepository extends JpaRepository<RegistroAuditoria, Lo
           AND (COALESCE(:de, null)         IS NULL OR r.dataHora   >= :de)
           AND (COALESCE(:ate, null)        IS NULL OR r.dataHora   <= :ate)
     """)
+// No AuditoriaRepository — troque LocalDateTime por OffsetDateTime nos params de data:
     Page<RegistroAuditoria> filtrar(
-            @Param("entidade")   String entidade,
-            @Param("acao")       String acao,
-            @Param("usuario")    String usuario,
-            @Param("entidadeId") Long   entidadeId,
-            @Param("de")         LocalDateTime de,
-            @Param("ate")        LocalDateTime ate,
+            String entidade, String acao, String usuario,
+            Long entidadeId,
+            OffsetDateTime de,      // ← era LocalDateTime
+            OffsetDateTime ate,     // ← era LocalDateTime
             Pageable pageable
     );
 
