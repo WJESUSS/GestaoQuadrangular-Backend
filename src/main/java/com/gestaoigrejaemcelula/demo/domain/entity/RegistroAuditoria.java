@@ -57,7 +57,7 @@ public class RegistroAuditoria {
     @Column(length = 120)
     private String aprovadorEmail;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime dataHora;
 
     /** IP de origem da requisição */

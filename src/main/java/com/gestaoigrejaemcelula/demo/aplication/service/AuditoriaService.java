@@ -13,9 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Map;
 
@@ -54,7 +52,7 @@ public class AuditoriaService {
                     .usuarioEmail(usuarioEmail)
                     .aprovadorNome(aprovadorNome)
                     .aprovadorEmail(aprovadorEmail)
-                    .dataHora(OffsetDateTime.now(ZoneId.of("America/Sao_Paulo")))
+                    .dataHora(OffsetDateTime.now(ZoneOffset.UTC)) // ✅ salva em UTC
                     .ipOrigem(ipOrigem)
                     .build();
             repo.save(reg);
@@ -66,15 +64,14 @@ public class AuditoriaService {
     // ── Listar com filtros e paginação ───────────────────────────────────────
     public Page<AuditoriaDTO> listar(
             String entidade, String acao, String usuario,
-            Long entidadeId, LocalDateTime de, LocalDateTime ate,
+            Long entidadeId,
+            OffsetDateTime de,  // ✅ era LocalDateTime
+            OffsetDateTime ate, // ✅ era LocalDateTime
             int page, int size
     ) {
-        // ✅ Converte para OffsetDateTime em SP antes de comparar com o banco
-        OffsetDateTime deOffset  = de  != null ? de.atOffset(OFFSET_SP)  : null;
-        OffsetDateTime ateOffset = ate != null ? ate.atOffset(OFFSET_SP) : null;
-
+        // ✅ sem conversão manual — já vem com offset do frontend
         Pageable pageable = PageRequest.of(page, size, Sort.by("dataHora").descending());
-        return repo.filtrar(entidade, acao, usuario, entidadeId, deOffset, ateOffset, pageable)
+        return repo.filtrar(entidade, acao, usuario, entidadeId, de, ate, pageable)
                 .map(this::toDTO);
     }
 
@@ -101,7 +98,7 @@ public class AuditoriaService {
                 .aprovadorNome(r.getAprovadorNome())
                 .aprovadorEmail(r.getAprovadorEmail())
                 .dataHora(r.getDataHora()
-                        .withOffsetSameInstant(OFFSET_SP)
+                        .withOffsetSameInstant(OFFSET_SP) // ✅ converte UTC → Brasília para exibição
                         .toLocalDateTime())
                 .ipOrigem(r.getIpOrigem())
                 .build();

@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/auditoria")
@@ -29,8 +30,8 @@ public class AuditoriaController {
             @RequestParam(required = false) String acao,
             @RequestParam(required = false) String usuario,
             @RequestParam(required = false) Long   entidadeId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime de,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime de,  // ✅
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime ate, // ✅
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size
     ) {
@@ -38,6 +39,7 @@ public class AuditoriaController {
                 service.listar(entidade, acao, usuario, entidadeId, de, ate, page, size)
         );
     }
+
 
     /**
      * GET /auditoria/{entidade}/{id}
