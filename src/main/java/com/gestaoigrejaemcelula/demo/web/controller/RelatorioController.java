@@ -8,9 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,14 +39,13 @@ public class RelatorioController {
 
     @PostMapping
     @PreAuthorize("hasRole('LIDER_CELULA')")
-    public ResponseEntity<String> criar(@RequestBody @Valid RelatorioRequestDTO dto) {
-        try {
-            service.salvarRelatorio(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Relatório criado com sucesso!");
-        } catch (Exception e) {
-            log.error("Erro ao criar relatório", e);
-            return ResponseEntity.badRequest().body("Erro ao criar relatório: " + e.getMessage());
-        }
+    public ResponseEntity<String> criar(@RequestBody @Valid RelatorioRequestDTO dto) throws java.nio.file.AccessDeniedException {
+        // ✅ CORREÇÃO: não capturar Exception aqui.
+        // Deixar a exceção subir para o GlobalExceptionHandler, que decide o status
+        // correto (409 para duplicata, com errorCode "DUPLICATE_REPORT", etc).
+        // O try/catch anterior forçava 400 para QUALQUER erro, inclusive duplicatas.
+        service.salvarRelatorio(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Relatório criado com sucesso!");
     }
 
     // ── Listagens ────────────────────────────────────────────────────────────
@@ -118,16 +115,12 @@ public class RelatorioController {
     @PreAuthorize("hasRole('LIDER_CELULA')")
     public ResponseEntity<String> atualizar(
             @PathVariable Long id,
-            @RequestBody @Valid RelatorioRequestDTO dto) {
-        try {
-            service.atualizarRelatorio(id, dto);
-            return ResponseEntity.ok("Relatório atualizado com sucesso!");
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acesso negado: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("Erro ao atualizar relatório {}", id, e);
-            return ResponseEntity.badRequest().body("Erro ao atualizar relatório: " + e.getMessage());
-        }
+            @RequestBody @Valid RelatorioRequestDTO dto) throws java.nio.file.AccessDeniedException {
+        // ✅ Mesma correção: deixa o GlobalExceptionHandler tratar IllegalStateException
+        // (ex: duplicata) e AccessDeniedException com os status corretos (409 / 403),
+        // em vez de forçar 400 para tudo.
+        service.atualizarRelatorio(id, dto);
+        return ResponseEntity.ok("Relatório atualizado com sucesso!");
     }
 
     // ── Não realizada ────────────────────────────────────────────────────────

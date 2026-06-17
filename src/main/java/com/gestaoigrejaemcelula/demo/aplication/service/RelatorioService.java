@@ -47,6 +47,11 @@ public class RelatorioService {
         Celula celula = celulaRepository.findByLider_Id(lider.getId())
                 .orElseThrow(() -> new RuntimeException("Líder não possui célula vinculada"));
 
+        // ✅ CORREÇÃO: Bloqueia relatório duplicado para a mesma célula e data
+        if (relatorioRepository.existsByCelulaIdAndDataReuniao(celula.getId(), dto.getDataReuniao())) {
+            throw new IllegalStateException("Já existe um relatório para esta célula nesta data. Não é permitido enviar mais de um relatório por reunião.");
+        }
+
         Relatorio relatorio = new Relatorio();
         relatorio.setCelula(celula);
         relatorio.setDataReuniao(dto.getDataReuniao());
@@ -129,7 +134,6 @@ public class RelatorioService {
 
     @Transactional(readOnly = true)
     public RelatorioResumoDTO buscarResumoSemana(LocalDate inicio, LocalDate fim) {
-        // Uma query só com JOIN FETCH em vez de duas queries + merge manual em RAM
         List<Relatorio> todos = relatorioRepository.findRelatoriosEntreDatasComCelula(inicio, fim);
 
         List<Relatorio> realizadas = todos.stream()
@@ -220,7 +224,6 @@ public class RelatorioService {
     public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
         List<DiscipuladoRelatorio> todos = discipuladoRelatorioRepository.findAllWithEagerRelationships();
 
-        // Agrupamento em memória mantido, mas com Map.Entry para evitar criação de chaves intermediárias
         Map<String, List<DiscipuladoRelatorio>> agrupado = todos.stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getLider().getId() + "-" + r.getSemanaInicio()
@@ -357,17 +360,14 @@ public class RelatorioService {
        MÉTODOS AUXILIARES
        ========================= */
 
-    /**
-     * Extrai lógica duplicada de resolução de visitantes (usada em salvar e atualizar).
-     */
     private List<Visitante> resolverVisitantes(RelatorioRequestDTO dto) {
         List<Long> ids = dto.getVisitantesPresentes().stream()
-                .map(VisitantePresencaDTO::getId)  // ✅
+                .map(VisitantePresencaDTO::getId)
                 .toList();
 
         Map<Long, DecisaoEspiritual> decisoes = dto.getVisitantesPresentes().stream()
                 .collect(Collectors.toMap(
-                        VisitantePresencaDTO::getId,       // ✅
+                        VisitantePresencaDTO::getId,
                         v -> v.getDecisaoEspiritual() != null
                                 ? v.getDecisaoEspiritual()
                                 : DecisaoEspiritual.NENHUMA
