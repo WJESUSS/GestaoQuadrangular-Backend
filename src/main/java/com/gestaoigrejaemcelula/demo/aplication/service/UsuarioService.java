@@ -76,10 +76,10 @@ public class UsuarioService {
     // 2 — LISTAR TODOS
     // =========================
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarTodos() {
+    public List<UsuarioResumoDTO> listarTodos() {
         return usuarioRepository.findAll()
                 .stream()
-                .map(UsuarioResponseDTO::new)
+                .map(UsuarioResumoDTO::new)
                 .collect(Collectors.toList());
     }
 
@@ -304,10 +304,10 @@ public class UsuarioService {
     // LISTAR PENDENTES
     // =========================
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarPendentes() {
+    public List<UsuarioResumoDTO> listarPendentes() {
         return usuarioRepository.findAll().stream()
                 .filter(u -> !u.isAtivo())
-                .map(UsuarioResponseDTO::new)
+                .map(UsuarioResumoDTO::new)
                 .collect(Collectors.toList());
     }
 
@@ -341,10 +341,10 @@ public class UsuarioService {
     // LISTAR COM ALTERAÇÃO PENDENTE
     // =========================
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarComAlteracaoPendente() {
+    public List<UsuarioResumoDTO> listarComAlteracaoPendente() {
         return usuarioRepository.findAll().stream()
                 .filter(u -> u.getEmailPendente() != null || u.getSenhaPendente() != null)
-                .map(UsuarioResponseDTO::new)
+                .map(UsuarioResumoDTO::new)
                 .collect(Collectors.toList());
     }
 
@@ -459,6 +459,16 @@ public class UsuarioService {
         auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
                 Map.of("fotoPerfil", Map.of("para", "*** imagem atualizada ***"))
         );
+    }
+
+    // =========================
+    // LISTAR FOTOS
+    // =========================
+    @Transactional(readOnly = true)
+    public Map<Long, String> listarFotos() {
+        return usuarioRepository.findAll().stream()
+                .filter(u -> u.getFotoPerfil() != null)
+                .collect(Collectors.toMap(Usuario::getId, Usuario::getFotoPerfil));
     }
 
     // ── Helper interno para pegar e-mail do usuário logado ──────────────────
