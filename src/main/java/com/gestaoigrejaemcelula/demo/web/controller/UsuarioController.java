@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/usuarios") // ✅ corrigido
@@ -41,7 +42,7 @@ public class UsuarioController {
 
     // 2️⃣ Listar todos os usuários
     @GetMapping
-    public ResponseEntity<List<UsuarioResponseDTO>> listar() {
+    public ResponseEntity<List<UsuarioResumoDTO>> listar() {
         return ResponseEntity.ok(service.listarTodos());
     }
 
@@ -85,11 +86,11 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/pendentes")
-    public ResponseEntity<List<UsuarioResponseDTO>> listarPendentes() {
+    public ResponseEntity<List<UsuarioResumoDTO>> listarPendentes() {
         return ResponseEntity.ok(service.listarPendentes());
     }
     @GetMapping("/com-alteracao-pendente")
-    public ResponseEntity<List<UsuarioResponseDTO>> listarComAlteracaoPendente() {
+    public ResponseEntity<List<UsuarioResumoDTO>> listarComAlteracaoPendente() {
         return ResponseEntity.ok(service.listarComAlteracaoPendente());
     }
 
@@ -117,6 +118,11 @@ public class UsuarioController {
             @RequestBody @Valid SolicitacaoAlteracaoDTO dto) {
         return ResponseEntity.ok(service.solicitarAlteracao(dto));
     }
+    @GetMapping("/fotos")
+    public ResponseEntity<Map<Long, String>> listarFotos() {
+        return ResponseEntity.ok(service.listarFotos());
+    }
+
     @PatchMapping("/{id}/foto")
     public ResponseEntity<Void> atualizarFoto(
             @PathVariable Long id,
