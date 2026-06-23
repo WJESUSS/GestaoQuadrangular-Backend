@@ -53,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             email = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            log.warn("JWT inválido: {}", e.getMessage());
+            log.debug("JWT inválido: {}", e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }

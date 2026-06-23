@@ -13,6 +13,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,7 +37,11 @@ public class UsuarioService {
     private final CelulaRepository celulaRepository;
     private final FichaEncontroRepository fichaEncontroRepository;
     private final NotificacaoService notificacaoService;
+    private final WhatsAppService whatsAppService;
     private final AuditoriaHelper auditoria;
+
+    @Value("${whatsapp.api.template.notificacao:notificacao_geral}")
+    private String templateBoasVindas;
 
     // ── Helper ─────────────────────────────────────────────────────────────────
     private String str(Object o) { return o != null ? o.toString() : ""; }
@@ -52,6 +57,7 @@ public class UsuarioService {
         usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         usuario.setPerfil(dto.getPerfil());
         usuario.setAtivo(dto.isAtivo());
+        usuario.setTelefoneWhatsapp(dto.getTelefoneWhatsapp());
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
@@ -68,6 +74,8 @@ public class UsuarioService {
                         "ativo",  Map.of("para", str(salvo.isAtivo()))
                 )
         );
+
+        enviarBoasVindas(salvo);
 
         return salvo;
     }
@@ -115,10 +123,13 @@ public class UsuarioService {
         }
         if (dto.senha() != null && !dto.senha().trim().isEmpty())
             diff.put("senha", Map.of("para", "*** alterada ***"));
+        if (!Objects.equals(usuario.getTelefoneWhatsapp(), dto.telefoneWhatsapp()))
+            diff.put("telefoneWhatsapp", Map.of("de", str(usuario.getTelefoneWhatsapp()), "para", str(dto.telefoneWhatsapp())));
 
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
         usuario.setPerfil(dto.perfil());
+        usuario.setTelefoneWhatsapp(dto.telefoneWhatsapp());
 
         if (dto.senha() != null && !dto.senha().trim().isEmpty())
             usuario.setSenha(passwordEncoder.encode(dto.senha()));
@@ -277,6 +288,7 @@ public class UsuarioService {
         usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         usuario.setPerfil(Perfil.LIDER_CELULA);
         usuario.setAtivo(false);
+        usuario.setTelefoneWhatsapp(dto.getTelefoneWhatsapp());
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
@@ -452,8 +464,16 @@ public class UsuarioService {
     // =========================
     // ATUALIZAR FOTO
     // =========================
-    public void atualizarFoto(Long id, String fotoBase64) {
+    @Transactional
+    public void atualizarFoto(Long id, String fotoBase64) throws AccessDeniedException {
         Usuario usuario = buscarPorId(id);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(g -> g.getAuthority().equals("ADMIN"));
+        if (!isAdmin && !usuario.getEmail().equalsIgnoreCase(auth.getName()))
+            throw new AccessDeniedException("Apenas o próprio usuário ou um administrador pode alterar a foto.");
+
         usuario.setFotoPerfil(fotoBase64);
         usuarioRepository.save(usuario);
         auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
@@ -465,5 +485,18 @@ public class UsuarioService {
     private String getEmailLogado() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         return auth != null ? auth.getName() : "sistema";
+    }
+
+    private void enviarBoasVindas(Usuario usuario) {
+        if (usuario.getTelefoneWhatsapp() == null || usuario.getTelefoneWhatsapp().isBlank()) {
+            return;
+        }
+        String primeiroNome = usuario.getNome().split(" ")[0];
+        whatsAppService.enviarTemplate(
+                usuario.getTelefoneWhatsapp(),
+                templateBoasVindas,
+                "pt_BR",
+                primeiroNome
+        );
     }
 }

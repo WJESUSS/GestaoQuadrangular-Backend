@@ -64,13 +64,14 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/solicitar-cadastro-lider").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/solicitar-alteracao").permitAll()
+                        .requestMatchers("/whatsapp/teste/**").permitAll()
                         .requestMatchers("/auditoria").hasAnyAuthority("ADMIN","PASTOR")
 
 
                         // ✅ removida linha duplicada de /relatorios/** com permitAll()
                         // ✅ removida linha duplicada de /membros/sem-celula
                         .requestMatchers("/api/casas-de-paz/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/foto").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/usuarios/*/foto").authenticated()
                         .requestMatchers("/api/missao70/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/api/missao70").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
                         .requestMatchers("/api/aniversariantes/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")

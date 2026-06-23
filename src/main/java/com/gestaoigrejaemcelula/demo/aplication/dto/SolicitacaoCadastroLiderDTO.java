@@ -22,10 +22,8 @@ public class SolicitacaoCadastroLiderDTO {
     @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
     private String senha;
 
-    // Opcional: líder pode informar a qual célula pertence
     private Long celulaId;
-
-    // ── Getters / Setters ──────────────────────────────────────────────────
+    private String telefoneWhatsapp;
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
@@ -38,4 +36,7 @@ public class SolicitacaoCadastroLiderDTO {
 
     public Long getCelulaId() { return celulaId; }
     public void setCelulaId(Long celulaId) { this.celulaId = celulaId; }
+
+    public String getTelefoneWhatsapp() { return telefoneWhatsapp; }
+    public void setTelefoneWhatsapp(String telefoneWhatsapp) { this.telefoneWhatsapp = telefoneWhatsapp; }
 }

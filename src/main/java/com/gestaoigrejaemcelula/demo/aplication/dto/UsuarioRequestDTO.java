@@ -9,5 +9,6 @@ public record UsuarioRequestDTO(
         @NotBlank @Email String email,
         String senha,
         Perfil perfil,
-        Long celulaId
+        Long celulaId,
+        String telefoneWhatsapp
 ) {}

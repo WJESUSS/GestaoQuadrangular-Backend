@@ -15,6 +15,7 @@ public class CadastroUsuarioDTO {
     @NotNull private Perfil perfil;
     private boolean ativo;
     private Long celulaId;
+    private String telefoneWhatsapp;
 
     public void setNome(String nome) { this.nome = nome; }
     public void setEmail(String email) { this.email = email; }
@@ -29,4 +30,6 @@ public class CadastroUsuarioDTO {
     public String getSenha() { return senha; }
     public Perfil getPerfil() { return perfil; }
     public boolean isAtivo() { return ativo; }
+    public String getTelefoneWhatsapp() { return telefoneWhatsapp; }
+    public void setTelefoneWhatsapp(String telefoneWhatsapp) { this.telefoneWhatsapp = telefoneWhatsapp; }
 }

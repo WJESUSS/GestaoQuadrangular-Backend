@@ -11,18 +11,20 @@ public record UsuarioResponseDTO(
         Perfil perfil,
         boolean ativo,
         Long celulaId,
-        String nomeCelula
+        String nomeCelula,
+        String telefoneWhatsapp
 ) {
     public UsuarioResponseDTO(Usuario usuario) {
         this(
                 usuario.getId(),
                 usuario.getNome(),
-                usuario.getFotoPerfil(), // ✅ agora passa a foto
+                usuario.getFotoPerfil(),
                 usuario.getEmail(),
                 usuario.getPerfil(),
                 usuario.isAtivo(),
                 usuario.getCelula() != null ? usuario.getCelula().getId() : null,
-                usuario.getCelula() != null ? usuario.getCelula().getNome() : "Sem Célula"
+                usuario.getCelula() != null ? usuario.getCelula().getNome() : "Sem Célula",
+                usuario.getTelefoneWhatsapp()
         );
     }
 }

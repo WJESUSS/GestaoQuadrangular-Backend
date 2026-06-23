@@ -6,6 +6,7 @@ import com.gestaoigrejaemcelula.demo.aplication.service.UsuarioService;
 import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import java.nio.file.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -119,7 +120,7 @@ public class UsuarioController {
     @PatchMapping("/{id}/foto")
     public ResponseEntity<Void> atualizarFoto(
             @PathVariable Long id,
-            @RequestBody FotoPerfilDTO dto) {
+            @RequestBody FotoPerfilDTO dto) throws AccessDeniedException {
         service.atualizarFoto(id, dto.getFotoBase64());
         return ResponseEntity.noContent().build();
     }

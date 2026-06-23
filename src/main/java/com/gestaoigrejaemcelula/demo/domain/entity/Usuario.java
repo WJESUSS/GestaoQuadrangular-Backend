@@ -164,5 +164,14 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "celula_id")
     private Celula celula;
 
+    @Column(name = "telefone_whatsapp", length = 20)
+    private String telefoneWhatsapp;
 
+    public String getTelefoneWhatsapp() {
+        return telefoneWhatsapp;
+    }
+
+    public void setTelefoneWhatsapp(String telefoneWhatsapp) {
+        this.telefoneWhatsapp = telefoneWhatsapp;
+    }
 }

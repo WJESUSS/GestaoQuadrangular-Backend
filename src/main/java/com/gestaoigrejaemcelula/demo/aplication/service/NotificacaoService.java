@@ -6,6 +6,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.NotificacaoRepository;
 import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,15 +19,11 @@ public class NotificacaoService {
 
     private final NotificacaoRepository notificacaoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final WhatsAppService whatsAppService;
 
-    /**
-     * Envia uma notificação interna para um usuário específico.
-     * A notificação é salva no banco e ficará visível no dashboard/app do usuário.
-     */
-    /**
-     * Envia uma notificação interna para um usuário específico.
-     * Adicionado o parâmetro 'titulo' para evitar erro de constraint no banco.
-     */
+    @Value("${whatsapp.api.template.notificacao:notificacao_geral}")
+    private String templateNotificacao;
+
     @Transactional
     public void enviarNotificacao(Long usuarioId, String titulo, String mensagem, Notificacao.TipoNotificacao tipo) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -34,18 +31,17 @@ public class NotificacaoService {
 
         Notificacao notificacao = new Notificacao();
         notificacao.setUsuario(usuario);
-        notificacao.setTitulo(titulo); // <-- Faltava esta linha!
+        notificacao.setTitulo(titulo);
         notificacao.setMensagem(mensagem);
         notificacao.setTipo(tipo);
         notificacao.setDataEnvio(LocalDateTime.now());
         notificacao.setLida(false);
 
         notificacaoRepository.save(notificacao);
+
+        enviarWhatsAppSePossivel(usuario, titulo);
     }
 
-    /**
-     * Envia notificação para múltiplos usuários
-     */
     @Transactional
     public void enviarNotificacaoParaVarios(List<Long> usuarioIds, String titulo, String mensagem, Notificacao.TipoNotificacao tipo) {
         List<Usuario> usuarios = usuarioRepository.findAllById(usuarioIds);
@@ -60,8 +56,23 @@ public class NotificacaoService {
             notificacao.setDataEnvio(agora);
             notificacao.setLida(false);
             notificacoes.add(notificacao);
+
+            enviarWhatsAppSePossivel(usuario, titulo);
         }
         notificacaoRepository.saveAll(notificacoes);
+    }
+
+    private void enviarWhatsAppSePossivel(Usuario usuario, String titulo) {
+        if (usuario.getTelefoneWhatsapp() == null || usuario.getTelefoneWhatsapp().isBlank()) {
+            return;
+        }
+        whatsAppService.enviarTemplate(
+                usuario.getTelefoneWhatsapp(),
+                templateNotificacao,
+                "pt_BR",
+                usuario.getNome().split(" ")[0],
+                titulo
+        );
     }
 
     /**
