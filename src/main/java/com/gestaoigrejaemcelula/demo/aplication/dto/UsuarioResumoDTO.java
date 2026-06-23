@@ -9,7 +9,9 @@ public record UsuarioResumoDTO(
         String perfil,
         boolean ativo,
         Long celulaId,
-        String nomeCelula
+        String nomeCelula,
+        String telefoneWhatsapp,
+        String fotoPerfil
 ) {
     public UsuarioResumoDTO(Usuario usuario) {
         this(
@@ -19,7 +21,9 @@ public record UsuarioResumoDTO(
                 usuario.getPerfil().name(),
                 usuario.isAtivo(),
                 usuario.getCelula() != null ? usuario.getCelula().getId() : null,
-                usuario.getCelula() != null ? usuario.getCelula().getNome() : "Sem Célula"
+                usuario.getCelula() != null ? usuario.getCelula().getNome() : "Sem Célula",
+                usuario.getTelefoneWhatsapp(),
+                usuario.getFotoPerfil()
         );
     }
 }
