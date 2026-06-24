@@ -65,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/solicitar-cadastro-lider").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuarios/solicitar-alteracao").permitAll()
                         .requestMatchers("/whatsapp/teste/**").permitAll()
+                        .requestMatchers("/webhook/**").permitAll()
                         .requestMatchers("/auditoria").hasAnyAuthority("ADMIN","PASTOR")
 
 
