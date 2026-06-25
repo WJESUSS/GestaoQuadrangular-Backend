@@ -1,6 +1,9 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gestaoigrejaemcelula.demo.domain.entity.RegistroWebhook;
+import com.gestaoigrejaemcelula.demo.domain.repository.RegistroWebhookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,15 +34,15 @@ public class WhatsAppService {
     @Value("${whatsapp.api.version:v23.0}")
     private String version;
 
+    private final RegistroWebhookRepository registroRepository; // ← inject
     private final ObjectMapper objectMapper = new ObjectMapper();
-
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
     public void enviarTemplate(String numeroDestino, String templateName, String idiomaCode, String... parametros) {
         if (token == null || token.isBlank() || phoneNumberId == null || phoneNumberId.isBlank()) {
-            log.warn("WhatsApp não configurado: token ou phone-number-id vazios. Mensagem não enviada para {}", numeroDestino);
+            log.warn("WhatsApp não configurado. Mensagem não enviada para {}", numeroDestino);
             return;
         }
 
@@ -46,6 +50,7 @@ public class WhatsAppService {
         String url = "https://graph.facebook.com/" + version + "/" + phoneNumberId + "/messages";
 
         try {
+            // ── Monta o body ──────────────────────────────────────────
             Map<String, Object> body = new HashMap<>();
             body.put("messaging_product", "whatsapp");
             body.put("to", numeroLimpo);
@@ -66,20 +71,16 @@ public class WhatsAppService {
                     paramMap.put("text", param);
                     parameters.add(paramMap);
                 }
-
                 Map<String, Object> component = new HashMap<>();
                 component.put("type", "body");
                 component.put("parameters", parameters);
-
-                List<Map<String, Object>> components = new ArrayList<>();
-                components.add(component);
-                template.put("components", components);
+                template.put("components", List.of(component));
             }
 
             body.put("template", template);
-
             String json = objectMapper.writeValueAsString(body);
 
+            // ── Envia para a Meta ─────────────────────────────────────
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Authorization", "Bearer " + token)
@@ -90,12 +91,52 @@ public class WhatsAppService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                log.info("WhatsApp template '{}' enviado com sucesso para {}", templateName, numeroLimpo);
+                log.info("Template '{}' enviado para {}", templateName, numeroLimpo);
+
+                // ── Extrai o wamid da resposta ────────────────────────
+                String wamid = null;
+                try {
+                    JsonNode resp = objectMapper.readTree(response.body());
+                    wamid = resp.path("messages").get(0).path("id").asText(null);
+                } catch (Exception ex) {
+                    log.warn("Não foi possível extrair wamid da resposta: {}", ex.getMessage());
+                }
+
+                // ── ✅ Salva o registro no banco ──────────────────────
+                salvarRegistroEnvio(numeroLimpo, templateName, wamid, parametros, json);
+
             } else {
-                log.error("Erro ao enviar WhatsApp para {}: status={}, resposta={}", numeroLimpo, response.statusCode(), response.body());
+                log.error("Erro ao enviar para {}: status={}, body={}", numeroLimpo, response.statusCode(), response.body());
             }
+
         } catch (Exception e) {
-            log.error("Exceção ao enviar WhatsApp para {}: {}", numeroLimpo, e.getMessage(), e);
+            log.error("Exceção ao enviar para {}: {}", numeroLimpo, e.getMessage(), e);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    private void salvarRegistroEnvio(String numero, String templateName, String wamid, String[] parametros, String payloadEnviado) {
+        try {
+            RegistroWebhook r = new RegistroWebhook();
+            r.setTipoEvento("mensagem");
+            r.setTipoMensagem("template");
+            r.setStatus("enviada");
+            r.setNumeroDestino(numero);
+            r.setIdMensagem(wamid != null ? wamid : "pendente-" + System.currentTimeMillis());
+
+            // Texto legível: [Template: nome] | PARAM1, PARAM2
+            String texto = "[Template: " + templateName + "]";
+            if (parametros != null && parametros.length > 0) {
+                texto += " | " + String.join(", ", parametros);
+            }
+            r.setTextoMensagem(texto);
+            r.setPayload(payloadEnviado);
+
+            registroRepository.save(r);
+            log.info("Registro de envio salvo: template={}, para={}", templateName, numero);
+
+        } catch (Exception e) {
+            log.error("Erro ao salvar registro de envio: {}", e.getMessage(), e);
         }
     }
 }

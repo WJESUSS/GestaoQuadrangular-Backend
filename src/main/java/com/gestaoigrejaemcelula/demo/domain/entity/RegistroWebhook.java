@@ -13,6 +13,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RegistroWebhook {
 
+    @Column(name = "texto_mensagem", columnDefinition = "TEXT")
+    private String textoMensagem;
+
+    @Column(name = "tipo_mensagem")
+    private String tipoMensagem; // "text", "image", "audio", "document"...
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
