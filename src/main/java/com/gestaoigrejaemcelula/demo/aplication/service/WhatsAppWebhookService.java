@@ -17,6 +17,7 @@ import java.util.List;
 public class WhatsAppWebhookService {
 
     private final RegistroWebhookRepository repository;
+    private final BloqueioService bloqueioService; // <-- novo
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void processarPayload(String payloadJson) {
@@ -41,6 +42,14 @@ public class WhatsAppWebhookService {
             JsonNode messages = value.path("messages");
             if (messages.isArray()) {
                 for (JsonNode m : messages) {
+                    String remetente = m.path("from").asText();
+
+                    // Ignora completamente mensagens de números bloqueados.
+                    if (bloqueioService.isBloqueado(remetente)) {
+                        log.info("Mensagem de número bloqueado ignorada: {}", remetente);
+                        continue;
+                    }
+
                     salvarRegistro(m, "mensagem");
                 }
             }
