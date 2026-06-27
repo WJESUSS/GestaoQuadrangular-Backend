@@ -43,6 +43,9 @@ public class UsuarioService {
     @Value("${whatsapp.api.template.notificacao:notificacao_geral}")
     private String templateBoasVindas;
 
+    @Value("${foto.perfil.max-size-bytes:524288}")
+    private int maxFotoSizeBytes;
+
     // ── Helper ─────────────────────────────────────────────────────────────────
     private String str(Object o) { return o != null ? o.toString() : ""; }
 
@@ -317,8 +320,7 @@ public class UsuarioService {
     // =========================
     @Transactional(readOnly = true)
     public List<UsuarioResumoDTO> listarPendentes() {
-        return usuarioRepository.findAll().stream()
-                .filter(u -> !u.isAtivo())
+        return usuarioRepository.findPendentes().stream()
                 .map(UsuarioResumoDTO::new)
                 .collect(Collectors.toList());
     }
@@ -354,8 +356,7 @@ public class UsuarioService {
     // =========================
     @Transactional(readOnly = true)
     public List<UsuarioResumoDTO> listarComAlteracaoPendente() {
-        return usuarioRepository.findAll().stream()
-                .filter(u -> u.getEmailPendente() != null || u.getSenhaPendente() != null)
+        return usuarioRepository.findComAlteracaoPendente().stream()
                 .map(UsuarioResumoDTO::new)
                 .collect(Collectors.toList());
     }
@@ -466,6 +467,17 @@ public class UsuarioService {
     // =========================
     @Transactional
     public void atualizarFoto(Long id, String fotoBase64) throws AccessDeniedException {
+        if (fotoBase64 == null || fotoBase64.isBlank())
+            throw new IllegalArgumentException("A foto não pode estar vazia.");
+
+        String base64Data = fotoBase64;
+        if (base64Data.contains(","))
+            base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+
+        byte[] decoded = java.util.Base64.getDecoder().decode(base64Data);
+        if (decoded.length > maxFotoSizeBytes)
+            throw new IllegalArgumentException("A foto excede o tamanho máximo de " + (maxFotoSizeBytes / 1024) + "KB.");
+
         Usuario usuario = buscarPorId(id);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -486,9 +498,11 @@ public class UsuarioService {
     // =========================
     @Transactional(readOnly = true)
     public Map<Long, String> listarFotos() {
-        return usuarioRepository.findAll().stream()
-                .filter(u -> u.getFotoPerfil() != null)
-                .collect(Collectors.toMap(Usuario::getId, Usuario::getFotoPerfil));
+        return usuarioRepository.findFotos().stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (String) row[1]
+                ));
     }
 
     // ── Helper interno para pegar e-mail do usuário logado ──────────────────

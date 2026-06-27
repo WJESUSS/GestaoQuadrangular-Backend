@@ -13,7 +13,7 @@ import java.time.Duration;
 public class LoginRateLimiter {
 
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
-            .maximumSize(10_000)
+            .maximumSize(1_000)
             .expireAfterWrite(Duration.ofMinutes(30))
             .build();
 

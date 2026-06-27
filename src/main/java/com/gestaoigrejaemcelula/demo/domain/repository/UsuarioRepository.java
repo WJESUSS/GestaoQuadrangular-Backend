@@ -19,4 +19,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     """)
     List<Usuario> findByPerfilAndAtivoTrueAndTelefoneWhatsappIsNotNull(Perfil perfil);
 
+    @Query("SELECT u.id, u.fotoPerfil FROM Usuario u WHERE u.fotoPerfil IS NOT NULL")
+    List<Object[]> findFotos();
+
+    @Query("SELECT u FROM Usuario u WHERE u.ativo = false")
+    List<Usuario> findPendentes();
+
+    @Query("SELECT u FROM Usuario u WHERE u.emailPendente IS NOT NULL OR u.senhaPendente IS NOT NULL")
+    List<Usuario> findComAlteracaoPendente();
+
 }
