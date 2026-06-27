@@ -22,6 +22,18 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
     Optional<DiscipuladoRelatorio> findByMembroIdAndSemanaInicioAndSemanaFim(
             Long membroId, LocalDate semanaInicio, LocalDate semanaFim);
 
+    @Query("""
+        SELECT r FROM DiscipuladoRelatorio r
+        JOIN FETCH r.membro
+        WHERE r.membro.id IN :membroIds
+          AND r.semanaInicio = :inicio
+          AND r.semanaFim    = :fim
+    """)
+    List<DiscipuladoRelatorio> findByMembroIdInAndSemanaInicioAndSemanaFim(
+            @Param("membroIds") List<Long> membroIds,
+            @Param("inicio")    LocalDate inicio,
+            @Param("fim")       LocalDate fim);
+
     // ── Eager (sem paginação — uso restrito a consultas pequenas) ────────────
 
     @Query("""
@@ -83,7 +95,7 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
     @Query("""
         SELECT r FROM DiscipuladoRelatorio r
         JOIN FETCH r.membro
-        LEFT JOIN FETCH r.celula
+        JOIN FETCH r.celula
         LEFT JOIN FETCH r.lider
         WHERE r.semanaInicio = :inicio
           AND r.semanaFim    = :fim
@@ -93,6 +105,22 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("inicio")   LocalDate inicio,
             @Param("fim")      LocalDate fim,
             @Param("celulaId") Long celulaId);
+
+    @Query("""
+        SELECT r FROM DiscipuladoRelatorio r
+        JOIN FETCH r.membro
+        JOIN FETCH r.celula
+        LEFT JOIN FETCH r.lider
+        WHERE r.celula.id = (
+            SELECT r2.celula.id FROM DiscipuladoRelatorio r2 WHERE r2.id = :id
+        ) AND r.semanaInicio = (
+            SELECT r2.semanaInicio FROM DiscipuladoRelatorio r2 WHERE r2.id = :id
+        ) AND r.semanaFim = (
+            SELECT r2.semanaFim FROM DiscipuladoRelatorio r2 WHERE r2.id = :id
+        )
+    """)
+    List<DiscipuladoRelatorio> findRegistrosDaSemanaPorIdRelatorio(
+            @Param("id") Long id);
 
     @Query("""
         SELECT r FROM DiscipuladoRelatorio r

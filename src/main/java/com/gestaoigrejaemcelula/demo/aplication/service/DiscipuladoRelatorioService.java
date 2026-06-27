@@ -24,6 +24,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,55 +61,81 @@ public class DiscipuladoRelatorioService {
                                        LocalDate inicio,
                                        LocalDate fim) {
         Usuario lider = usuarioLogado();
+
+        List<Long> membroIds = lista.stream()
+                .map(DiscipuladoRequestDTO::membroId)
+                .collect(Collectors.toList());
+
+        List<DiscipuladoRelatorio> existentes = repository
+                .findByMembroIdInAndSemanaInicioAndSemanaFim(membroIds, inicio, fim);
+
+        Map<Long, DiscipuladoRelatorio> existentesMap = existentes.stream()
+                .collect(Collectors.toMap(r -> r.getMembro().getId(), Function.identity()));
+
+        List<Long> novosMembroIds = lista.stream()
+                .map(DiscipuladoRequestDTO::membroId)
+                .filter(id -> !existentesMap.containsKey(id))
+                .collect(Collectors.toList());
+
+        Map<Long, Celula> celulaCache = new HashMap<>();
+
+        Map<Long, Membro> novosMembros = membroRepository.findAllById(novosMembroIds).stream()
+                .collect(Collectors.toMap(Membro::getId, Function.identity()));
+
         List<DiscipuladoRelatorio> paraSalvar = new ArrayList<>();
 
         for (DiscipuladoRequestDTO dto : lista) {
-            repository.findByMembroIdAndSemanaInicioAndSemanaFim(dto.membroId(), inicio, fim)
-                    .ifPresentOrElse(
-                            existente -> {
-                                existente.setEscolaBiblica(dto.escolaBiblica());
-                                existente.setQuartaNoite(dto.quartaNoite());
-                                existente.setQuintaNoite(dto.quintaNoite());
-                                existente.setDomingoManha(dto.domingoManha());
-                                existente.setDomingoNoite(dto.domingoNoite());
-                                existente.setJustEscolaBiblica(dto.justEscolaBiblica());
-                                existente.setJustQuartaNoite(dto.justQuartaNoite());
-                                existente.setJustQuintaNoite(dto.justQuintaNoite());
-                                existente.setJustDomingoManha(dto.justDomingoManha());
-                                existente.setJustDomingoNoite(dto.justDomingoNoite());
-                                existente.calcularPresenca();
-                                paraSalvar.add(existente);
-                            },
-                            () -> {
-                                Membro membro = membroRepository.findById(dto.membroId())
-                                        .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
-                                                "Membro não encontrado com ID: " + dto.membroId()));
+            DiscipuladoRelatorio existente = existentesMap.get(dto.membroId());
+            if (existente != null) {
+                existente.setEscolaBiblica(dto.escolaBiblica());
+                existente.setQuartaNoite(dto.quartaNoite());
+                existente.setQuintaNoite(dto.quintaNoite());
+                existente.setDomingoManha(dto.domingoManha());
+                existente.setDomingoNoite(dto.domingoNoite());
+                existente.setJustEscolaBiblica(dto.justEscolaBiblica());
+                existente.setJustQuartaNoite(dto.justQuartaNoite());
+                existente.setJustQuintaNoite(dto.justQuintaNoite());
+                existente.setJustDomingoManha(dto.justDomingoManha());
+                existente.setJustDomingoNoite(dto.justDomingoNoite());
+                existente.calcularPresenca();
+                paraSalvar.add(existente);
+                continue;
+            }
 
-                                DiscipuladoRelatorio relatorio = new DiscipuladoRelatorio();
-                                relatorio.setSemanaInicio(inicio);
-                                relatorio.setSemanaFim(fim);
-                                relatorio.setMembro(membro);
-                                relatorio.setCelula(dto.celulaId() != null
-                                        ? celulaRepository.findById(dto.celulaId())
-                                        .orElseThrow(() -> new RuntimeException(
-                                                "Célula não encontrada: " + dto.celulaId()))
-                                        : membro.getCelula());
-                                relatorio.setEscolaBiblica(dto.escolaBiblica());
-                                relatorio.setQuartaNoite(dto.quartaNoite());
-                                relatorio.setQuintaNoite(dto.quintaNoite());
-                                relatorio.setDomingoManha(dto.domingoManha());
-                                relatorio.setDomingoNoite(dto.domingoNoite());
-                                relatorio.setJustEscolaBiblica(dto.justEscolaBiblica());
-                                relatorio.setJustQuartaNoite(dto.justQuartaNoite());
-                                relatorio.setJustQuintaNoite(dto.justQuintaNoite());
-                                relatorio.setJustDomingoManha(dto.justDomingoManha());
-                                relatorio.setJustDomingoNoite(dto.justDomingoNoite());
-                                relatorio.setLider(lider);
-                                relatorio.setDataEnvio(LocalDateTime.now());
-                                relatorio.calcularPresenca();
-                                paraSalvar.add(relatorio);
-                            }
-                    );
+            Membro membro = novosMembros.get(dto.membroId());
+            if (membro == null) {
+                throw new jakarta.persistence.EntityNotFoundException(
+                        "Membro não encontrado com ID: " + dto.membroId());
+            }
+
+            Celula celula;
+            if (dto.celulaId() != null) {
+                celula = celulaCache.computeIfAbsent(dto.celulaId(), id ->
+                        celulaRepository.findById(id).orElseThrow(() ->
+                                new RuntimeException("Célula não encontrada: " + id)));
+            } else {
+                celula = membro.getCelula();
+            }
+
+            DiscipuladoRelatorio relatorio = new DiscipuladoRelatorio();
+            relatorio.setSemanaInicio(inicio);
+            relatorio.setSemanaFim(fim);
+            relatorio.setMembro(membro);
+            relatorio.setCelula(celula);
+            relatorio.setEscolaBiblica(dto.escolaBiblica());
+            relatorio.setQuartaNoite(dto.quartaNoite());
+            relatorio.setQuintaNoite(dto.quintaNoite());
+            relatorio.setDomingoManha(dto.domingoManha());
+            relatorio.setDomingoNoite(dto.domingoNoite());
+            relatorio.setJustEscolaBiblica(dto.justEscolaBiblica());
+            relatorio.setJustQuartaNoite(dto.justQuartaNoite());
+            relatorio.setJustQuintaNoite(dto.justQuintaNoite());
+            relatorio.setJustDomingoManha(dto.justDomingoManha());
+            relatorio.setJustDomingoNoite(dto.justDomingoNoite());
+            relatorio.setLider(lider);
+            relatorio.setDataEnvio(LocalDateTime.now());
+            relatorio.calcularPresenca();
+            paraSalvar.add(relatorio);
         }
 
         repository.saveAll(paraSalvar);
@@ -157,11 +184,15 @@ public class DiscipuladoRelatorioService {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  LISTAR todos (painel admin)
+    //  LISTAR todos (painel admin) — com filtro de data padrão
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
-    public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
-        return repository.findAllWithEagerRelationships()
+    public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios(
+            LocalDate inicio, LocalDate fim) {
+        if (inicio == null) inicio = LocalDate.now().minusMonths(6);
+        if (fim    == null) fim    = LocalDate.now();
+
+        return repository.findBySemanaInicioBetween(inicio, fim)
                 .stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getLider().getId() + "-" + r.getSemanaInicio()
@@ -377,16 +408,16 @@ public class DiscipuladoRelatorioService {
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
     public DiscipuladoSemanaDetalheDTO buscarDetalhe(Long id) {
-        DiscipuladoRelatorio referencia = repository.findById(id)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
-                        "Relatório não encontrado com ID: " + id));
-
-        LocalDate inicio = referencia.getSemanaInicio();
-        LocalDate fim    = referencia.getSemanaFim();
-        Celula    celula = referencia.getCelula();
-
         List<DiscipuladoRelatorio> registrosDaSemana =
-                repository.findBySemanaInicioAndSemanaFimAndCelulaId(inicio, fim, celula.getId());
+                repository.findRegistrosDaSemanaPorIdRelatorio(id);
+
+        if (registrosDaSemana.isEmpty()) {
+            throw new jakarta.persistence.EntityNotFoundException(
+                    "Relatório não encontrado com ID: " + id);
+        }
+
+        DiscipuladoRelatorio referencia = registrosDaSemana.get(0);
+        Celula celula = referencia.getCelula();
 
         List<DiscipuladoSemanaDetalheDTO.MembroResumoDTO> membros = registrosDaSemana.stream()
                 .map(r -> DiscipuladoSemanaDetalheDTO.MembroResumoDTO.builder()
@@ -416,8 +447,8 @@ public class DiscipuladoRelatorioService {
         return DiscipuladoSemanaDetalheDTO.builder()
                 .id(referencia.getId())
                 .nomeCelula(celula.getNome())
-                .inicio(inicio)
-                .fim(fim)
+                .inicio(referencia.getSemanaInicio())
+                .fim(referencia.getSemanaFim())
                 .membros(membros)
                 .presencas(presencas)
                 .build();
@@ -431,9 +462,6 @@ public class DiscipuladoRelatorioService {
                                           List<DiscipuladoRequestDTO> lista,
                                           LocalDate inicio,
                                           LocalDate fim) {
-        repository.findById(id)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
-                        "Relatório não encontrado com ID: " + id));
         salvarRelatorioSemanal(lista, inicio, fim);
     }
 }
