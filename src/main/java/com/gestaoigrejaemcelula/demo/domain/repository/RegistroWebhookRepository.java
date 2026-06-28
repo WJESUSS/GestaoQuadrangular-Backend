@@ -1,15 +1,16 @@
 package com.gestaoigrejaemcelula.demo.domain.repository;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.RegistroWebhook;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface RegistroWebhookRepository extends JpaRepository<RegistroWebhook, Long> {
-    List<RegistroWebhook> findAllByOrderByRecebidoEmDesc();
+    Page<RegistroWebhook> findAllByOrderByRecebidoEmDesc(Pageable pageable);
 
     @Query("""
         SELECT r FROM RegistroWebhook r
@@ -19,10 +20,11 @@ public interface RegistroWebhookRepository extends JpaRepository<RegistroWebhook
                                    OR r.idMensagem    LIKE %:busca%)
         ORDER BY r.recebidoEm DESC
     """)
-    List<RegistroWebhook> filtrar(
+    Page<RegistroWebhook> filtrar(
             @Param("tipoEvento") String tipoEvento,
             @Param("status")     String status,
-            @Param("busca")      String busca
+            @Param("busca")      String busca,
+            Pageable pageable
     );
 
     // Métricas

@@ -6,10 +6,12 @@ import com.gestaoigrejaemcelula.demo.domain.repository.RegistroWebhookRepository
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -50,7 +52,8 @@ public class WhatsAppWebhookController {
     }
 
     @GetMapping("/registros")
-    public ResponseEntity<List<RegistroWebhook>> listarRegistros() {
-        return ResponseEntity.ok(registroRepository.findAllByOrderByRecebidoEmDesc());
+    public ResponseEntity<Page<RegistroWebhook>> listarRegistros(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(registroRepository.findAllByOrderByRecebidoEmDesc(pageable));
     }
 }

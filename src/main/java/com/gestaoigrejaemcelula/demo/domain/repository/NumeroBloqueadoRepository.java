@@ -1,11 +1,12 @@
 package com.gestaoigrejaemcelula.demo.domain.repository;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.NumeroBloqueado;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface NumeroBloqueadoRepository extends JpaRepository<NumeroBloqueado, Long> {
@@ -21,5 +22,5 @@ public interface NumeroBloqueadoRepository extends JpaRepository<NumeroBloqueado
     @Transactional
     void deleteByNumero(String numero);
 
-    List<NumeroBloqueado> findAllByOrderByBloqueadoEmDesc();
+    Page<NumeroBloqueado> findAllByOrderByBloqueadoEmDesc(Pageable pageable);
 }

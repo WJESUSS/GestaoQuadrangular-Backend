@@ -5,6 +5,8 @@ import com.gestaoigrejaemcelula.demo.domain.repository.NumeroBloqueadoRepository
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -75,8 +77,8 @@ public class BloqueioService {
         tentarChamarMeta(numeroNormalizado, HttpMethod.DELETE, "desbloquear");
     }
 
-    public List<NumeroBloqueado> listar() {
-        return repository.findAllByOrderByBloqueadoEmDesc();
+    public Page<NumeroBloqueado> listar(Pageable pageable) {
+        return repository.findAllByOrderByBloqueadoEmDesc(pageable);
     }
 
     private void tentarChamarMeta(String numero, HttpMethod method, String acao) {

@@ -3,11 +3,13 @@ package com.gestaoigrejaemcelula.demo.web.controller;
 import com.gestaoigrejaemcelula.demo.domain.entity.RegistroWebhook;
 import com.gestaoigrejaemcelula.demo.domain.repository.RegistroWebhookRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,16 +31,17 @@ public class RegistroWebhookAdminController {
     // Separado do /registros original para não quebrar nada.
     // ------------------------------------------------------------------
     @GetMapping("/registros/filtrar")
-    public ResponseEntity<List<RegistroWebhook>> filtrar(
+    public ResponseEntity<Page<RegistroWebhook>> filtrar(
             @RequestParam(required = false) String tipoEvento,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String busca
+            @RequestParam(required = false) String busca,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
         String ft = (tipoEvento != null && !tipoEvento.isBlank()) ? tipoEvento : null;
         String fs = (status     != null && !status.isBlank())     ? status     : null;
         String fb = (busca      != null && !busca.isBlank())      ? busca      : null;
 
-        return ResponseEntity.ok(repository.filtrar(ft, fs, fb));
+        return ResponseEntity.ok(repository.filtrar(ft, fs, fb, pageable));
     }
 
     // ------------------------------------------------------------------
