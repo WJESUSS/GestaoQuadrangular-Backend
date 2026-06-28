@@ -187,15 +187,24 @@ public class DiscipuladoRelatorioService {
     //  LISTAR todos (painel admin) — com filtro de data padrão
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
-    public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios(
-            LocalDate inicio, LocalDate fim) {
+    public Page<RelatorioDiscipuladoDTO> listarTodosOsRelatorios(
+            LocalDate inicio, LocalDate fim, Pageable pageable) {
+
         if (inicio == null) inicio = LocalDate.now().minusMonths(6);
         if (fim    == null) fim    = LocalDate.now();
 
-        return repository.findBySemanaInicioBetween(inicio, fim)
+        Page<DiscipuladoRelatorio> page =
+                repository.findBySemanaInicioBetween(inicio, fim, pageable);
+
+        List<RelatorioDiscipuladoDTO> dtos = page.getContent()
                 .stream()
                 .collect(Collectors.groupingBy(
-                        r -> r.getLider().getId() + "-" + r.getSemanaInicio()
+                        // ← null-safe: lider pode ser null
+                        r -> {
+                            Long liderId = r.getLider() != null
+                                    ? r.getLider().getId() : 0L;
+                            return liderId + "-" + r.getSemanaInicio();
+                        }
                 ))
                 .values().stream()
                 .map(grupo -> {
@@ -205,6 +214,7 @@ public class DiscipuladoRelatorioService {
 
                     Long   celulaId   = null;
                     String nomeCelula = "Célula não informada";
+
                     if (celula != null) {
                         celulaId   = celula.getId();
                         nomeCelula = celula.getNome();
@@ -241,8 +251,9 @@ public class DiscipuladoRelatorioService {
                     );
                 })
                 .collect(Collectors.toList());
-    }
 
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
+    }
     // ════════════════════════════════════════════════════════════════════════
     //  ALERTAS CRÍTICOS
     // ════════════════════════════════════════════════════════════════════════
