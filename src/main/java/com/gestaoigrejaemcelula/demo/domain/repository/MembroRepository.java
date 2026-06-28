@@ -20,17 +20,17 @@ import java.util.Optional;
 public interface MembroRepository extends JpaRepository<Membro, Long> {
 
     // Buscar por nome (tela de busca)
-    List<Membro> findByNomeContainingIgnoreCase(String nome);
+    Page<Membro> findByNomeContainingIgnoreCase(String nome, Pageable pageable);
     Optional<Membro> findByNomeIgnoreCase(String nome);
 
     // Listar membros SEM célula (para adicionar em célula)
-    List<Membro> findByCelulaIsNull();
+    Page<Membro> findByCelulaIsNull(Pageable pageable);
 
     // Listar membros de uma célula específica
     List<Membro> findByCelulaId(Long celulaId);
 
     // Buscar membros por status
-    List<Membro> findByStatus(StatusMembro status);
+    Page<Membro> findByStatus(StatusMembro status, Pageable pageable);
 
     @Query("SELECT COUNT(m) FROM Membro m WHERE m.dataCadastro BETWEEN :inicio AND :fim")
     Long novosMembrosMes(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
@@ -56,7 +56,7 @@ public interface MembroRepository extends JpaRepository<Membro, Long> {
     List<MembroSelectDTO> listarNomesParaSelect();
 
     @Query("SELECT new com.gestaoigrejaemcelula.demo.aplication.dto.MembroResumoDTO(m.id, m.nome) FROM Membro m WHERE m.status = 'ATIVO' ORDER BY m.nome")
-    List<MembroResumoDTO> listarAtivosOrdenados();
+    Page<MembroResumoDTO> listarAtivosOrdenados(Pageable pageable);
 
     @Query("""
         SELECT m FROM Membro m

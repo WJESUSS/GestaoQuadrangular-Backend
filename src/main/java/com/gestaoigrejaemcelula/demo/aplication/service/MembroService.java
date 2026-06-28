@@ -116,9 +116,8 @@ public class MembroService {
         return new MembroResponseDTO(salvo);
     }
     @Transactional(readOnly = true)
-    public List<MembroResumoDTO> listarSemCelula() {
-        return repository.findByCelulaIsNull()
-                .stream()
+    public Page<MembroResumoDTO> listarSemCelula(Pageable pageable) {
+        return repository.findByCelulaIsNull(pageable)
                 .map(membro -> {
                     MembroResumoDTO dto = new MembroResumoDTO();
                     dto.setId(membro.getId());
@@ -126,8 +125,7 @@ public class MembroService {
                     dto.setTelefone(membro.getTelefone());
                     dto.setStatus(membro.getStatus().getDescricao());
                     return dto;
-                })
-                .collect(Collectors.toList());
+                });
     }
 
     @Transactional(readOnly = true)
@@ -140,8 +138,8 @@ public class MembroService {
     }
 
     @Transactional(readOnly = true)
-    public List<MembroResponseDTO> buscarPorNome(String nome) {
-        return repository.findByNomeContainingIgnoreCase(nome).stream().map(MembroResponseDTO::new).toList();
+    public Page<MembroResponseDTO> buscarPorNome(String nome, Pageable pageable) {
+        return repository.findByNomeContainingIgnoreCase(nome, pageable).map(MembroResponseDTO::new);
     }
 
     public void remover(Long id) {
@@ -214,11 +212,9 @@ public class MembroService {
     // -------------------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<MembroResponseDTO> listarPorStatus(StatusMembro status) {
-        return repository.findByStatus(status)
-                .stream()
-                .map(MembroResponseDTO::new)
-                .collect(Collectors.toList());
+    public Page<MembroResponseDTO> listarPorStatus(StatusMembro status, Pageable pageable) {
+        return repository.findByStatus(status, pageable)
+                .map(MembroResponseDTO::new);
     }
 
     @Transactional
@@ -243,8 +239,8 @@ public class MembroService {
     // -------------------------------------------------------
 
     @Transactional(readOnly = true)
-    public List<MembroResumoDTO> listarTodosAtivos() {
-        return repository.listarAtivosOrdenados();
+    public Page<MembroResumoDTO> listarTodosAtivos(Pageable pageable) {
+        return repository.listarAtivosOrdenados(pageable);
     }
 
     public List<MembroSelectDTO> listarParaSelect() {

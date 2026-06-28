@@ -37,8 +37,9 @@ public class MembroController {
 
 
     @GetMapping("/sem-celula")
-    public ResponseEntity<List<MembroResumoDTO>> listarSemCelula() {
-        return ResponseEntity.ok(service.listarSemCelula());
+    public ResponseEntity<Page<MembroResumoDTO>> listarSemCelula(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.listarSemCelula(pageable));
     }
 
     @PutMapping("/{id}")
@@ -61,20 +62,24 @@ public class MembroController {
     }
 
     @GetMapping("/buscar")
-    public ResponseEntity<List<MembroResponseDTO>> buscarPorNome(@RequestParam String nome) {
-        return ResponseEntity.ok(service.buscarPorNome(nome));
+    public ResponseEntity<Page<MembroResponseDTO>> buscarPorNome(
+            @RequestParam String nome,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.buscarPorNome(nome, pageable));
     }
 
     @GetMapping("/resumo")
-    public ResponseEntity<List<MembroResumoDTO>> listarResumo() {
-        return ResponseEntity.ok(service.listarTodosAtivos());
+    public ResponseEntity<Page<MembroResumoDTO>> listarResumo(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.listarTodosAtivos(pageable));
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<MembroResponseDTO>> listarPorStatus(
-            @PathVariable StatusMembro status) {
+    public ResponseEntity<Page<MembroResponseDTO>> listarPorStatus(
+            @PathVariable StatusMembro status,
+            @PageableDefault(size = 20) Pageable pageable) {
 
-        return ResponseEntity.ok(service.listarPorStatus(status));
+        return ResponseEntity.ok(service.listarPorStatus(status, pageable));
     }
 
     @DeleteMapping("/{id}")
