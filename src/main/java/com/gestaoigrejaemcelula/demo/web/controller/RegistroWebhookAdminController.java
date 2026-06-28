@@ -35,7 +35,7 @@ public class RegistroWebhookAdminController {
             @RequestParam(required = false) String tipoEvento,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String busca,
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 10) Pageable pageable
     ) {
         String ft = (tipoEvento != null && !tipoEvento.isBlank()) ? tipoEvento : null;
         String fs = (status     != null && !status.isBlank())     ? status     : null;

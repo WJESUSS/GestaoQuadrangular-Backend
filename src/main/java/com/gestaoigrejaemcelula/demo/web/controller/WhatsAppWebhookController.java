@@ -53,7 +53,7 @@ public class WhatsAppWebhookController {
 
     @GetMapping("/registros")
     public ResponseEntity<Page<RegistroWebhook>> listarRegistros(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(registroRepository.findAllByOrderByRecebidoEmDesc(pageable));
     }
 }

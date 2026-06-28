@@ -27,7 +27,7 @@ public class BloqueioController {
     private final BloqueioService bloqueioService;
 
     @GetMapping
-    public Page<NumeroBloqueado> listar(@PageableDefault(size = 20) Pageable pageable) {
+    public Page<NumeroBloqueado> listar(@PageableDefault(size = 10) Pageable pageable) {
         return bloqueioService.listar(pageable);
     }
 
