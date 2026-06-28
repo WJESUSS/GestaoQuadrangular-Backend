@@ -109,7 +109,27 @@ public class BloqueioService {
         }
     }
 
+    /**
+     * Normaliza o número para o formato canônico salvo no banco.
+     *
+     * 1) Remove tudo que não é dígito.
+     * 2) Remove o "9" extra do padrão BR de celular: 55 DD 9XXXXXXXX (13 dígitos)
+     *    vira 55 DD XXXXXXXX (12 dígitos). Sem isso, "5571983039345" e
+     *    "557183039345" são tratados como números diferentes mesmo sendo
+     *    o mesmo celular — causando bloqueios "fantasma" que nunca desbloqueiam,
+     *    porque o número foi salvo com 13 dígitos e o desbloqueio é tentado com 12
+     *    (ou vice-versa, dependendo de como o usuário digitou).
+     *
+     * Mantém a MESMA regra usada no frontend (normalizarTelBR), pra garantir
+     * que o número fique idêntico nos dois lados.
+     */
     private String normalizar(String numero) {
-        return numero == null ? null : numero.replaceAll("\\D", "");
+        if (numero == null) return null;
+        String digitos = numero.replaceAll("\\D", "");
+        if (digitos.length() == 13 && digitos.startsWith("55")) {
+            // 55 DD 9 XXXXXXXX -> remove o "9" que fica logo após o DDD
+            digitos = digitos.substring(0, 4) + digitos.substring(5);
+        }
+        return digitos;
     }
 }
