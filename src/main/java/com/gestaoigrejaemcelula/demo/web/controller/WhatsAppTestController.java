@@ -4,6 +4,7 @@ import com.gestaoigrejaemcelula.demo.aplication.service.WhatsAppService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WhatsAppTestController {
 
+    @Autowired
     private final WhatsAppService whatsAppService;
 
     public record EnviarRequest(

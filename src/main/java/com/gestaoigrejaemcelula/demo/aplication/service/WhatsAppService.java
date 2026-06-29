@@ -34,7 +34,9 @@ public class WhatsAppService {
     @Value("${whatsapp.api.version:v23.0}")
     private String version;
 
-    private final RegistroWebhookRepository registroRepository; // ← inject
+    private final RegistroWebhookRepository registroRepository;
+
+    private final BloqueioService bloqueioService; // ← adicione final
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -62,6 +64,11 @@ public class WhatsAppService {
             Map<String, String> language = new HashMap<>();
             language.put("code", idiomaCode);
             template.put("language", language);
+
+            if (bloqueioService.isBloqueado(numeroLimpo)) {
+                log.info("Envio cancelado — número bloqueado: {}", numeroLimpo);
+                return;
+            }
 
             if (parametros != null && parametros.length > 0) {
                 List<Map<String, Object>> parameters = new ArrayList<>();
