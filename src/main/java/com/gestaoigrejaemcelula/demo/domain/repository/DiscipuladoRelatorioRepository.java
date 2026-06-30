@@ -169,12 +169,8 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("mesRef") String mesRef);
 // DiscipuladoRelatorioRepository
 
-    // Adicionar esta sobrecarga:
     @Query("""
     SELECT r FROM DiscipuladoRelatorio r
-    JOIN FETCH r.membro
-    LEFT JOIN FETCH r.celula
-    LEFT JOIN FETCH r.lider
     WHERE r.semanaInicio BETWEEN :inicio AND :fim
     ORDER BY r.semanaInicio DESC
 """)
