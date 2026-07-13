@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
+import com.gestaoigrejaemcelula.demo.aplication.service.BloqueioResultado;
 import com.gestaoigrejaemcelula.demo.aplication.service.BloqueioService;
 import com.gestaoigrejaemcelula.demo.domain.entity.NumeroBloqueado;
 import lombok.RequiredArgsConstructor;
@@ -32,18 +33,19 @@ public class BloqueioController {
     }
 
     @PostMapping
-    public ResponseEntity<NumeroBloqueado> bloquear(@RequestBody Map<String, String> body) {
+    public ResponseEntity<BloqueioResultado> bloquear(@RequestBody Map<String, String> body) {
         String numero = body.get("numero");
         if (numero == null || numero.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
         String motivo = body.get("motivo");
-        return ResponseEntity.ok(bloqueioService.bloquear(numero, motivo));
+        BloqueioResultado resultado = bloqueioService.bloquear(numero, motivo);
+        return ResponseEntity.ok(resultado);
     }
 
     @DeleteMapping("/{numero}")
-    public ResponseEntity<Void> desbloquear(@PathVariable String numero) {
-        bloqueioService.desbloquear(numero);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<BloqueioResultado> desbloquear(@PathVariable String numero) {
+        BloqueioResultado resultado = bloqueioService.desbloquear(numero);
+        return ResponseEntity.ok(resultado);
     }
 }

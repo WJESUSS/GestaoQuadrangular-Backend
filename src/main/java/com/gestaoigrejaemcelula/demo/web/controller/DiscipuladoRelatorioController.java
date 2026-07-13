@@ -8,6 +8,9 @@ import com.gestaoigrejaemcelula.demo.aplication.service.DiscipuladoRelatorioServ
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -120,5 +123,35 @@ public class DiscipuladoRelatorioController {
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(service.buscarDetalhe(id));
+    }
+
+    // DiscipuladoRelatorioController
+
+    /**
+     * GET /discipulado/relatorios?inicio=2025-01-01&fim=2025-06-30&page=0&size=20
+     *
+     * Lista todos os relatórios (visão administrativa).
+     * Acesso restrito a SECRETARIO, ADMIN e PASTOR.
+     */
+    @GetMapping("/relatorios")
+    @PreAuthorize("hasAnyRole('SECRETARIO', 'ADMIN', 'PASTOR')")
+    public ResponseEntity<Page<RelatorioDiscipuladoDTO>> listarTodos(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+
+        Pageable pageable = PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Direction.DESC, "semanaInicio"));
+
+        return ResponseEntity.ok(
+                service.listarTodosOsRelatorios(inicio, fim, pageable));
     }
 }

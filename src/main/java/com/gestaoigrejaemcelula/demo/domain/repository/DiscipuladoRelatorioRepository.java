@@ -17,7 +17,7 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
 
     List<DiscipuladoRelatorio> findBySemanaInicioAndSemanaFim(LocalDate inicio, LocalDate fim);
     List<DiscipuladoRelatorio> findBySemanaInicioBetween(LocalDate inicio, LocalDate fim);
-    boolean existsByMembroIdAndSemanaInicioAndSemanaFim(Long membroId, LocalDate inicio, LocalDate fim);
+;
 
     Optional<DiscipuladoRelatorio> findByMembroIdAndSemanaInicioAndSemanaFim(
             Long membroId, LocalDate semanaInicio, LocalDate semanaFim);
@@ -61,12 +61,19 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
      * Retorna as datas distintas de semana para uma célula, ordenadas DESC.
      * Usada pelo service para saber quais semanas compõem a página.
      */
-    @Query("""
-        SELECT DISTINCT r.semanaInicio, r.semanaFim
-        FROM DiscipuladoRelatorio r
-        WHERE r.celula.id = :celulaId
-        ORDER BY r.semanaInicio DESC
-    """)
+    @Query(
+        value = """
+            SELECT DISTINCT r.semanaInicio, r.semanaFim
+            FROM DiscipuladoRelatorio r
+            WHERE r.celula.id = :celulaId
+            ORDER BY r.semanaInicio DESC
+        """,
+        countQuery = """
+            SELECT COUNT(DISTINCT CONCAT(r.semanaInicio, '-', r.semanaFim))
+            FROM DiscipuladoRelatorio r
+            WHERE r.celula.id = :celulaId
+        """
+    )
     Page<Object[]> findSemanasPaginadas(
             @Param("celulaId") Long celulaId,
             Pageable pageable);
@@ -160,7 +167,17 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("mes")    int mes,
             @Param("ano")    int ano,
             @Param("mesRef") String mesRef);
+// DiscipuladoRelatorioRepository
 
+    @Query("""
+    SELECT r FROM DiscipuladoRelatorio r
+    WHERE r.semanaInicio BETWEEN :inicio AND :fim
+    ORDER BY r.semanaInicio DESC
+""")
+    Page<DiscipuladoRelatorio> findBySemanaInicioBetween(
+            @Param("inicio") LocalDate inicio,
+            @Param("fim")    LocalDate fim,
+            Pageable pageable);
     @Query(value = """
         SELECT
             m.id,
