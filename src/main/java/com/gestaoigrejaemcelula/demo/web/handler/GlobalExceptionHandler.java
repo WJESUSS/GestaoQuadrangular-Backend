@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.web.handler;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -97,7 +98,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(500, "Erro interno do servidor", "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde."));
     }
-
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleIntegrityViolation(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("Não é possível excluir este membro pois existem registros vinculados (relatórios de discipulado ou histórico de status).");
+    }
     public static class ErrorResponse {
         private int status;
         private String title;

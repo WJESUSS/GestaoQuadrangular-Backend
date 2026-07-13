@@ -49,4 +49,7 @@ CREATE INDEX idx_solicitacao_celula ON solicitacoes_membro(celula_id);
 ALTER TABLE registro_webhook ADD COLUMN texto_mensagem TEXT;
 ALTER TABLE registro_webhook ADD COLUMN tipo_mensagem VARCHAR(50);
 
+ALTER TABLE missao70 ADD COLUMN motivo_cancelamento VARCHAR(50);
+ALTER TABLE missao70 ADD COLUMN observacao_cancelamento VARCHAR(500);
+
 

@@ -1,10 +1,12 @@
 package com.gestaoigrejaemcelula.demo.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.gestaoigrejaemcelula.demo.domain.enums.MotivoCancelamentoMissao70;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,9 @@ public class Missao70 {
     private LocalDate dataInicio;
 
     @Column(nullable = false)
+    private LocalTime horario;
+
+    @Column(nullable = false)
     private int encontrosRestantes = 4;
 
     @Column(nullable = false)
@@ -55,6 +60,11 @@ public class Missao70 {
     @JsonIgnoreProperties({"celula", "dataCadastro", "hibernateLazyInitializer"})
     private Membro auxiliar;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "terceiro_membro_id", nullable = true)
+    @JsonIgnoreProperties({"celula", "dataCadastro", "hibernateLazyInitializer"})
+    private Membro terceiroMembro;
+
     @ManyToMany
     @JoinTable(
             name = "missao70_visitantes",
@@ -67,6 +77,17 @@ public class Missao70 {
     @OneToMany(mappedBy = "missao70", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EncontroMissao70> encontros = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motivo_cancelamento")
+    private MotivoCancelamentoMissao70 motivoCancelamento;
+
+    @Column(name = "observacao_cancelamento", length = 500)
+    private String observacaoCancelamento;
+
+    public MotivoCancelamentoMissao70 getMotivoCancelamento() { return motivoCancelamento; }
+    public void setMotivoCancelamento(MotivoCancelamentoMissao70 motivoCancelamento) { this.motivoCancelamento = motivoCancelamento; }
+    public String getObservacaoCancelamento() { return observacaoCancelamento; }
+    public void setObservacaoCancelamento(String observacaoCancelamento) { this.observacaoCancelamento = observacaoCancelamento; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNome() { return nome; }
@@ -79,6 +100,8 @@ public class Missao70 {
     public void setTelefoneContato(String telefoneContato) { this.telefoneContato = telefoneContato; }
     public LocalDate getDataInicio() { return dataInicio; }
     public void setDataInicio(LocalDate dataInicio) { this.dataInicio = dataInicio; }
+    public LocalTime getHorario() { return horario; }
+    public void setHorario(LocalTime horario) { this.horario = horario; }
     public int getEncontrosRestantes() { return encontrosRestantes; }
     public void setEncontrosRestantes(int encontrosRestantes) { this.encontrosRestantes = encontrosRestantes; }
     public int getProximaSemana() { return proximaSemana; }
@@ -91,6 +114,8 @@ public class Missao70 {
     public void setLider(Membro lider) { this.lider = lider; }
     public Membro getAuxiliar() { return auxiliar; }
     public void setAuxiliar(Membro auxiliar) { this.auxiliar = auxiliar; }
+    public Membro getTerceiroMembro() { return terceiroMembro; }
+    public void setTerceiroMembro(Membro terceiroMembro) { this.terceiroMembro = terceiroMembro; }
     public List<Visitante> getVisitantes() { return visitantes; }
     public void setVisitantes(List<Visitante> visitantes) { this.visitantes = visitantes; }
     public List<EncontroMissao70> getEncontros() { return encontros; }

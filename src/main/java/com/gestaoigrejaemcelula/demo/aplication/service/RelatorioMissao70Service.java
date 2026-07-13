@@ -81,6 +81,11 @@ public class RelatorioMissao70Service {
         long canceladas  = todas.stream().filter(m -> m.getStatus() == StatusMissao70.CANCELADA).count();
 
         long totalVisitantes  = todas.stream().mapToLong(m -> m.getVisitantes().size()).sum();
+        long totalVisitantesPorCulto = todas.stream()
+                .mapToLong(m -> m.getEncontros().stream()
+                        .mapToLong(e -> e.getVisitantesPresentes().size())
+                        .sum())
+                .sum();
         long totalAceitouJesus = todas.stream().mapToLong(m ->
                 decisaoRepository.countByEncontro_Missao70_IdAndTipoDecisao(m.getId(), DecisaoEspiritual.ACEITOU_JESUS)
         ).sum();
@@ -93,7 +98,8 @@ public class RelatorioMissao70Service {
 
         return new ResumoGeralMissao70(
                 todas.size(), emAndamento, concluidas, canceladas,
-                totalVisitantes, totalAceitouJesus, totalReconciliacao, totalBatismo
+                totalVisitantes, totalVisitantesPorCulto,
+                totalAceitouJesus, totalReconciliacao, totalBatismo
         );
     }
 
@@ -108,10 +114,28 @@ public class RelatorioMissao70Service {
         dto.setDataInicio(missao.getDataInicio());
         dto.setStatus(missao.getStatus());
 
-        dto.setNomeCelula(missao.getCelula().getNome());
-        dto.setNomeLider(missao.getLider().getNome());
+        // Motivo do cancelamento — só é relevante quando status == CANCELADA,
+        // mas preenchemos sempre que a entidade tiver o valor (fica null quando
+        // a missão nunca foi cancelada, que é o comportamento correto).
+        dto.setMotivoCancelamento(missao.getMotivoCancelamento());
+        dto.setMotivoCancelamentoDescricao(
+                missao.getMotivoCancelamento() != null ? missao.getMotivoCancelamento().getDescricao() : null
+        );
+        dto.setObservacaoCancelamento(missao.getObservacaoCancelamento());
 
-        dto.setNomeAuxiliar(missao.getAuxiliar().getNome());
+        if (missao.getCelula() != null) {
+            dto.setNomeCelula(missao.getCelula().getNome());
+        }
+        if (missao.getLider() != null) {
+            dto.setNomeLider(missao.getLider().getNome());
+        }
+        if (missao.getAuxiliar() != null) {
+            dto.setNomeAuxiliar(missao.getAuxiliar().getNome());
+        }
+
+        if (missao.getTerceiroMembro() != null) {
+            dto.setNomeTerceiroMembro(missao.getTerceiroMembro().getNome());
+        }
 
         int semanasRealizadas = 4 - missao.getEncontrosRestantes();
         dto.setSemanasRealizadas(semanasRealizadas);
@@ -119,6 +143,12 @@ public class RelatorioMissao70Service {
         dto.setSemanaAtual(missao.getProximaSemana());
 
         dto.setTotalVisitantes(missao.getVisitantes().size());
+
+        // Soma de presenças por culto: mesma pessoa conta 1x em cada semana que participou
+        int totalVisitantesPorCulto = missao.getEncontros().stream()
+                .mapToInt(e -> e.getVisitantesPresentes().size())
+                .sum();
+        dto.setTotalVisitantesPorCulto(totalVisitantesPorCulto);
 
         dto.setTotalAceitouJesus(
                 decisaoRepository.countByEncontro_Missao70_IdAndTipoDecisao(
@@ -141,18 +171,21 @@ public class RelatorioMissao70Service {
         private final long concluidas;
         private final long canceladas;
         private final long totalVisitantes;
+        private final long totalVisitantesPorCulto;
         private final long totalAceitouJesus;
         private final long totalReconciliacao;
         private final long totalBatismo;
 
         public ResumoGeralMissao70(long total, long emAndamento, long concluidas, long canceladas,
-                                   long totalVisitantes, long totalAceitouJesus,
+                                   long totalVisitantes, long totalVisitantesPorCulto,
+                                   long totalAceitouJesus,
                                    long totalReconciliacao, long totalBatismo) {
             this.total = total;
             this.emAndamento = emAndamento;
             this.concluidas = concluidas;
             this.canceladas = canceladas;
             this.totalVisitantes = totalVisitantes;
+            this.totalVisitantesPorCulto = totalVisitantesPorCulto;
             this.totalAceitouJesus = totalAceitouJesus;
             this.totalReconciliacao = totalReconciliacao;
             this.totalBatismo = totalBatismo;
@@ -163,6 +196,7 @@ public class RelatorioMissao70Service {
         public long getConcluidas() { return concluidas; }
         public long getCanceladas() { return canceladas; }
         public long getTotalVisitantes() { return totalVisitantes; }
+        public long getTotalVisitantesPorCulto() { return totalVisitantesPorCulto; }
         public long getTotalAceitouJesus() { return totalAceitouJesus; }
         public long getTotalReconciliacao() { return totalReconciliacao; }
         public long getTotalBatismo() { return totalBatismo; }

@@ -1,16 +1,24 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
-import com.gestaoigrejaemcelula.demo.aplication.dto.EncontroMissao70RequestDTO;
-import com.gestaoigrejaemcelula.demo.aplication.dto.Missao70RequestDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.*;
+import com.gestaoigrejaemcelula.demo.domain.enums.MotivoCancelamentoMissao70;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
-import com.gestaoigrejaemcelula.demo.domain.entity.*;
+import com.gestaoigrejaemcelula.demo.domain.entity.Missao70;
+import com.gestaoigrejaemcelula.demo.domain.entity.EncontroMissao70;
+import com.gestaoigrejaemcelula.demo.domain.entity.DecisaoMissao70;
+import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
+import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
+import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class Missao70Service {
@@ -47,6 +55,7 @@ public class Missao70Service {
         missao.setNomeAnfitriao(dto.getNomeAnfitriao());
         missao.setEndereco(dto.getEndereco());
         missao.setTelefoneContato(dto.getTelefoneContato());
+        missao.setHorario(dto.getHorario());          // ⬅️ NOVO — grava o horário fixo dos cultos
         missao.setDataInicio(dto.getDataInicio());
         missao.setEncontrosRestantes(4);
         missao.setProximaSemana(1);
@@ -65,6 +74,10 @@ public class Missao70Service {
             missao.setAuxiliar(membroRepository.findById(dto.getAuxiliarId())
                     .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado")));
         }
+        if (dto.getTerceiroMembroId() != null) {
+            missao.setTerceiroMembro(membroRepository.findById(dto.getTerceiroMembroId())
+                    .orElseThrow(() -> new RuntimeException("Terceiro membro não encontrado")));
+        }
 
         return missao70Repository.save(missao);
     }
@@ -78,6 +91,7 @@ public class Missao70Service {
         missao.setNomeAnfitriao(dto.getNomeAnfitriao());
         missao.setEndereco(dto.getEndereco());
         missao.setTelefoneContato(dto.getTelefoneContato());
+        missao.setHorario(dto.getHorario());          // ⬅️ NOVO — permite editar o horário fixo depois
         missao.setDataInicio(dto.getDataInicio());
 
         if (dto.getCelulaId() != null) {
@@ -99,15 +113,35 @@ public class Missao70Service {
         } else {
             missao.setAuxiliar(null);
         }
+        if (dto.getTerceiroMembroId() != null) {
+            missao.setTerceiroMembro(membroRepository.findById(dto.getTerceiroMembroId())
+                    .orElseThrow(() -> new RuntimeException("Terceiro membro não encontrado")));
+        } else {
+            missao.setTerceiroMembro(null);
+        }
 
         return missao70Repository.save(missao);
     }
 
     @Transactional
-    public Missao70 cancelar(Long id) {
-        Missao70 missao = buscarPorId(id);
+    public Missao70ResponseDTO cancelar(Long id, CancelarMissao70RequestDTO dto) {
+        Missao70 missao = missao70Repository.findByIdWithAssociations(id)
+                .orElseThrow(() -> new RuntimeException("Casa da Missão 70 não encontrada."));
+
+        if (dto.getMotivoCancelamento() == null) {
+            throw new IllegalArgumentException("Informe o motivo do cancelamento.");
+        }
+        if (dto.getMotivoCancelamento() == MotivoCancelamentoMissao70.OUTRO
+                && (dto.getObservacaoCancelamento() == null || dto.getObservacaoCancelamento().isBlank())) {
+            throw new IllegalArgumentException("Descreva o motivo em 'Outro'.");
+        }
+
         missao.setStatus(StatusMissao70.CANCELADA);
-        return missao70Repository.save(missao);
+        missao.setMotivoCancelamento(dto.getMotivoCancelamento());
+        missao.setObservacaoCancelamento(dto.getObservacaoCancelamento());
+
+        missao70Repository.save(missao);
+        return Missao70ResponseDTO.de(missao);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -158,9 +192,16 @@ public class Missao70Service {
         // ── Cria o encontro ──────────────────────────────────────
         EncontroMissao70 encontro = new EncontroMissao70();
         encontro.setDataEncontro(dto.getDataEncontro());
+        encontro.setHoraEncontro(dto.getHoraEncontro() != null ? dto.getHoraEncontro() : missao.getHorario());
         encontro.setNumeroSemana(semanaAtual);
         encontro.setObservacoes(dto.getObservacoes());
         encontro.setMissao70(missao);
+
+        // ── Registra quem esteve presente neste culto ─────────────
+        if (dto.getVisitantesPresentesIds() != null && !dto.getVisitantesPresentesIds().isEmpty()) {
+            List<Visitante> presentes = visitanteRepository.findAllById(dto.getVisitantesPresentesIds());
+            encontro.setVisitantesPresentes(presentes);
+        }
 
         boolean houveDecisao = false;
 
@@ -169,22 +210,27 @@ public class Missao70Service {
                 Visitante visitante = visitanteRepository.findById(decisaoDTO.getVisitanteId())
                         .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
 
-                // Registra a decisão no encontro
-                DecisaoMissao70 decisao = new DecisaoMissao70();
-                decisao.setTipoDecisao(decisaoDTO.getTipoDecisao());
-                decisao.setVisitante(visitante);
-                decisao.setEncontro(encontro);
-                encontro.getDecisoes().add(decisao);
+                DecisaoEspiritual novaDecisao = decisaoDTO.getTipoDecisao();
 
-                // Atualiza o campo decisaoEspiritual do Visitante
-                // (só altera se ainda não tem uma decisão registrada)
-                DecisaoEspiritual atual = visitante.getDecisaoEspiritual();
-                boolean jaTemDecisao = atual == DecisaoEspiritual.ACEITOU_JESUS
-                        || atual == DecisaoEspiritual.RECONCILIOU
-                        || atual == DecisaoEspiritual.BATISMO_AGUAS;
+                // Só registra e conta se a decisão for DIFERENTE da que o visitante
+                // já tinha. Isso permite a progressão espiritual (ex.: Aceitou Jesus
+                // num culto → Deseja Batismo em outro), mas evita duplicar no
+                // relatório do pastor quando o frontend reenvia a mesma decisão sem
+                // mudança real (ex.: valor pré-preenchido que o líder não alterou).
+                boolean decisaoMudou = visitante.getDecisaoEspiritual() != novaDecisao;
 
-                if (!jaTemDecisao) {
-                    visitante.setDecisaoEspiritual(decisaoDTO.getTipoDecisao());
+                if (decisaoMudou) {
+                    // Registra a decisão no encontro (histórico completo — mantém
+                    // registro de cada marco distinto pelo qual o visitante passou)
+                    DecisaoMissao70 decisao = new DecisaoMissao70();
+                    decisao.setTipoDecisao(novaDecisao);
+                    decisao.setVisitante(visitante);
+                    decisao.setEncontro(encontro);
+                    encontro.getDecisoes().add(decisao);
+
+                    // Atualiza o campo-resumo do Visitante para refletir SEMPRE a
+                    // decisão mais recente (antes ficava travado na primeira decisão)
+                    visitante.setDecisaoEspiritual(novaDecisao);
 
                     // Garante vínculo com a célula para que o recálculo funcione
                     if (visitante.getCelula() == null && missao.getCelula() != null) {
@@ -211,8 +257,6 @@ public class Missao70Service {
         missao70Repository.save(missao);
 
         // ── Recalcula metas da célula se houve decisão espiritual ─
-        // Garante que o progresso das metas seja atualizado no banco
-        // mesmo que o frontend não dispare o endpoint /recalcular
         if (houveDecisao && missao.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(missao.getCelula().getId());
         }
@@ -227,6 +271,80 @@ public class Missao70Service {
         );
     }
 
+    /**
+     * Lista o histórico de cultos (encontros) já registrados nesta casa,
+     * em ordem de semana (1, 2, 3, 4).
+     */
+    @Transactional(readOnly = true)
+    public List<EncontroMissao70ResponseDTO> listarEncontros(Long missaoId) {
+        buscarPorId(missaoId); // garante que a casa existe (lança 404 se não)
+        return encontroRepository.findByMissao70IdOrderByNumeroSemanaAsc(missaoId)
+                .stream()
+                .map(EncontroMissao70ResponseDTO::de)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Edita um culto já registrado (data, horário, observações e/ou presença).
+     * Não mexe no número da semana nem nos contadores da missão.
+     */
+    @Transactional
+    public EncontroMissao70 atualizarEncontro(Long missaoId, Long encontroId, EncontroMissao70RequestDTO dto) {
+        EncontroMissao70 encontro = encontroRepository.findById(encontroId)
+                .orElseThrow(() -> new RuntimeException("Culto não encontrado"));
+
+        if (!encontro.getMissao70().getId().equals(missaoId)) {
+            throw new RuntimeException("Este culto não pertence a esta casa.");
+        }
+
+        if (dto.getDataEncontro() != null) {
+            encontro.setDataEncontro(dto.getDataEncontro());
+        }
+        if (dto.getHoraEncontro() != null) {              // ⬅️ NOVO — permite corrigir o horário na edição
+            encontro.setHoraEncontro(dto.getHoraEncontro());
+        }
+        if (dto.getObservacoes() != null) {
+            encontro.setObservacoes(dto.getObservacoes());
+        }
+        if (dto.getVisitantesPresentesIds() != null) {
+            List<Visitante> presentes = visitanteRepository.findAllById(dto.getVisitantesPresentesIds());
+            encontro.setVisitantesPresentes(presentes);
+        }
+
+        return encontroRepository.save(encontro);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DECISÃO DO VISITANTE
+    // ─────────────────────────────────────────────────────────────
+
+    @Transactional
+    public void alterarDecisaoVisitante(Long missaoId, Long visitanteId, AlterarDecisaoVisitanteDTO dto) {
+        Missao70 missao = missao70Repository.findByIdWithAssociations(missaoId)
+                .orElseThrow(() -> new RuntimeException("Missão 70 não encontrada"));
+
+        boolean visitantePertence = missao.getVisitantes().stream()
+                .anyMatch(v -> v.getId().equals(visitanteId));
+        if (!visitantePertence) {
+            throw new RuntimeException("Visitante não pertence a esta Missão 70");
+        }
+
+        Visitante visitante = visitanteRepository.findById(visitanteId)
+                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+
+        visitante.setDecisaoEspiritual(dto.getTipoDecisao());
+
+        if (visitante.getCelula() == null && missao.getCelula() != null) {
+            visitante.setCelula(missao.getCelula());
+        }
+
+        visitanteRepository.save(visitante);
+
+        if (missao.getCelula() != null) {
+            metaService.recalcularTodasMetasCelula(missao.getCelula().getId());
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────
     // CONSULTAS
     // ─────────────────────────────────────────────────────────────
@@ -239,6 +357,30 @@ public class Missao70Service {
     @Transactional(readOnly = true)
     public List<Missao70> listarPorCelula(Long celulaId) {
         return missao70Repository.findByCelulaId(celulaId);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Missao70ResponseDTO> listarTodasPaginado(Pageable pageable) {
+        return missao70Repository.findAllWithAssociationsPaginado(pageable)
+                .map(Missao70ResponseDTO::de);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Missao70ResponseDTO> listarPorCelulaPaginado(Long celulaId, Pageable pageable) {
+        return missao70Repository.findByCelulaIdPaginado(celulaId, pageable)
+                .map(Missao70ResponseDTO::de);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Missao70ResponseDTO> listarPorStatusPaginado(StatusMissao70 status, Pageable pageable) {
+        return missao70Repository.findByStatusPaginado(status, pageable)
+                .map(Missao70ResponseDTO::de);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Missao70ResponseDTO> listarPorCelulaEStatusPaginado(Long celulaId, StatusMissao70 status, Pageable pageable) {
+        return missao70Repository.findByCelulaIdAndStatusPaginado(celulaId, status, pageable)
+                .map(Missao70ResponseDTO::de);
     }
 
     @Transactional(readOnly = true)
