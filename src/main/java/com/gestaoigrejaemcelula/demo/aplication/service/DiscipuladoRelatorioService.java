@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,10 +45,14 @@ public class DiscipuladoRelatorioService {
         return Boolean.TRUE.equals(value);
     }
 
-    private Usuario usuarioLogado() {
-        String email = SecurityContextHolder.getContext()
+    private String loggedUserEmail() {
+        return SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();
+    }
+
+    @Cacheable(value = "usuario-logado", key = "#email")
+    private Usuario usuarioLogado(String email) {
         return usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException(
                         "Usuário autenticado não encontrado: " + email));
@@ -60,7 +65,7 @@ public class DiscipuladoRelatorioService {
     public void salvarRelatorioSemanal(List<DiscipuladoRequestDTO> lista,
                                        LocalDate inicio,
                                        LocalDate fim) {
-        Usuario lider = usuarioLogado();
+        Usuario lider = usuarioLogado(loggedUserEmail());
 
         List<Long> membroIds = lista.stream()
                 .map(DiscipuladoRequestDTO::membroId)
@@ -146,7 +151,7 @@ public class DiscipuladoRelatorioService {
     // ════════════════════════════════════════════════════════════════════════
     @Transactional(readOnly = true)
     public List<RelatorioDiscipuladoDTO> listarSemana(LocalDate inicio, LocalDate fim) {
-        Usuario lider  = usuarioLogado();
+        Usuario lider  = usuarioLogado(loggedUserEmail());
         Celula  celula = lider.getCelula();
         if (celula == null) return List.of();
 
@@ -349,7 +354,7 @@ public class DiscipuladoRelatorioService {
     @Transactional(readOnly = true)
     public Page<DiscipuladoHistoricoItemDTO> listarHistorico(int page, int size) {
 
-        Usuario lider = usuarioLogado();
+        Usuario lider = usuarioLogado(loggedUserEmail());
 
         // Célula do líder (com fallback)
         Celula celula = celulaRepository.findByLider_Id(lider.getId())

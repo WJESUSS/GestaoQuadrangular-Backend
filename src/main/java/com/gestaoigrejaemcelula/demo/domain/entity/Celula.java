@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "celulas")
+@Table(name = "celulas", indexes = {
+    @Index(name = "idx_celula_lider", columnList = "lider_id")
+})
 public class Celula {
 
     @Id
