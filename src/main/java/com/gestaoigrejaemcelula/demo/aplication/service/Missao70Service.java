@@ -203,45 +203,7 @@ public class Missao70Service {
             encontro.setVisitantesPresentes(presentes);
         }
 
-        boolean houveDecisao = false;
-
-        if (dto.getDecisoes() != null) {
-            for (EncontroMissao70RequestDTO.DecisaoDTO decisaoDTO : dto.getDecisoes()) {
-                Visitante visitante = visitanteRepository.findById(decisaoDTO.getVisitanteId())
-                        .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
-
-                DecisaoEspiritual novaDecisao = decisaoDTO.getTipoDecisao();
-
-                // Só registra e conta se a decisão for DIFERENTE da que o visitante
-                // já tinha. Isso permite a progressão espiritual (ex.: Aceitou Jesus
-                // num culto → Deseja Batismo em outro), mas evita duplicar no
-                // relatório do pastor quando o frontend reenvia a mesma decisão sem
-                // mudança real (ex.: valor pré-preenchido que o líder não alterou).
-                boolean decisaoMudou = visitante.getDecisaoEspiritual() != novaDecisao;
-
-                if (decisaoMudou) {
-                    // Registra a decisão no encontro (histórico completo — mantém
-                    // registro de cada marco distinto pelo qual o visitante passou)
-                    DecisaoMissao70 decisao = new DecisaoMissao70();
-                    decisao.setTipoDecisao(novaDecisao);
-                    decisao.setVisitante(visitante);
-                    decisao.setEncontro(encontro);
-                    encontro.getDecisoes().add(decisao);
-
-                    // Atualiza o campo-resumo do Visitante para refletir SEMPRE a
-                    // decisão mais recente (antes ficava travado na primeira decisão)
-                    visitante.setDecisaoEspiritual(novaDecisao);
-
-                    // Garante vínculo com a célula para que o recálculo funcione
-                    if (visitante.getCelula() == null && missao.getCelula() != null) {
-                        visitante.setCelula(missao.getCelula());
-                    }
-
-                    visitanteRepository.save(visitante);
-                    houveDecisao = true;
-                }
-            }
-        }
+        boolean houveDecisao = processarDecisoes(missao, encontro, dto);
 
         encontroRepository.save(encontro);
 
@@ -269,6 +231,51 @@ public class Missao70Service {
                         ? "Parabéns! Missão 70 concluída — 4 semanas realizadas!"
                         : "Semana " + semanaAtual + " de 4 registrada com sucesso."
         );
+    }
+
+    private boolean processarDecisoes(Missao70 missao, EncontroMissao70 encontro,
+                                       EncontroMissao70RequestDTO dto) {
+        if (dto.getDecisoes() == null || dto.getDecisoes().isEmpty()) {
+            return false;
+        }
+
+        List<Long> visitanteIds = dto.getDecisoes().stream()
+                .map(EncontroMissao70RequestDTO.DecisaoDTO::getVisitanteId)
+                .toList();
+        List<Visitante> visitantesDecisao = visitanteRepository.findAllById(visitanteIds);
+        var visitanteMap = visitantesDecisao.stream()
+                .collect(Collectors.toMap(Visitante::getId, v -> v));
+
+        boolean houveDecisao = false;
+
+        for (EncontroMissao70RequestDTO.DecisaoDTO decisaoDTO : dto.getDecisoes()) {
+            Visitante visitante = visitanteMap.get(decisaoDTO.getVisitanteId());
+            if (visitante == null) {
+                throw new RuntimeException("Visitante não encontrado: " + decisaoDTO.getVisitanteId());
+            }
+
+            DecisaoEspiritual novaDecisao = decisaoDTO.getTipoDecisao();
+            boolean decisaoMudou = visitante.getDecisaoEspiritual() != novaDecisao;
+
+            if (decisaoMudou) {
+                DecisaoMissao70 decisao = new DecisaoMissao70();
+                decisao.setTipoDecisao(novaDecisao);
+                decisao.setVisitante(visitante);
+                decisao.setEncontro(encontro);
+                encontro.getDecisoes().add(decisao);
+
+                visitante.setDecisaoEspiritual(novaDecisao);
+
+                if (visitante.getCelula() == null && missao.getCelula() != null) {
+                    visitante.setCelula(missao.getCelula());
+                }
+
+                visitanteRepository.save(visitante);
+                houveDecisao = true;
+            }
+        }
+
+        return houveDecisao;
     }
 
     /**

@@ -18,7 +18,6 @@ public interface Missao70Repository extends JpaRepository<Missao70, Long> {
         LEFT JOIN FETCH m.lider
         LEFT JOIN FETCH m.auxiliar
         LEFT JOIN FETCH m.terceiroMembro
-        LEFT JOIN FETCH m.visitantes
     """)
     List<Missao70> findAllWithAssociations();
 
@@ -28,7 +27,6 @@ public interface Missao70Repository extends JpaRepository<Missao70, Long> {
         LEFT JOIN FETCH m.lider
         LEFT JOIN FETCH m.auxiliar
         LEFT JOIN FETCH m.terceiroMembro
-        LEFT JOIN FETCH m.visitantes
         WHERE m.celula.id = :celulaId
     """)
     List<Missao70> findByCelulaId(@Param("celulaId") Long celulaId);
@@ -39,7 +37,6 @@ public interface Missao70Repository extends JpaRepository<Missao70, Long> {
         LEFT JOIN FETCH m.lider
         LEFT JOIN FETCH m.auxiliar
         LEFT JOIN FETCH m.terceiroMembro
-        LEFT JOIN FETCH m.visitantes
         WHERE m.id = :id
     """)
     Optional<Missao70> findByIdWithAssociations(@Param("id") Long id);
@@ -50,7 +47,6 @@ public interface Missao70Repository extends JpaRepository<Missao70, Long> {
         LEFT JOIN FETCH m.lider
         LEFT JOIN FETCH m.auxiliar
         LEFT JOIN FETCH m.terceiroMembro
-        LEFT JOIN FETCH m.visitantes
         WHERE m.status = :status
     """)
     List<Missao70> findByStatus(@Param("status") StatusMissao70 status);
@@ -61,7 +57,6 @@ public interface Missao70Repository extends JpaRepository<Missao70, Long> {
         LEFT JOIN FETCH m.lider
         LEFT JOIN FETCH m.auxiliar
         LEFT JOIN FETCH m.terceiroMembro
-        LEFT JOIN FETCH m.visitantes
         WHERE m.celula.id = :celulaId AND m.status = :status
     """)
     List<Missao70> findByCelulaIdAndStatus(

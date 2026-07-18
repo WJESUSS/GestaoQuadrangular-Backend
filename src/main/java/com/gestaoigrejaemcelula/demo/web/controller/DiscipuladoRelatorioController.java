@@ -100,7 +100,7 @@ public class DiscipuladoRelatorioController {
     ) {
         // Protege contra valores absurdos
         int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 50);
+        int safeSize = Math.clamp(size, 1, 50);
 
         return ResponseEntity.ok(service.listarHistorico(safePage, safeSize));
     }
@@ -146,7 +146,7 @@ public class DiscipuladoRelatorioController {
             @RequestParam(defaultValue = "20") int size
     ) {
         int safePage = Math.max(page, 0);
-        int safeSize = Math.min(Math.max(size, 1), 100);
+        int safeSize = Math.clamp(size, 1, 100);
 
         Pageable pageable = PageRequest.of(safePage, safeSize,
                 Sort.by(Sort.Direction.DESC, "semanaInicio"));

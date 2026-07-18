@@ -21,6 +21,8 @@ import java.util.Map;
 @Service
 public class FichaEncontroService {
 
+    private static final String ENTIDADE = "FICHA";
+
     private final FichaEncontroRepository repository;
     private final UsuarioRepository usuarioRepository;
     private final AuditoriaHelper auditoria;
@@ -86,7 +88,7 @@ public class FichaEncontroService {
 
         FichaEncontro fichaSalva = repository.save(ficha);
 
-        auditoria.registrar("FICHA", fichaSalva.getId(), fichaSalva.getNomeConvidado(), "CREATE",
+        auditoria.registrar(ENTIDADE, fichaSalva.getId(), fichaSalva.getNomeConvidado(), "CREATE",
                 Map.of(
                         "encontro", Map.of("para", str(fichaSalva.getNomeEncontro())),
                         "celula",   Map.of("para", str(fichaSalva.getNomeCelula())),
@@ -109,7 +111,7 @@ public class FichaEncontroService {
         BeanUtils.copyProperties(fichaAtualizada, fichaExistente, "id");
         FichaEncontro salva = repository.save(fichaExistente);
 
-        auditoria.registrar("FICHA", id, salva.getNomeConvidado(), "UPDATE", null);
+        auditoria.registrar(ENTIDADE, id, salva.getNomeConvidado(), "UPDATE", null);
 
         return salva;
     }
@@ -121,7 +123,7 @@ public class FichaEncontroService {
     public void excluir(Long id) {
         FichaEncontro ficha = buscarPorId(id);
         repository.delete(ficha);
-        auditoria.registrar("FICHA", id, ficha.getNomeConvidado(), "DELETE", null);
+        auditoria.registrar(ENTIDADE, id, ficha.getNomeConvidado(), "DELETE", null);
     }
 
     // =========================

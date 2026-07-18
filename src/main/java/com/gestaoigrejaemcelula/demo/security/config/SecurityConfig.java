@@ -26,6 +26,12 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String PASTOR = "PASTOR";
+    private static final String SECRETARIO = "SECRETARIO";
+    private static final String LIDER_CELULA = "LIDER_CELULA";
+    private static final String TESOUREIRO = "TESOUREIRO";
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -66,23 +72,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/usuarios/solicitar-alteracao").permitAll()
                         .requestMatchers("/whatsapp/teste/**").permitAll()
                         .requestMatchers("/webhook/**").permitAll()
-                        .requestMatchers("/auditoria").hasAnyAuthority("ADMIN","PASTOR")
+                        .requestMatchers("/auditoria").hasAnyAuthority(ADMIN, PASTOR)
 
 
                         // ✅ removida linha duplicada de /relatorios/** com permitAll()
                         // ✅ removida linha duplicada de /membros/sem-celula
-                        .requestMatchers("/api/casas-de-paz/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/casas-de-paz/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA)
                         .requestMatchers(HttpMethod.PATCH, "/usuarios/*/foto").authenticated()
-                        .requestMatchers("/api/missao70/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/missao70").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/api/aniversariantes/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/api/missao70/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA)
+                        .requestMatchers("/api/missao70").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA)
+                        .requestMatchers("/api/aniversariantes/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA)
                         .requestMatchers("/discipulado/**").permitAll()
-                        .requestMatchers("/celulas/minha-celula").hasAnyAuthority("LIDER_CELULA", "ADMIN", "PASTOR", "SECRETARIO")
-                        .requestMatchers("/celulas/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
-                        .requestMatchers("/membros/sem-celula").hasAnyAuthority("LIDER_CELULA", "PASTOR","SECRETARIO","ADMIN")
-                        .requestMatchers("/membros/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "TESOUREIRO","LIDER_CELULA")
-                        .requestMatchers("/tesouraria/**").hasAnyAuthority("ADMIN", "TESOUREIRO", "PASTOR")
-                        .requestMatchers("/relatorios/**").hasAnyAuthority("ADMIN", "SECRETARIO", "PASTOR", "LIDER_CELULA")
+                        .requestMatchers("/celulas/minha-celula").hasAnyAuthority(LIDER_CELULA, ADMIN, PASTOR, SECRETARIO)
+                        .requestMatchers("/celulas/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA)
+                        .requestMatchers("/membros/sem-celula").hasAnyAuthority(LIDER_CELULA, PASTOR, SECRETARIO, ADMIN)
+                        .requestMatchers("/membros/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, TESOUREIRO, LIDER_CELULA)
+                        .requestMatchers("/tesouraria/**").hasAnyAuthority(ADMIN, TESOUREIRO, PASTOR)
+                        .requestMatchers("/relatorios/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA)
 
                         .anyRequest().authenticated()
 

@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
 @Service
 public class VisitanteService {
 
+    private static final String ENTIDADE = "VISITANTE";
+    private static final String MSG_NAO_ENCONTRADO = "Visitante não encontrado";
+
     private final VisitanteRepository repository;
     private final CelulaRepository celulaRepository;
     private final AuditoriaHelper auditoria;
@@ -54,7 +57,7 @@ public class VisitanteService {
 
         Visitante salvo = repository.save(visitante);
 
-        auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "CREATE",
+        auditoria.registrar(ENTIDADE, salvo.getId(), salvo.getNome(), "CREATE",
                 Map.of(
                         "telefone", Map.of("para", str(salvo.getTelefone())),
                         "email", Map.of("para", str(salvo.getEmail())),
@@ -97,7 +100,7 @@ public class VisitanteService {
     @Transactional
     public VisitanteResponseDTO atualizar(Long id, VisitanteRequestDTO dto) {
         Visitante visitante = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_NAO_ENCONTRADO));
 
         Map<String, Object> diff = new LinkedHashMap<>();
         if (!Objects.equals(visitante.getNome(), dto.getNome()))
@@ -121,7 +124,7 @@ public class VisitanteService {
         Visitante salvo = repository.save(visitante);
 
         if (!diff.isEmpty())
-            auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "UPDATE", diff);
+            auditoria.registrar(ENTIDADE, salvo.getId(), salvo.getNome(), "UPDATE", diff);
 
         if (salvo.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(salvo.getCelula().getId());
@@ -136,7 +139,7 @@ public class VisitanteService {
     @Transactional
     public void deletar(Long id) {
         Visitante visitante = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_NAO_ENCONTRADO));
         visitante.setAtivo(false);
         repository.save(visitante);
 
@@ -170,7 +173,7 @@ public class VisitanteService {
     @Transactional(readOnly = true)
     public VisitanteResponseDTO buscarPorId(Long id) {
         Visitante visitante = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_NAO_ENCONTRADO));
         return toDTO(visitante);
     }
 
@@ -180,7 +183,7 @@ public class VisitanteService {
     @Transactional(readOnly = true)
     public HistoricoDecisaoDTO buscarDecisaoAtual(Long id) {
         Visitante v = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_NAO_ENCONTRADO));
         return new HistoricoDecisaoDTO(
                 v.getId(),
                 v.getNome(),
@@ -194,7 +197,7 @@ public class VisitanteService {
     @Transactional
     public void arquivar(Long id) {
         Visitante visitante = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_NAO_ENCONTRADO));
 
         visitante.setArquivado(true);
         visitante.setDataArquivamento(LocalDate.now());
@@ -205,7 +208,7 @@ public class VisitanteService {
                 ? visitante.getDecisaoEspiritual().name()
                 : "SEM_DECISAO";
 
-        auditoria.registrar("VISITANTE", visitante.getId(), visitante.getNome(), "ARQUIVAR",
+        auditoria.registrar(ENTIDADE, visitante.getId(), visitante.getNome(), "ARQUIVAR",
                 Map.of("motivo", Map.of("para", motivo))
         );
 
@@ -220,13 +223,13 @@ public class VisitanteService {
     @Transactional
     public void desarquivar(Long id) {
         Visitante visitante = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_NAO_ENCONTRADO));
 
         visitante.setArquivado(false);
         visitante.setDataArquivamento(null);
         repository.save(visitante);
 
-        auditoria.registrar("VISITANTE", visitante.getId(), visitante.getNome(), "DESARQUIVAR",
+        auditoria.registrar(ENTIDADE, visitante.getId(), visitante.getNome(), "DESARQUIVAR",
                 Map.of()
         );
 

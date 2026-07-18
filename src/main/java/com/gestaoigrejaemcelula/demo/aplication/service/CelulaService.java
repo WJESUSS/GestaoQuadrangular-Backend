@@ -28,6 +28,9 @@ public class CelulaService {
 
     private static final Logger log = LoggerFactory.getLogger(CelulaService.class);
 
+    private static final String ACAO_UPDATE = "UPDATE";
+    private static final String ACAO_CREATE = "CREATE";
+
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
     private final UsuarioRepository usuarioRepository;
@@ -77,7 +80,7 @@ public class CelulaService {
         lider.setCelula(celulaSalva);
         usuarioRepository.saveAndFlush(lider);
 
-        auditoria.registrar("CELULA", celulaSalva.getId(), celulaSalva.getNome(), "CREATE",
+        auditoria.registrar("CELULA", celulaSalva.getId(), celulaSalva.getNome(), ACAO_CREATE,
                 Map.of(
                         "lider",    Map.of("para", str(lider.getNome())),
                         "endereco", Map.of("para", str(dto.endereco())),
@@ -155,7 +158,7 @@ public class CelulaService {
         CelulaResponseDTO resposta = new CelulaResponseDTO(celulaRepository.save(celula));
 
         if (!diff.isEmpty())
-            auditoria.registrar("CELULA", id, celula.getNome(), "UPDATE", diff);
+            auditoria.registrar("CELULA", id, celula.getNome(), ACAO_UPDATE, diff);
 
         return resposta;
     }
@@ -187,7 +190,7 @@ public class CelulaService {
         membro.setCelula(celula);
         membroRepository.save(membro);
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), ACAO_UPDATE,
                 Map.of("celula", Map.of("de", "", "para", str(celula.getNome())))
         );
     }
@@ -212,7 +215,7 @@ public class CelulaService {
             celulaRepository.save(celula);
         }
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), ACAO_UPDATE,
                 Map.of("celula", Map.of("de", nomeCelula, "para", ""))
         );
     }
@@ -235,7 +238,7 @@ public class CelulaService {
         membro.setCelula(novaCelula);
         membroRepository.save(membro);
 
-        auditoria.registrar("MEMBRO", membro.getId(), membro.getNome(), "UPDATE",
+        auditoria.registrar("MEMBRO", membro.getId(), membro.getNome(), ACAO_UPDATE,
                 Map.of("celula", Map.of("de", celulaAnterior, "para", str(novaCelula.getNome())))
         );
     }
@@ -258,7 +261,7 @@ public class CelulaService {
 
         Visitante salvo = visitanteRepository.save(visitante);
 
-        auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), "CREATE",
+        auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), ACAO_CREATE,
                 Map.of("celula", Map.of("para", str(celula.getNome())))
         );
 
@@ -331,7 +334,7 @@ public class CelulaService {
         celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now());
         celulaRepository.save(celula);
 
-        auditoria.registrar("CELULA", celulaId, celula.getNome(), "UPDATE",
+        auditoria.registrar("CELULA", celulaId, celula.getNome(), ACAO_UPDATE,
                 Map.of("statusMultiplicacao", Map.of("de", "NORMAL", "para", "EM_ANALISE"),
                         "motivo",              Map.of("para", str(celula.getMotivoSolicitacao())))
         );
@@ -402,7 +405,7 @@ public class CelulaService {
         celula.getMembros().add(membro);
         celulaRepository.save(celula);
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+        auditoria.registrar("MEMBRO", membroId, membro.getNome(), ACAO_UPDATE,
                 Map.of("celula", Map.of("de", "", "para", str(celula.getNome())))
         );
 

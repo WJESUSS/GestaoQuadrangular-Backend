@@ -6,7 +6,6 @@ import com.gestaoigrejaemcelula.demo.aplication.service.TesourariaService;
 import com.gestaoigrejaemcelula.demo.domain.entity.LancamentoTesouraria;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.repository.LancamentoTesourariaRepository;
-import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

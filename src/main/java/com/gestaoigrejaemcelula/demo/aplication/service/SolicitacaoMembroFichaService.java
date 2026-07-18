@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 @Service
 public class SolicitacaoMembroFichaService {
 
+    private static final String ENTIDADE = "SOLICITACAO_MEMBRO";
+
     private final SolicitacaoMembroFichaRepository solicitacaoRepository;
     private final MembroRepository membroRepository;
     private final UsuarioRepository usuarioRepository;
@@ -71,7 +73,7 @@ public class SolicitacaoMembroFichaService {
 
         SolicitacaoMembroFicha salva = solicitacaoRepository.save(ficha);
 
-        auditoria.registrar("SOLICITACAO_MEMBRO", salva.getId(), salva.getNome(),
+        auditoria.registrar(ENTIDADE, salva.getId(), salva.getNome(),
                 "CREATE", Map.of("lider", lider.getNome(), "status", "PENDENTE"));
 
         return new SolicitacaoMembroFichaResponseDTO(salva);
@@ -148,7 +150,7 @@ public class SolicitacaoMembroFichaService {
             ficha.setStatus(StatusSolicitacaoMembro.APROVADO);
             ficha.setMembroCriadoId(membro.getId());
 
-            auditoria.registrar("SOLICITACAO_MEMBRO", ficha.getId(), ficha.getNome(),
+            auditoria.registrar(ENTIDADE, ficha.getId(), ficha.getNome(),
                     "APROVADO",
                     Map.of("secretario", secretario.getNome(), "membroCriadoId", membro.getId()));
         } else {
@@ -156,7 +158,7 @@ public class SolicitacaoMembroFichaService {
             ficha.setStatus(StatusSolicitacaoMembro.REJEITADO);
             ficha.setMotivoRejeicao(decisao.getMotivoRejeicao());
 
-            auditoria.registrar("SOLICITACAO_MEMBRO", ficha.getId(), ficha.getNome(),
+            auditoria.registrar(ENTIDADE, ficha.getId(), ficha.getNome(),
                     "REJEITADO",
                     Map.of("secretario", secretario.getNome(), "motivo", decisao.getMotivoRejeicao()));
         }
@@ -216,7 +218,7 @@ public class SolicitacaoMembroFichaService {
         Membro salvo = membroRepository.save(membro);
 
         auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "CREATE",
-                Map.of("origem", "SOLICITACAO_MEMBRO", "solicitacaoId", ficha.getId()));
+                Map.of("origem", ENTIDADE, "solicitacaoId", ficha.getId()));
 
         return salvo;
     }

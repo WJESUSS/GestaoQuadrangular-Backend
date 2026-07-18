@@ -10,8 +10,14 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
+
 @Entity
-@Table(name = "missao70")
+@Table(name = "missao70", indexes = {
+        @Index(name = "idx_missao70_celula_id", columnList = "celula_id"),
+        @Index(name = "idx_missao70_status", columnList = "status"),
+        @Index(name = "idx_missao70_data_inicio", columnList = "dataInicio")
+})
 public class Missao70 {
 
     @Id
@@ -72,9 +78,11 @@ public class Missao70 {
             inverseJoinColumns = @JoinColumn(name = "visitante_id")
     )
     @JsonIgnoreProperties({"celula", "hibernateLazyInitializer"})
+    @BatchSize(size = 20)
     private List<Visitante> visitantes = new ArrayList<>();
 
     @OneToMany(mappedBy = "missao70", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     private List<EncontroMissao70> encontros = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)

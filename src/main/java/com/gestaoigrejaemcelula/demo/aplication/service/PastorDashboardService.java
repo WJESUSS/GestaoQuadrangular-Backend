@@ -25,7 +25,9 @@ public class PastorDashboardService {
 
     // Cache por mês — chave "2026-05", "2026-04", etc.
     @CacheEvict(value = "metricas-pastor", allEntries = true)
-    public void limparCache() {}
+    public void limparCache() {
+        // Corpo vazio de propósito — a limpeza é feita pela annotation @CacheEvict
+    }
 
     @Cacheable(value = "metricas-pastor", key = "#mes")
     @Transactional(readOnly = true)

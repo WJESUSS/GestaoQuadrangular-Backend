@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 @Service
 public class MembroService {
 
+    private static final String ENTIDADE = "MEMBRO";
+
     private final MembroRepository repository;
     private final HistoricoStatusMembroRepository historicoRepository;
     private final VisitanteRepository visitanteRepository;
@@ -64,7 +66,7 @@ public class MembroService {
         Membro membro = new Membro();
         copiarDtoParaEntidade(dto, membro);
         Membro salvo = repository.save(membro);
-        auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "CREATE", null);
+        auditoria.registrar(ENTIDADE, salvo.getId(), salvo.getNome(), "CREATE", null);
         return new MembroResponseDTO(salvo);
     }
     private void addDiff(Map<String, Object> diff, String campo, Object antes, Object depois) {
@@ -111,7 +113,7 @@ public class MembroService {
         Membro salvo = repository.save(m);
 
         if (!diff.isEmpty())
-            auditoria.registrar("MEMBRO", salvo.getId(), salvo.getNome(), "UPDATE", diff);
+            auditoria.registrar(ENTIDADE, salvo.getId(), salvo.getNome(), "UPDATE", diff);
 
         return new MembroResponseDTO(salvo);
     }
@@ -145,7 +147,7 @@ public class MembroService {
     public void remover(Long id) {
         Membro m = buscarEntidadePorId(id);
         repository.deleteById(id);
-        auditoria.registrar("MEMBRO", id, m.getNome(), "DELETE", null);
+        auditoria.registrar(ENTIDADE, id, m.getNome(), "DELETE", null);
     }
 
     // -------------------------------------------------------
@@ -230,7 +232,7 @@ public class MembroService {
         repository.save(membro);
         registrarHistorico(membro, statusAnterior, novoStatus, observacao);
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE, membroId, membro.getNome(), "UPDATE",
                 Map.of("status", Map.of("de", str(statusAnterior), "para", str(novoStatus))));
     }
 
