@@ -6,7 +6,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 public record CelulaResponseDTO(
         Long id,
         String nome,
@@ -37,7 +36,7 @@ public record CelulaResponseDTO(
                 celula.isAtiva(),
                 celula.getMembros().stream()
                         .map(MembroDTO::new)   // Agora recebe Membro
-                        .collect(Collectors.toList()),
+                        .toList(),
                 celula.getQuantidadeMembrosAtivos(),
                 celula.getStatusMultiplicacao()
         );

@@ -5,7 +5,6 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CasaDePazResponseDTO {
 
@@ -70,7 +69,7 @@ public class CasaDePazResponseDTO {
             dto.setVisitantes(
                     casa.getVisitantes().stream()
                             .map(v -> new VisitanteSimples(v.getId(), v.getNome()))
-                            .collect(Collectors.toList())
+                            .toList()
             );
         } else {
             dto.setVisitantes(List.of());

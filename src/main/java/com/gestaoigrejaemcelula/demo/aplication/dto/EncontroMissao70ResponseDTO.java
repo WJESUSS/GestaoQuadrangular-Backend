@@ -5,7 +5,6 @@ import com.gestaoigrejaemcelula.demo.domain.entity.EncontroMissao70;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class EncontroMissao70ResponseDTO {
 
@@ -34,7 +33,7 @@ public class EncontroMissao70ResponseDTO {
         dto.visitantesPresentes = encontro.getVisitantesPresentes() != null
                 ? encontro.getVisitantesPresentes().stream()
                 .map(v -> new PresenteDTO(v.getId(), v.getNome()))
-                .collect(Collectors.toList())
+                .toList()
                 : List.of();
         return dto;
     }

@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -20,7 +18,6 @@ public class AniversarioService {
 
     private static final Logger log = LoggerFactory.getLogger(AniversarioService.class);
 
-    // ✅ FUSO HORÁRIO DE SALVADOR/BAHIA
     private static final ZoneId ZONE_BAHIA = ZoneId.of("America/Bahia");
 
     private final MembroRepository membroRepository;
@@ -33,7 +30,6 @@ public class AniversarioService {
             key = "'dia-' + T(java.time.LocalDate).now(T(java.time.ZoneId).of('America/Bahia')).toString()")
     @Transactional(readOnly = true)
     public List<AniversarianteDTO> listarAniversariantesDoDia() {
-        // ✅ USA FUSO HORÁRIO DE BAHIA
         LocalDate hoje = LocalDate.now(ZONE_BAHIA);
 
         log.info("Procurando aniversariantes para: {}", hoje);
@@ -52,7 +48,7 @@ public class AniversarioService {
             key = "'semana-' + T(java.time.LocalDate).now(T(java.time.ZoneId).of('America/Bahia')).toString()")
     @Transactional(readOnly = true)
     public List<AniversarianteDTO> listarAniversariantesDaSemana() {
-        // ✅ USA FUSO HORÁRIO DE BAHIA
+
         LocalDate hoje = LocalDate.now(ZONE_BAHIA);
 
         List<Integer> diasMes = new ArrayList<>();
@@ -81,24 +77,20 @@ lhe conceda saúde, paz e prosperidade.
 Com carinho,
 Pastores Renato e Jaci Soares 🙏 🤍""".formatted(m.getNome());
 
-        String mensagemCodificada = URLEncoder.encode(mensagem, StandardCharsets.UTF_8);
         String telefoneLimpo = m.getTelefone().replaceAll("[^0-9]", "");
 
         if (!telefoneLimpo.startsWith("55")) {
             telefoneLimpo = "55" + telefoneLimpo;
         }
 
-        String link = "https://wa.me/" + telefoneLimpo + "?text=" + mensagemCodificada;
-
         return new AniversarianteDTO(
                 m.getId(),
                 m.getNome(),
                 m.getTelefone(),
-                mensagem,
-                link
+                mensagem
         );
     }
-    // Para aniversariantes da CÉLULA
+
     @Transactional(readOnly = true)
     public List<AniversarianteDTO> listarAniversariantesDoDiaPorCelula(Long celulaId) {
         LocalDate hoje = LocalDate.now(ZONE_BAHIA);
