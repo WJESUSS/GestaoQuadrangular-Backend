@@ -37,6 +37,8 @@ public class WhatsAppService {
     private final RegistroWebhookRepository registroRepository;
 
     private final BloqueioService bloqueioService; // ← adicione final
+    private static final String TIPO_TEMPLATE = "template";
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -56,7 +58,7 @@ public class WhatsAppService {
             Map<String, Object> body = new HashMap<>();
             body.put("messaging_product", "whatsapp");
             body.put("to", numeroLimpo);
-            body.put("type", "template");
+            body.put("type", TIPO_TEMPLATE);
 
             Map<String, Object> template = new HashMap<>();
             template.put("name", templateName);
@@ -84,7 +86,7 @@ public class WhatsAppService {
                 template.put("components", List.of(component));
             }
 
-            body.put("template", template);
+            body.put(TIPO_TEMPLATE, template);
             String json = objectMapper.writeValueAsString(body);
 
             // ── Envia para a Meta ─────────────────────────────────────
@@ -126,7 +128,7 @@ public class WhatsAppService {
         try {
             RegistroWebhook r = new RegistroWebhook();
             r.setTipoEvento("mensagem");
-            r.setTipoMensagem("template");
+            r.setTipoMensagem(TIPO_TEMPLATE);
             r.setStatus("enviada");
             r.setNumeroDestino(numero);
             r.setIdMensagem(wamid != null ? wamid : "pendente-" + System.currentTimeMillis());

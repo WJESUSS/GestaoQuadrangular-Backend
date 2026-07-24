@@ -38,6 +38,8 @@ public class UsuarioService {
     private static final String CAMPO_EMAIL   = "e-mail";
     private static final String CAMPO_ATIVO   = "CAMPO_ATIVO";
     private static final String CAMPO_SENHA   = "CAMPO_SENHA";
+    private static final String ACAO_UPDATE   = "UPDATE";
+    private static final String MSG_USUARIO_NAO_ENCONTRADO = "Usuário não encontrado: ";
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -139,7 +141,7 @@ public class UsuarioService {
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
         if (!diff.isEmpty())
-            auditoria.registrar(ENTIDADE_USUARIO, id, usuarioSalvo.getNome(), "UPDATE", diff);
+            auditoria.registrar(ENTIDADE_USUARIO, id, usuarioSalvo.getNome(), ACAO_UPDATE, diff);
 
         return new UsuarioResponseDTO(usuarioSalvo);
     }
@@ -182,7 +184,7 @@ public class UsuarioService {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(true);
         usuarioRepository.save(usuario);
-        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), ACAO_UPDATE,
                 Map.of(CAMPO_ATIVO, Map.of("de", "false", "para", "true"))
         );
     }
@@ -195,7 +197,7 @@ public class UsuarioService {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
-        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), ACAO_UPDATE,
                 Map.of(CAMPO_ATIVO, Map.of("de", "true", "para", "false"))
         );
     }
@@ -209,7 +211,7 @@ public class UsuarioService {
         boolean anterior = usuario.isAtivo();
         usuario.setAtivo(!anterior);
         usuarioRepository.save(usuario);
-        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), ACAO_UPDATE,
                 Map.of(CAMPO_ATIVO, Map.of("de", str(anterior), "para", str(!anterior)))
         );
     }
@@ -226,7 +228,7 @@ public class UsuarioService {
 
         String email = authentication.getName();
         return usuarioRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException(MSG_USUARIO_NAO_ENCONTRADO + email));
     }
 
     // =========================
@@ -235,7 +237,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public List<FichaEncontroResponseDTO> findByUsuarioLogado(String username) {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException(MSG_USUARIO_NAO_ENCONTRADO + username));
 
         List<FichaEncontro> fichas = fichaEncontroRepository
                 .findByUsuarioIdOrderByDataCriacaoDesc(usuario.getId());
@@ -416,7 +418,7 @@ public class UsuarioService {
     @Transactional
     public SolicitacaoAlteracaoResponseDTO solicitarAlteracao(@Valid SolicitacaoAlteracaoDTO dto) {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + dto.getEmail()));
+                .orElseThrow(() -> new UsernameNotFoundException(MSG_USUARIO_NAO_ENCONTRADO + dto.getEmail()));
 
         validarSenhaAtual(dto.getSenhaAtual(), usuario.getSenha());
 
@@ -437,7 +439,7 @@ public class UsuarioService {
 
         String tipoAlteracao = resolverTipoAlteracao(trocaEmail, trocaSenha);
 
-        auditoria.registrar(ENTIDADE_USUARIO, usuario.getId(), usuario.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE_USUARIO, usuario.getId(), usuario.getNome(), ACAO_UPDATE,
                 Map.of("solicitacao", Map.of("para", tipoAlteracao + " pendentes"))
         );
 
@@ -514,7 +516,7 @@ public class UsuarioService {
 
         usuario.setFotoPerfil(fotoBase64);
         usuarioRepository.save(usuario);
-        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), ACAO_UPDATE,
                 Map.of("fotoPerfil", Map.of("para", "*** imagem atualizada ***"))
         );
     }

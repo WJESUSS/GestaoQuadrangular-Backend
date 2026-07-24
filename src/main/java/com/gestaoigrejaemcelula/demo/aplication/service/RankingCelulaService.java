@@ -93,7 +93,9 @@ public class RankingCelulaService {
         return gerarRanking(mesAtual);
     }
     @CacheEvict(value = "ranking-celulas", allEntries = true)
-    public void limparCache() {}
+    public void limparCache() {
+        // Método intencionalmente vazio: a limpeza do cache é tratada pela anotação @CacheEvict.
+    }
 
 
 }
