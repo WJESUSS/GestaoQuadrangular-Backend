@@ -30,6 +30,9 @@ public class CelulaService {
 
     private static final String ACAO_UPDATE = "UPDATE";
     private static final String ACAO_CREATE = "CREATE";
+    private static final String ENTIDADE_MEMBRO = "MEMBRO";
+    private static final String CAMPO_CELULA = "celula";
+    private static final String CAMPO_STATUS_MULTIPLICACAO = "CAMPO_STATUS_MULTIPLICACAO";
 
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
@@ -190,8 +193,8 @@ public class CelulaService {
         membro.setCelula(celula);
         membroRepository.save(membro);
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), ACAO_UPDATE,
-                Map.of("celula", Map.of("de", "", "para", str(celula.getNome())))
+        auditoria.registrar(ENTIDADE_MEMBRO, membroId, membro.getNome(), ACAO_UPDATE,
+                Map.of(CAMPO_CELULA, Map.of("de", "", "para", str(celula.getNome())))
         );
     }
 
@@ -215,8 +218,8 @@ public class CelulaService {
             celulaRepository.save(celula);
         }
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), ACAO_UPDATE,
-                Map.of("celula", Map.of("de", nomeCelula, "para", ""))
+        auditoria.registrar(ENTIDADE_MEMBRO, membroId, membro.getNome(), ACAO_UPDATE,
+                Map.of(CAMPO_CELULA, Map.of("de", nomeCelula, "para", ""))
         );
     }
 
@@ -238,8 +241,8 @@ public class CelulaService {
         membro.setCelula(novaCelula);
         membroRepository.save(membro);
 
-        auditoria.registrar("MEMBRO", membro.getId(), membro.getNome(), ACAO_UPDATE,
-                Map.of("celula", Map.of("de", celulaAnterior, "para", str(novaCelula.getNome())))
+        auditoria.registrar(ENTIDADE_MEMBRO, membro.getId(), membro.getNome(), ACAO_UPDATE,
+                Map.of(CAMPO_CELULA, Map.of("de", celulaAnterior, "para", str(novaCelula.getNome())))
         );
     }
 
@@ -262,7 +265,7 @@ public class CelulaService {
         Visitante salvo = visitanteRepository.save(visitante);
 
         auditoria.registrar("VISITANTE", salvo.getId(), salvo.getNome(), ACAO_CREATE,
-                Map.of("celula", Map.of("para", str(celula.getNome())))
+                Map.of(CAMPO_CELULA, Map.of("para", str(celula.getNome())))
         );
 
         return converterVisitante(salvo);
@@ -335,7 +338,7 @@ public class CelulaService {
         celulaRepository.save(celula);
 
         auditoria.registrar("CELULA", celulaId, celula.getNome(), ACAO_UPDATE,
-                Map.of("statusMultiplicacao", Map.of("de", "NORMAL", "para", "EM_ANALISE"),
+                Map.of(CAMPO_STATUS_MULTIPLICACAO, Map.of("de", "NORMAL", "para", "EM_ANALISE"),
                         "motivo",              Map.of("para", str(celula.getMotivoSolicitacao())))
         );
 
@@ -405,8 +408,8 @@ public class CelulaService {
         celula.getMembros().add(membro);
         celulaRepository.save(celula);
 
-        auditoria.registrar("MEMBRO", membroId, membro.getNome(), ACAO_UPDATE,
-                Map.of("celula", Map.of("de", "", "para", str(celula.getNome())))
+        auditoria.registrar(ENTIDADE_MEMBRO, membroId, membro.getNome(), ACAO_UPDATE,
+                Map.of(CAMPO_CELULA, Map.of("de", "", "para", str(celula.getNome())))
         );
 
         this.verificarELancarAlertaMultiplicacao(celulaId);
@@ -427,7 +430,7 @@ public class CelulaService {
 
         auditoria.registrar("CELULA", celulaId, celula.getNome(),
                 aprovado ? "APPROVE" : "REJECT",
-                Map.of("statusMultiplicacao", Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
+                Map.of(CAMPO_STATUS_MULTIPLICACAO, Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
         );
 
         String titulo = aprovado ? "Multiplicação APROVADA" : "Solicitação Indeferida";
@@ -453,7 +456,7 @@ public class CelulaService {
 
         auditoria.registrar("CELULA", id, celula.getNome(),
                 aprovado ? "APPROVE" : "REJECT",
-                Map.of("statusMultiplicacao", Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
+                Map.of(CAMPO_STATUS_MULTIPLICACAO, Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
         );
 
         return new CelulaStatusMultiplicacaoDTO(celula.getId(), celula.getStatusMultiplicacao().name());

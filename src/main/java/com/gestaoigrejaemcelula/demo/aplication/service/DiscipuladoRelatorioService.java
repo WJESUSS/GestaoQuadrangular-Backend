@@ -34,6 +34,9 @@ public class DiscipuladoRelatorioService {
 
     private static final Logger log = LoggerFactory.getLogger(DiscipuladoRelatorioService.class);
 
+    private static final String CELULA_NAO_INFORMADA = "CELULA_NAO_INFORMADA";
+    private static final String LIDER_DESCONHECIDO  = "LIDER_DESCONHECIDO";
+
     private final DiscipuladoRelatorioRepository repository;
     private final MembroRepository               membroRepository;
     private final UsuarioRepository              usuarioRepository;
@@ -178,8 +181,8 @@ public class DiscipuladoRelatorioService {
                     return new RelatorioDiscipuladoDTO(
                             r.getId(),
                             cel != null ? cel.getId()   : null,
-                            cel != null ? cel.getNome() : "Célula não informada",
-                            lid != null ? lid.getNome() : "Líder desconhecido",
+                            cel != null ? cel.getNome() : CELULA_NAO_INFORMADA,
+                            lid != null ? lid.getNome() : LIDER_DESCONHECIDO,
                             r.getSemanaInicio(),
                             r.getSemanaFim(),
                             presencas
@@ -218,7 +221,7 @@ public class DiscipuladoRelatorioService {
                     Celula  celula = primeiro.getCelula();
 
                     Long   celulaId   = null;
-                    String nomeCelula = "Célula não informada";
+                    String nomeCelula = CELULA_NAO_INFORMADA;
 
                     if (celula != null) {
                         celulaId   = celula.getId();
@@ -249,7 +252,7 @@ public class DiscipuladoRelatorioService {
                             primeiro.getId(),
                             celulaId,
                             nomeCelula,
-                            lider != null ? lider.getNome() : "Líder desconhecido",
+                            lider != null ? lider.getNome() : LIDER_DESCONHECIDO,
                             primeiro.getSemanaInicio(),
                             primeiro.getSemanaFim(),
                             presencas
@@ -320,8 +323,8 @@ public class DiscipuladoRelatorioService {
         return new RelatorioDiscipuladoDTO(
                 relatorio.getId(),
                 celula != null ? celula.getId()   : null,
-                celula != null ? celula.getNome() : "Célula não informada",
-                lider  != null ? lider.getNome()  : "Líder desconhecido",
+                celula != null ? celula.getNome() : CELULA_NAO_INFORMADA,
+                lider  != null ? lider.getNome()  : LIDER_DESCONHECIDO,
                 relatorio.getSemanaInicio(),
                 relatorio.getSemanaFim(),
                 List.of(new PresencaMembroDTO(

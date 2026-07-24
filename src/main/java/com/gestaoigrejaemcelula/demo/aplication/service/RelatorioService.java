@@ -32,6 +32,9 @@ public class RelatorioService {
     @Autowired private DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
     @Autowired private RankingCelulaService rankingCelulaService;
 
+    private static final String CELULA_NAO_INFORMADA = "CELULA_NAO_INFORMADA";
+    private static final String LIDER_DESCONHECIDO  =" LIDER_DESCONHECIDO";
+
     private boolean safe(Boolean value) {
         return Boolean.TRUE.equals(value);
     }
@@ -236,7 +239,7 @@ public class RelatorioService {
                     Celula celulaDoRelatorio = primeiro.getCelula();
 
                     Long celulaId = null;
-                    String nomeCelula = "Célula não informada";
+                    String nomeCelula = CELULA_NAO_INFORMADA;
 
                     if (celulaDoRelatorio != null) {
                         celulaId  = celulaDoRelatorio.getId();
@@ -267,7 +270,7 @@ public class RelatorioService {
                             primeiro.getId(),
                             celulaId,
                             nomeCelula,
-                            lider != null ? lider.getNome() : "Líder desconhecido",
+                            lider != null ? lider.getNome() : LIDER_DESCONHECIDO,
                             primeiro.getSemanaInicio(),
                             primeiro.getSemanaFim(),
                             presencas
