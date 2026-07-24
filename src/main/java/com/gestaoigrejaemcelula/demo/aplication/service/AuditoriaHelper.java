@@ -1,6 +1,7 @@
 package com.gestaoigrejaemcelula.demo.aplication.service;
 
 
+import com.gestaoigrejaemcelula.demo.aplication.dto.EventoAuditoria;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -16,21 +17,21 @@ public class AuditoriaHelper {
     public void registrar(String entidade, Long id, String nome,
                           String acao, Map<String, Object> diff) {
         String nomeUsuario = resolverUsuario();
-        auditoriaService.registrar(
+        auditoriaService.registrar(new EventoAuditoria(
                 entidade, id, nome, acao, diff,
                 nomeUsuario, nomeUsuario,
                 null, null, null
-        );
+        ));
     }
 
     public void registrarComAprovador(String entidade, Long id, String nome,
                                       String acao, String aprovadorNome, String aprovadorEmail) {
         String nomeUsuario = resolverUsuario();
-        auditoriaService.registrar(
+        auditoriaService.registrar(new EventoAuditoria(
                 entidade, id, nome, acao, null,
                 nomeUsuario, nomeUsuario,
                 aprovadorNome, aprovadorEmail, null
-        );
+        ));
     }
 
     private String resolverUsuario() {
@@ -40,7 +41,9 @@ public class AuditoriaHelper {
                     && !"anonymousUser".equals(auth.getPrincipal())) {
                 return auth.getName();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // Segurança pode não estar disponível (ex.: em contexto de schedulers ou testes)
+        }
         return "sistema";
     }
 }

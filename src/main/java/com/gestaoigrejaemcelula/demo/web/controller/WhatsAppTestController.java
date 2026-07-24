@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.Map;
 
 @RestController
@@ -23,7 +24,30 @@ public class WhatsAppTestController {
             String template,
             String idioma,
             String[] parametros
-    ) {}
+    ) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof EnviarRequest other)) return false;
+            return java.util.Objects.equals(telefone, other.telefone)
+                    && java.util.Objects.equals(template, other.template)
+                    && java.util.Objects.equals(idioma, other.idioma)
+                    && Arrays.equals(parametros, other.parametros);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = java.util.Objects.hash(telefone, template, idioma);
+            result = 31 * result + Arrays.hashCode(parametros);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "EnviarRequest[telefone=%s, template=%s, idioma=%s, parametros=%s]"
+                    .formatted(telefone, template, idioma, Arrays.toString(parametros));
+        }
+    }
 
     @PostMapping("/enviar")
     public ResponseEntity<Map<String, Object>> enviarTeste(@Valid @RequestBody EnviarRequest req) {

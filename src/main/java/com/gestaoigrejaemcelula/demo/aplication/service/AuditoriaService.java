@@ -2,6 +2,7 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gestaoigrejaemcelula.demo.aplication.dto.AuditoriaDTO;
+import com.gestaoigrejaemcelula.demo.aplication.dto.EventoAuditoria;
 import com.gestaoigrejaemcelula.demo.domain.entity.RegistroAuditoria;
 import com.gestaoigrejaemcelula.demo.domain.repository.AuditoriaRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Map;
+
 
 @Service
 @RequiredArgsConstructor
@@ -28,32 +29,21 @@ public class AuditoriaService {
     private final ObjectMapper mapper;
 
     // ── Registrar evento ─────────────────────────────────────────────────────
-    public void registrar(
-            String entidade,
-            Long   entidadeId,
-            String entidadeNome,
-            String acao,
-            Map<String, Object> detalhes,
-            String usuarioNome,
-            String usuarioEmail,
-            String aprovadorNome,
-            String aprovadorEmail,
-            String ipOrigem
-    ) {
+    public void registrar(EventoAuditoria evento) {
         try {
-            String detalhesJson = detalhes != null ? mapper.writeValueAsString(detalhes) : null;
+            String detalhesJson = evento.detalhes() != null ? mapper.writeValueAsString(evento.detalhes()) : null;
             RegistroAuditoria reg = RegistroAuditoria.builder()
-                    .entidade(entidade)
-                    .entidadeId(entidadeId)
-                    .entidadeNome(entidadeNome)
-                    .acao(acao)
+                    .entidade(evento.entidade())
+                    .entidadeId(evento.entidadeId())
+                    .entidadeNome(evento.entidadeNome())
+                    .acao(evento.acao())
                     .detalhes(detalhesJson)
-                    .usuarioNome(usuarioNome)
-                    .usuarioEmail(usuarioEmail)
-                    .aprovadorNome(aprovadorNome)
-                    .aprovadorEmail(aprovadorEmail)
-                    .dataHora(OffsetDateTime.now(ZoneOffset.UTC)) // ✅ salva em UTC
-                    .ipOrigem(ipOrigem)
+                    .usuarioNome(evento.usuarioNome())
+                    .usuarioEmail(evento.usuarioEmail())
+                    .aprovadorNome(evento.aprovadorNome())
+                    .aprovadorEmail(evento.aprovadorEmail())
+                    .dataHora(OffsetDateTime.now(ZoneOffset.UTC))
+                    .ipOrigem(evento.ipOrigem())
                     .build();
             repo.save(reg);
         } catch (Exception e) {

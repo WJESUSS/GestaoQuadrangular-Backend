@@ -288,10 +288,10 @@ public class Missao70Service {
     @Transactional(readOnly = true)
     public List<EncontroMissao70ResponseDTO> listarEncontros(Long missaoId) {
         buscarPorId(missaoId); // garante que a casa existe (lança 404 se não)
-        return encontroRepository.findByMissao70IdOrderByNumeroSemanaAsc(missaoId)
+        return List.copyOf(encontroRepository.findByMissao70IdOrderByNumeroSemanaAsc(missaoId)
                 .stream()
                 .map(EncontroMissao70ResponseDTO::de)
-                .collect(Collectors.toList());
+                .toList());
     }
 
     /**

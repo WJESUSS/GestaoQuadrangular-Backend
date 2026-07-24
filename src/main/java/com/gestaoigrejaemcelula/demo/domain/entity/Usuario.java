@@ -119,12 +119,12 @@ public class Usuario implements UserDetails {
 
     @Override
     public String getPassword() {
-        return senha;
+        return getSenha();
     }
 
     @Override
     public String getUsername() {
-        return email;
+        return getEmail();
     }
 
     @Override
@@ -149,7 +149,7 @@ public class Usuario implements UserDetails {
 
 
     public Boolean getAtivo() {
-        return ativo;
+        return isAtivo();
     }
 
     public Celula getCelula() {
