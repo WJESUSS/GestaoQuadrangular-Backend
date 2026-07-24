@@ -85,46 +85,6 @@ public class DiscipuladoRelatorio {
     private Boolean domingoManha;
     private Boolean domingoNoite;
 
-    public Boolean getQuartaNoite() {
-        return quartaNoite;
-    }
-
-    public void setQuartaNoite(Boolean quartaNoite) {
-        this.quartaNoite = quartaNoite;
-    }
-
-    public Boolean getQuintaNoite() {
-        return quintaNoite;
-    }
-
-    public void setQuintaNoite(Boolean quintaNoite) {
-        this.quintaNoite = quintaNoite;
-    }
-
-    public Boolean getEscolaBiblica() {
-        return escolaBiblica;
-    }
-
-    public void setEscolaBiblica(Boolean escolaBiblica) {
-        this.escolaBiblica = escolaBiblica;
-    }
-
-    public Boolean getDomingoManha() {
-        return domingoManha;
-    }
-
-    public void setDomingoManha(Boolean domingoManha) {
-        this.domingoManha = domingoManha;
-    }
-
-    public Boolean getDomingoNoite() {
-        return domingoNoite;
-    }
-
-    public void setDomingoNoite(Boolean domingoNoite) {
-        this.domingoNoite = domingoNoite;
-    }
-
     public Celula getCelula() {
         return celula;
     }
@@ -175,7 +135,21 @@ public class DiscipuladoRelatorio {
         this.escolaBiblica = escolaBiblica;
     }
 
+    public boolean isQuartaNoite() {
+        return quartaNoite;
+    }
 
+    public void setQuartaNoite(boolean quartaNoite) {
+        this.quartaNoite = quartaNoite;
+    }
+
+    public boolean isQuintaNoite() {
+        return quintaNoite;
+    }
+
+    public void setQuintaNoite(boolean quintaNoite) {
+        this.quintaNoite = quintaNoite;
+    }
 
     public boolean isDomingoManha() {
         return domingoManha;
@@ -230,20 +204,5 @@ public class DiscipuladoRelatorio {
         if (domingoManha) total++;
         if (domingoNoite) total++;
         this.totalPresencas = total;
-    }
-    public boolean isQuartaNoite() {
-        return quartaNoite;
-    }
-
-    public void setQuartaNoite(boolean quartaNoite) {
-        this.quartaNoite = quartaNoite;
-    }
-
-    public boolean isQuintaNoite() {
-        return quintaNoite;
-    }
-
-    public void setQuintaNoite(boolean quintaNoite) {
-        this.quintaNoite = quintaNoite;
     }
 }

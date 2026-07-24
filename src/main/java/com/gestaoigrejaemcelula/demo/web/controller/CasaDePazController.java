@@ -28,13 +28,13 @@ public class CasaDePazController {
         this.service = service;
     }
 
-    // POST /api/casas-de-paz
+
     @PostMapping
     public ResponseEntity<CasaDePazResponseDTO> criar(@RequestBody @Valid CasaDePazRequestDTO dto) {
         return ResponseEntity.ok(CasaDePazResponseDTO.de(service.criar(dto)));
     }
 
-    // GET /api/casas-de-paz?celulaId=2   ← corrigido: era "lista-casa"
+
     @GetMapping
     public ResponseEntity<List<CasaDePazResponseDTO>> listarCasas(
             @RequestParam(required = false) Long celulaId) {
@@ -44,13 +44,13 @@ public class CasaDePazController {
         return ResponseEntity.ok(lista);
     }
 
-    // GET /api/casas-de-paz/{id}
+
     @GetMapping("/{id}")
     public ResponseEntity<CasaDePazResponseDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(CasaDePazResponseDTO.de(service.buscarPorId(id)));
     }
 
-    // POST /api/casas-de-paz/{id}/visitantes/{visitanteId}
+
     @PostMapping("/{id}/visitantes/{visitanteId}")
     public ResponseEntity<CasaDePazResponseDTO> adicionarVisitante(
             @PathVariable Long id,
@@ -58,19 +58,19 @@ public class CasaDePazController {
         return ResponseEntity.ok(CasaDePazResponseDTO.de(service.adicionarVisitante(id, visitanteId)));
     }
 
-    // GET /api/casas-de-paz/listar-visitante   ← corrigido: barra inicial adicionada
+
     @GetMapping("/listar-visitante")
     public ResponseEntity<List<VisitanteResponseDTO>> listarVisitantes() {
         return ResponseEntity.ok(service.listar());
     }
 
-    // GET /api/casas-de-paz/buscar?nome=...
+
     @GetMapping("/buscar")
     public ResponseEntity<List<VisitanteResponseDTO>> buscar(@RequestParam String nome) {
         return ResponseEntity.ok(service.buscarPorNome(nome));
     }
 
-    // POST /api/casas-de-paz/{id}/encontros
+
     @PostMapping("/{id}/encontros")
     public ResponseEntity<Map<String, Object>> registrarEncontro(
             @PathVariable Long id,
@@ -78,13 +78,13 @@ public class CasaDePazController {
         return ResponseEntity.ok(service.registrarEncontro(id, dto));
     }
 
-    // PATCH /api/casas-de-paz/{id}/cancelar
+
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<CasaDePazResponseDTO> cancelar(@PathVariable Long id) {
         return ResponseEntity.ok(CasaDePazResponseDTO.de(service.cancelar(id)));
     }
 
-    // GET /api/casas-de-paz/relatorio
+
     @GetMapping("/relatorio")
     public ResponseEntity<List<RelatorioCasaDePazDTO>> relatorio(
             @RequestParam(required = false) Long celulaId,
@@ -94,8 +94,7 @@ public class CasaDePazController {
         return ResponseEntity.ok(service.gerarRelatorio(celulaId, status, dataInicio, dataFim));
     }
 
-    // GET /api/casas-de-paz/buscar-nome?nome=...
-    // Nota: equivalente ao /buscar acima — considere unificar os dois em um só endpoint
+
     @GetMapping("/buscar-nome")
     public ResponseEntity<List<VisitanteResponseDTO>> buscarPorNome(@RequestParam String nome) {
         return ResponseEntity.ok(service.buscarPorNome(nome));

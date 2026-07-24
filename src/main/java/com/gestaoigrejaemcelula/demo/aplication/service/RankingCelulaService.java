@@ -16,7 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +48,7 @@ public class RankingCelulaService {
         List<RankingCelulaDTO> listaRanking = dadosBrutos.stream()
                 .map(RankingCelulaDTO::new)
                 .peek(this::calcularPontuacaoManual)
-                .collect(Collectors.toList());
+                .toList();
 
         List<RankingCelulaDTO> ordenado = listaRanking.stream()
                 .sorted(Comparator.comparingInt(RankingCelulaDTO::getPontuacao).reversed())

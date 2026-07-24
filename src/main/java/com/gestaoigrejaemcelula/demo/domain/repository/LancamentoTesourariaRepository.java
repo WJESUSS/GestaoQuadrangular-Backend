@@ -23,7 +23,7 @@ public interface LancamentoTesourariaRepository extends JpaRepository<Lancamento
     List<LancamentoTesouraria> findByMesAno(@Param("mes") int mes, @Param("ano") int ano);
 
     /** @deprecated use {@link #findByMesAndAno(int, int, Pageable)} */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.0")
     @Query("SELECT l FROM LancamentoTesouraria l WHERE MONTH(l.dataLancamento) = :mes AND YEAR(l.dataLancamento) = :ano")
     List<LancamentoTesouraria> findByMesAndAno(@Param("mes") int mes, @Param("ano") int ano);
 
@@ -52,7 +52,7 @@ public interface LancamentoTesourariaRepository extends JpaRepository<Lancamento
     List<Object[]> sumAgrupadoPorTipo();
 
     /** @deprecated use {@link #sumAgrupadoPorMembroPaginado(Pageable)} */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.0")
     @Query("SELECT l.membroNome, SUM(COALESCE(l.valorDizimo, 0)), SUM(COALESCE(l.valorOferta, 0)) FROM LancamentoTesouraria l GROUP BY l.membroNome")
     List<Object[]> sumAgrupadoPorMembro();
 
