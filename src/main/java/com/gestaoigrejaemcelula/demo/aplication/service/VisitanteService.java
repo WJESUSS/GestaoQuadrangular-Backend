@@ -17,7 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 public class VisitanteService {
@@ -80,7 +79,7 @@ public class VisitanteService {
         return repository.findAllByArquivadoFalse()
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================
@@ -91,7 +90,7 @@ public class VisitanteService {
         return repository.findByNomeContainingIgnoreCase(nome)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================
@@ -156,7 +155,7 @@ public class VisitanteService {
         return repository.findByCelulaIdAndAtivoTrueAndArquivadoFalse(celulaId)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -164,7 +163,7 @@ public class VisitanteService {
         return repository.findByCelulaIdAndAtivoTrueAndArquivadoFalse(celulaId)
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================
@@ -246,7 +245,7 @@ public class VisitanteService {
         return repository.findByArquivadoTrue()
                 .stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================

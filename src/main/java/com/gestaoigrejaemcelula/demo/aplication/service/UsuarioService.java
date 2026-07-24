@@ -101,7 +101,7 @@ public class UsuarioService {
         return usuarioRepository.findAll()
                 .stream()
                 .map(UsuarioResumoDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================
@@ -243,7 +243,7 @@ public class UsuarioService {
         List<FichaEncontro> fichas = fichaEncontroRepository
                 .findByUsuarioIdOrderByDataCriacaoDesc(usuario.getId());
 
-        return fichas.stream().map(this::toResponseDTO).collect(Collectors.toList());
+        return fichas.stream().map(this::toResponseDTO).toList();
     }
 
     private FichaEncontroResponseDTO toResponseDTO(FichaEncontro entity) {
@@ -336,7 +336,7 @@ public class UsuarioService {
     public List<UsuarioResumoDTO> listarPendentes() {
         return usuarioRepository.findPendentes().stream()
                 .map(UsuarioResumoDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================
@@ -372,7 +372,7 @@ public class UsuarioService {
     public List<UsuarioResumoDTO> listarComAlteracaoPendente() {
         return usuarioRepository.findComAlteracaoPendente().stream()
                 .map(UsuarioResumoDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =========================

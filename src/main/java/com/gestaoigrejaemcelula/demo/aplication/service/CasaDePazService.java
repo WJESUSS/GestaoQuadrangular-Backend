@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class CasaDePazService {
@@ -227,10 +226,10 @@ public class CasaDePazService {
             casas = casas.stream()
                     .filter(c -> !c.getDataInicio().isBefore(dataInicio)
                             && !c.getDataInicio().isAfter(dataFim))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
-        return casas.stream().map(this::toRelatorioDTO).collect(Collectors.toList());
+        return casas.stream().map(this::toRelatorioDTO).toList();
     }
 
     @Transactional(readOnly = true)
@@ -252,13 +251,13 @@ public class CasaDePazService {
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> listar() {
         return visitanteRepository.findAll()
-                .stream().map(this::toDTO).collect(Collectors.toList());
+                .stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public List<VisitanteResponseDTO> buscarPorNome(String nome) {
         return visitanteRepository.findByNomeContainingIgnoreCase(nome)
-                .stream().map(this::toDTO).collect(Collectors.toList());
+                .stream().map(this::toDTO).toList();
     }
 
     // ─────────────────────────────────────────────────────────────

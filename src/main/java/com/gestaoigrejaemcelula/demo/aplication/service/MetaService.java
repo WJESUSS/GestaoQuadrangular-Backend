@@ -16,7 +16,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -64,12 +63,12 @@ public class MetaService {
 
     public List<MetaResponseDTO> listarPorCelula(Long celulaId) {
         return metaRepository.findByCelulaIdOrderByMesAnoDesc(celulaId)
-                .stream().map(MetaResponseDTO::new).collect(Collectors.toList());
+                .stream().map(MetaResponseDTO::new).toList();
     }
 
     public List<MetaResponseDTO> listarAtivasPorCelula(Long celulaId) {
         return metaRepository.findByCelulaIdAndAtivaOrderByMesAnoDesc(celulaId, true)
-                .stream().map(MetaResponseDTO::new).collect(Collectors.toList());
+                .stream().map(MetaResponseDTO::new).toList();
     }
 
     public MetaResponseDTO atualizar(Long id, MetaRequestDTO dto) {
@@ -122,7 +121,7 @@ public class MetaService {
                 .map(m -> mapearTipoMetaParaDecisao(m.getTipoMeta()))
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         if (!decisoesMapeadas.isEmpty()) {
             List<Object[]> contagens = visitanteRepository.countPorDecisao(celulaId, decisoesMapeadas);
@@ -157,12 +156,12 @@ public class MetaService {
 
     public List<MetaResponseDTO> buscarMetasProximasConclusao(Long celulaId) {
         return metaRepository.encontrarMetasProximasConclusao(celulaId)
-                .stream().map(MetaResponseDTO::new).collect(Collectors.toList());
+                .stream().map(MetaResponseDTO::new).toList();
     }
 
     public List<MetaResponseDTO> buscarMetasEmAtraso(Long celulaId) {
         return metaRepository.encontrarMetasEmAtraso(celulaId)
-                .stream().map(MetaResponseDTO::new).collect(Collectors.toList());
+                .stream().map(MetaResponseDTO::new).toList();
     }
 
     public long contarMetasConcluidas(Long celulaId) {

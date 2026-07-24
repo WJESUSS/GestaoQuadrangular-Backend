@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class MembroService {
@@ -255,7 +254,7 @@ public class MembroService {
         LocalDate dataLimite = LocalDate.now().minusDays(21);
         return repository.findAlertasMembros(dataLimite).stream()
                 .filter(alerta -> alerta.getTotalFaltas() != null && alerta.getTotalFaltas() >= 2)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -274,7 +273,7 @@ public class MembroService {
                         m.getTelefone(),
                         m.getDataNascimento()
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Membro buscarEntidadePorId(Long id) {

@@ -264,7 +264,7 @@ public class RelatorioService {
                                     r.getJustDomingoManha(),
                                     r.getJustDomingoNoite()
                             ))
-                            .collect(Collectors.toList());
+                            .toList();
 
                     return new RelatorioDiscipuladoDTO(
                             primeiro.getId(),
@@ -276,7 +276,7 @@ public class RelatorioService {
                             presencas
                     );
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional

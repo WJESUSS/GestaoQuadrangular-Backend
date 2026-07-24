@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class RelatorioMissao70Service {
@@ -52,12 +51,12 @@ public class RelatorioMissao70Service {
             missoes = missoes.stream()
                     .filter(m -> !m.getDataInicio().isBefore(dataInicio)
                             && !m.getDataInicio().isAfter(dataFim))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         return missoes.stream()
                 .map(this::toRelatorioDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

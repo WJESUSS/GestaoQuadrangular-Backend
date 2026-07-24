@@ -82,7 +82,7 @@ public class DiscipuladoRelatorioService {
 
         List<Long> membroIds = lista.stream()
                 .map(DiscipuladoRequestDTO::membroId)
-                .collect(Collectors.toList());
+                .toList();
 
         List<DiscipuladoRelatorio> existentes = repository
                 .findByMembroIdInAndSemanaInicioAndSemanaFim(membroIds, inicio, fim);
@@ -93,7 +93,7 @@ public class DiscipuladoRelatorioService {
         List<Long> novosMembroIds = lista.stream()
                 .map(DiscipuladoRequestDTO::membroId)
                 .filter(id -> !existentesMap.containsKey(id))
-                .collect(Collectors.toList());
+                .toList();
 
         Map<Long, Celula> celulaCache = new HashMap<>();
 
@@ -198,7 +198,7 @@ public class DiscipuladoRelatorioService {
                             presencas
                     );
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -256,7 +256,7 @@ public class DiscipuladoRelatorioService {
                                     r.getJustDomingoManha(),
                                     r.getJustDomingoNoite()
                             ))
-                            .collect(Collectors.toList());
+                            .toList();
 
                     return new RelatorioDiscipuladoDTO(
                             primeiro.getId(),
@@ -268,7 +268,7 @@ public class DiscipuladoRelatorioService {
                             presencas
                     );
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
@@ -302,7 +302,7 @@ public class DiscipuladoRelatorioService {
                             (int) obj[1]
                     );
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -422,7 +422,7 @@ public class DiscipuladoRelatorioService {
                             .frequencia(frequencia)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         // 3) Monta o Page com os metadados corretos (total vem da query de semanas)
         return new PageImpl<>(itens, pageable, semanasPaginadas.getTotalElements());
@@ -449,7 +449,7 @@ public class DiscipuladoRelatorioService {
                         .id(r.getMembro().getId())
                         .nome(r.getMembro().getNome())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         List<DiscipuladoRequestDTO> presencas = registrosDaSemana.stream()
                 .map(r -> new DiscipuladoRequestDTO(
@@ -467,7 +467,7 @@ public class DiscipuladoRelatorioService {
                         r.getJustDomingoManha(),
                         r.getJustDomingoNoite()
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
         return DiscipuladoSemanaDetalheDTO.builder()
                 .id(referencia.getId())
