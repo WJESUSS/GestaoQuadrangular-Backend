@@ -13,6 +13,8 @@ import java.time.LocalDate;
 @Service
 public class VinculoCelulaService {
 
+    private static final String MSG_MEMBRO_NAO_ENCONTRADO = "MSG_MEMBRO_NAO_ENCONTRADO";
+
     private final MembroRepository membroRepository;
     private final CelulaRepository celulaRepository;
     private final HistoricoCelulaRepository historicoRepository;
@@ -29,7 +31,7 @@ public class VinculoCelulaService {
     public void vincular(Long membroId, Long celulaId) {
 
         Membro membro = membroRepository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         Celula celula = celulaRepository.findById(celulaId)
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
@@ -60,7 +62,7 @@ public class VinculoCelulaService {
     public void remover(Long membroId) {
 
         Membro membro = membroRepository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         HistoricoCelula atual =
                 historicoRepository.findByMembroIdAndDataSaidaIsNull(membroId);

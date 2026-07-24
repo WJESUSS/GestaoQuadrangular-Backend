@@ -48,6 +48,16 @@ public class DiscipuladoRelatorioService {
         return Boolean.TRUE.equals(value);
     }
 
+    private int contarPresencas(DiscipuladoRelatorio r) {
+        int count = 0;
+        if (safe(r.isEscolaBiblica())) count++;
+        if (safe(r.isQuartaNoite()))   count++;
+        if (safe(r.isQuintaNoite()))   count++;
+        if (safe(r.isDomingoManha()))  count++;
+        if (safe(r.isDomingoNoite()))  count++;
+        return count;
+    }
+
     private String loggedUserEmail() {
         return SecurityContextHolder.getContext()
                 .getAuthentication()
@@ -393,13 +403,9 @@ public class DiscipuladoRelatorioService {
                     // Pega o primeiro para usar como referência de ID
                     DiscipuladoRelatorio primeiro = registros.get(0);
 
-                    int totalPresencas = registros.stream().mapToInt(r ->
-                            (safe(r.isEscolaBiblica()) ? 1 : 0) +
-                                    (safe(r.isQuartaNoite())   ? 1 : 0) +
-                                    (safe(r.isQuintaNoite())   ? 1 : 0) +
-                                    (safe(r.isDomingoManha())  ? 1 : 0) +
-                                    (safe(r.isDomingoNoite())  ? 1 : 0)
-                    ).sum();
+                    int totalPresencas = registros.stream()
+                            .mapToInt(this::contarPresencas)
+                            .sum();
 
                     int totalPossivel = registros.size() * TOTAL_COLUNAS;
                     int frequencia    = totalPossivel > 0

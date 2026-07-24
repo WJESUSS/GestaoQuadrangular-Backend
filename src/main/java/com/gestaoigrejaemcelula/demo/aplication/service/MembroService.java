@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class MembroService {
 
     private static final String ENTIDADE = "MEMBRO";
+    private static final String MSG_MEMBRO_NAO_ENCONTRADO =" MSG_MEMBRO_NAO_ENCONTRADO";
 
     private final MembroRepository repository;
     private final HistoricoStatusMembroRepository historicoRepository;
@@ -222,7 +223,7 @@ public class MembroService {
     @Transactional
     public void alterarStatus(Long membroId, StatusMembro novoStatus, String observacao) {
         Membro membro = repository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         StatusMembro statusAnterior = membro.getStatus();
         membro.setStatus(novoStatus);
@@ -278,7 +279,7 @@ public class MembroService {
 
     private Membro buscarEntidadePorId(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
     }
 
     private void removerVinculos(Membro membro) {

@@ -33,6 +33,7 @@ public class CelulaService {
     private static final String ENTIDADE_MEMBRO = "MEMBRO";
     private static final String CAMPO_CELULA = "celula";
     private static final String CAMPO_STATUS_MULTIPLICACAO = "CAMPO_STATUS_MULTIPLICACAO";
+    private static final String MSG_MEMBRO_NAO_ENCONTRADO = "MSG_MEMBRO_NAO_ENCONTRADO";
 
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
@@ -184,7 +185,7 @@ public class CelulaService {
                 .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
 
         Membro membro = membroRepository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         if (membro.getCelula() != null) {
             throw new RuntimeException("Membro já pertence a uma célula");
@@ -201,7 +202,7 @@ public class CelulaService {
     @Transactional
     public void removerMembro(Long celulaId, Long membroId) {
         Membro membro = membroRepository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         if (membro.getCelula() == null || !membro.getCelula().getId().equals(celulaId)) {
             throw new RuntimeException("Membro não pertence a esta célula");
@@ -226,7 +227,7 @@ public class CelulaService {
     @Transactional
     public void transferirMembro(TransferirMembroDTO dto) {
         Membro membro = membroRepository.findById(dto.getMembroId())
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado"));
+                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         if (membro.getStatus() == StatusMembro.FALECIDO ||
                 membro.getStatus() == StatusMembro.TRANSFERIDO) {
