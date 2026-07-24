@@ -7,7 +7,6 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusMissao70;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Missao70ResponseDTO {
 
@@ -91,7 +90,7 @@ public class Missao70ResponseDTO {
                 missao.getVisitantes() != null
                         ? missao.getVisitantes().stream()
                         .map(v -> new VisitanteSimples(v.getId(), v.getNome()))
-                        .collect(Collectors.toList())
+                        .toList()
                         : List.of()
         );
 

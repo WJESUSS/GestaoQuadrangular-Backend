@@ -11,6 +11,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -65,20 +66,20 @@ public class Missao70Service {
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
-                    .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
             missao.setCelula(celula);
         }
         if (dto.getLiderId() != null) {
             missao.setLider(membroRepository.findById(dto.getLiderId())
-                    .orElseThrow(() -> new RuntimeException("Líder não encontrado")));
+                    .orElseThrow(() -> new EntityNotFoundException("Líder não encontrado")));
         }
         if (dto.getAuxiliarId() != null) {
             missao.setAuxiliar(membroRepository.findById(dto.getAuxiliarId())
-                    .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado")));
+                    .orElseThrow(() -> new EntityNotFoundException("Auxiliar não encontrado")));
         }
         if (dto.getTerceiroMembroId() != null) {
             missao.setTerceiroMembro(membroRepository.findById(dto.getTerceiroMembroId())
-                    .orElseThrow(() -> new RuntimeException("Terceiro membro não encontrado")));
+                    .orElseThrow(() -> new EntityNotFoundException("Terceiro membro não encontrado")));
         }
 
         return missao70Repository.save(missao);
@@ -87,7 +88,7 @@ public class Missao70Service {
     @Transactional
     public Missao70 atualizar(Long id, Missao70RequestDTO dto) {
         Missao70 missao = missao70Repository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MSG_MISSAO70_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_MISSAO70_NAO_ENCONTRADA));
 
         missao.setNome(dto.getNome());
         missao.setNomeAnfitriao(dto.getNomeAnfitriao());
@@ -98,26 +99,26 @@ public class Missao70Service {
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
-                    .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
             missao.setCelula(celula);
         } else {
             missao.setCelula(null);
         }
         if (dto.getLiderId() != null) {
             missao.setLider(membroRepository.findById(dto.getLiderId())
-                    .orElseThrow(() -> new RuntimeException("Líder não encontrado")));
+                    .orElseThrow(() -> new EntityNotFoundException("Líder não encontrado")));
         } else {
             missao.setLider(null);
         }
         if (dto.getAuxiliarId() != null) {
             missao.setAuxiliar(membroRepository.findById(dto.getAuxiliarId())
-                    .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado")));
+                    .orElseThrow(() -> new EntityNotFoundException("Auxiliar não encontrado")));
         } else {
             missao.setAuxiliar(null);
         }
         if (dto.getTerceiroMembroId() != null) {
             missao.setTerceiroMembro(membroRepository.findById(dto.getTerceiroMembroId())
-                    .orElseThrow(() -> new RuntimeException("Terceiro membro não encontrado")));
+                    .orElseThrow(() -> new EntityNotFoundException("Terceiro membro não encontrado")));
         } else {
             missao.setTerceiroMembro(null);
         }
@@ -128,7 +129,7 @@ public class Missao70Service {
     @Transactional
     public Missao70ResponseDTO cancelar(Long id, CancelarMissao70RequestDTO dto) {
         Missao70 missao = missao70Repository.findByIdWithAssociations(id)
-                .orElseThrow(() -> new RuntimeException("Casa da Missão 70 não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Casa da Missão 70 não encontrada."));
 
         if (dto.getMotivoCancelamento() == null) {
             throw new IllegalArgumentException("Informe o motivo do cancelamento.");
@@ -154,7 +155,7 @@ public class Missao70Service {
     public Missao70 adicionarVisitante(Long missaoId, Long visitanteId) {
         Missao70 missao = buscarPorId(missaoId);
         Visitante visitante = visitanteRepository.findById(visitanteId)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Visitante não encontrado"));
 
         if (!missao.getVisitantes().contains(visitante)) {
             missao.getVisitantes().add(visitante);
@@ -183,10 +184,10 @@ public class Missao70Service {
         Missao70 missao = buscarPorId(missaoId);
 
         if (missao.getStatus() != StatusMissao70.EM_ANDAMENTO) {
-            throw new RuntimeException("Esta Missão 70 não está em andamento.");
+            throw new IllegalStateException("Esta Missão 70 não está em andamento.");
         }
         if (missao.getEncontrosRestantes() <= 0) {
-            throw new RuntimeException("Todas as 4 semanas já foram realizadas.");
+            throw new IllegalStateException("Todas as 4 semanas já foram realizadas.");
         }
 
         int semanaAtual = missao.getProximaSemana();
@@ -253,7 +254,7 @@ public class Missao70Service {
         for (EncontroMissao70RequestDTO.DecisaoDTO decisaoDTO : dto.getDecisoes()) {
             Visitante visitante = visitanteMap.get(decisaoDTO.getVisitanteId());
             if (visitante == null) {
-                throw new RuntimeException("Visitante não encontrado: " + decisaoDTO.getVisitanteId());
+                throw new EntityNotFoundException("Visitante não encontrado: " + decisaoDTO.getVisitanteId());
             }
 
             DecisaoEspiritual novaDecisao = decisaoDTO.getTipoDecisao();
@@ -300,10 +301,10 @@ public class Missao70Service {
     @Transactional
     public EncontroMissao70 atualizarEncontro(Long missaoId, Long encontroId, EncontroMissao70RequestDTO dto) {
         EncontroMissao70 encontro = encontroRepository.findById(encontroId)
-                .orElseThrow(() -> new RuntimeException("Culto não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Culto não encontrado"));
 
         if (!encontro.getMissao70().getId().equals(missaoId)) {
-            throw new RuntimeException("Este culto não pertence a esta casa.");
+            throw new IllegalStateException("Este culto não pertence a esta casa.");
         }
 
         if (dto.getDataEncontro() != null) {
@@ -330,16 +331,16 @@ public class Missao70Service {
     @Transactional
     public void alterarDecisaoVisitante(Long missaoId, Long visitanteId, AlterarDecisaoVisitanteDTO dto) {
         Missao70 missao = missao70Repository.findByIdWithAssociations(missaoId)
-                .orElseThrow(() -> new RuntimeException(MSG_MISSAO70_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_MISSAO70_NAO_ENCONTRADA));
 
         boolean visitantePertence = missao.getVisitantes().stream()
                 .anyMatch(v -> v.getId().equals(visitanteId));
         if (!visitantePertence) {
-            throw new RuntimeException("Visitante não pertence a esta Missão 70");
+            throw new IllegalStateException("Visitante não pertence a esta Missão 70");
         }
 
         Visitante visitante = visitanteRepository.findById(visitanteId)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Visitante não encontrado"));
 
         visitante.setDecisaoEspiritual(dto.getTipoDecisao());
 
@@ -395,6 +396,6 @@ public class Missao70Service {
     @Transactional(readOnly = true)
     public Missao70 buscarPorId(Long id) {
         return missao70Repository.findByIdWithAssociations(id)
-                .orElseThrow(() -> new RuntimeException(MSG_MISSAO70_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_MISSAO70_NAO_ENCONTRADA));
     }
 }

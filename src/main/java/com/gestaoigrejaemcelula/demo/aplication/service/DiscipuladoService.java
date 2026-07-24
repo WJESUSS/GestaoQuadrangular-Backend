@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class DiscipuladoService {
@@ -108,7 +107,7 @@ public class DiscipuladoService {
                         rel.getJustDomingoManha(),
                         rel.getJustDomingoNoite()
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Cacheable(value = "alertas-discipulado", key = "#mesRef + '-criticos'")
@@ -127,7 +126,7 @@ public class DiscipuladoService {
                     (String)  obj[2],
                     (String)  obj[3],
                     ((Number) obj[4]).intValue()
-            )).collect(Collectors.toList());
+            )).toList();
 
         } catch (Exception e) {
             log.error("Erro ao buscar alertas críticos para {}", mesRef, e);

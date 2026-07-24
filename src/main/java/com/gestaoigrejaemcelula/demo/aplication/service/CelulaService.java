@@ -69,7 +69,7 @@ public class CelulaService {
     @Transactional
     public CelulaResponseDTO cadastrar(CelulaRequestDTO dto) {
         Usuario lider = usuarioRepository.findById(dto.liderId())
-                .orElseThrow(() -> new RuntimeException("Líder não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Líder não encontrado"));
 
         Celula celula = new Celula();
         celula.setNome(dto.nome());
@@ -125,7 +125,7 @@ public class CelulaService {
     @Transactional
     public CelulaResponseDTO atualizar(Long id, CelulaRequestDTO dto) {
         Celula celula = celulaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA));
 
         // Monta diff ANTES de alterar
         Map<String, Object> diff = new LinkedHashMap<>();
@@ -151,10 +151,10 @@ public class CelulaService {
 
         if (!celula.getLider().getId().equals(dto.liderId())) {
             Usuario novoLider = usuarioRepository.findById(dto.liderId())
-                    .orElseThrow(() -> new RuntimeException("Novo líder não encontrado"));
+                    .orElseThrow(() -> new EntityNotFoundException("Novo líder não encontrado"));
 
             if (novoLider.getPerfil() != Perfil.LIDER_CELULA) {
-                throw new RuntimeException("Usuário não possui perfil de líder");
+                throw new IllegalStateException("Usuário não possui perfil de líder");
             }
 
             diff.put("lider", Map.of("de", str(celula.getLider().getNome()), "para", str(novoLider.getNome())));
@@ -184,13 +184,13 @@ public class CelulaService {
     @Transactional
     public void adicionarMembro(Long celulaId, Long membroId) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA));
 
         Membro membro = membroRepository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         if (membro.getCelula() != null) {
-            throw new RuntimeException("Membro já pertence a uma célula");
+            throw new IllegalStateException("Membro já pertence a uma célula");
         }
 
         membro.setCelula(celula);
@@ -204,10 +204,10 @@ public class CelulaService {
     @Transactional
     public void removerMembro(Long celulaId, Long membroId) {
         Membro membro = membroRepository.findById(membroId)
-                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         if (membro.getCelula() == null || !membro.getCelula().getId().equals(celulaId)) {
-            throw new RuntimeException("Membro não pertence a esta célula");
+            throw new IllegalStateException("Membro não pertence a esta célula");
         }
 
         Celula celula = membro.getCelula();
@@ -229,15 +229,15 @@ public class CelulaService {
     @Transactional
     public void transferirMembro(TransferirMembroDTO dto) {
         Membro membro = membroRepository.findById(dto.getMembroId())
-                .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_MEMBRO_NAO_ENCONTRADO));
 
         if (membro.getStatus() == StatusMembro.FALECIDO ||
                 membro.getStatus() == StatusMembro.TRANSFERIDO) {
-            throw new RuntimeException("Membro não pode ser transferido");
+            throw new IllegalStateException("Membro não pode ser transferido");
         }
 
         Celula novaCelula = celulaRepository.findById(dto.getNovaCelulaId())
-                .orElseThrow(() -> new RuntimeException("Nova célula não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Nova célula não encontrada"));
 
         String celulaAnterior = membro.getCelula() != null ? str(membro.getCelula().getNome()) : "";
 
@@ -255,7 +255,7 @@ public class CelulaService {
     @Transactional
     public VisitanteResponseDTO salvarVisitanteNaCelula(Long celulaId, VisitanteRequestDTO dto) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA));
 
         Visitante visitante = new Visitante();
         visitante.setNome(dto.getNome());
@@ -296,7 +296,7 @@ public class CelulaService {
     @Transactional(readOnly = true)
     public Celula buscarPorId(Long id) {
         return celulaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada com id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com id: " + id));
     }
 
     @Transactional
@@ -384,7 +384,7 @@ public class CelulaService {
     @Transactional(readOnly = true)
     public Celula buscarCelulaDoLiderComMembros(Long liderId) {
         Celula celula = celulaRepository.findByLiderIdWithMembros(liderId)
-                .orElseThrow(() -> new RuntimeException("Líder não possui célula ativa"));
+                .orElseThrow(() -> new EntityNotFoundException("Líder não possui célula ativa"));
 
         Hibernate.initialize(celula.getMembros());
 
@@ -447,7 +447,7 @@ public class CelulaService {
     @Transactional
     public CelulaStatusMultiplicacaoDTO atualizarStatusMultiplicacao(Long id, boolean aprovado) {
         Celula celula = celulaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA));
 
         String statusAnterior = str(celula.getStatusMultiplicacao());
 
@@ -468,7 +468,7 @@ public class CelulaService {
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> buscarMembrosPorCelula(Long celulaId) {
         Celula celula = celulaRepository.findByIdWithMembros(celulaId)
-                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA));
         return celula.getMembros()
                 .stream()
                 .map(MembroResponseDTO::new)

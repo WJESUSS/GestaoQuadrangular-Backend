@@ -90,7 +90,7 @@ public class PastorPendenciasService {
                                 (d.isRelatorioPendente() ? 1 : 0) + (d.isDiscipuladoPendente() ? 1 : 0))
                         .reversed()
                         .thenComparing(PendenciaDTO::getNomeCelula))
-                .collect(Collectors.toList());
+                .toList();
     }
     // Atalho para manter compatibilidade com chamadas antigas (semana atual, só pendentes)
     @Transactional(readOnly = true)

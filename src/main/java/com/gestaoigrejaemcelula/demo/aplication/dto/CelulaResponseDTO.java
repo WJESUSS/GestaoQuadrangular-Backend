@@ -2,7 +2,6 @@ package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
-import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;

@@ -72,6 +72,9 @@ public class MetaService {
     }
 
     public MetaResponseDTO atualizar(Long id, MetaRequestDTO dto) {
+        if (dto.getCelulaId() == null)
+            throw new IllegalArgumentException("O campo celulaId é obrigatório.");
+
         Meta meta = buscarEntidade(id);
         meta.setTipoMeta(dto.getTipoMeta());
         meta.setMetaTotal(dto.getMetaTotal());
