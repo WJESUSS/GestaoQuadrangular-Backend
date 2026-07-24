@@ -347,7 +347,7 @@ public class CelulaService {
 
         String tituloAdm = "Nova Solicitação de Multiplicação";
         String mensagemAdm = String.format(
-                "📢 SOLICITAÇÃO DE MULTIPLICAÇÃO\n\nCélula: %s\nLíder: %s\nMembros Ativos: %d\nMotivo: %s\n\nPor favor, analise a viabilidade no painel administrativo.",
+                "📢 SOLICITAÇÃO DE MULTIPLICAÇÃO%n%nCélula: %s%nLíder: %s%nMembros Ativos: %d%nMotivo: %s%n%nPor favor, analise a viabilidade no painel administrativo.",
                 celula.getNome(), celula.getLider().getNome(),
                 celula.getQuantidadeMembrosAtivos(), celula.getMotivoSolicitacao()
         );

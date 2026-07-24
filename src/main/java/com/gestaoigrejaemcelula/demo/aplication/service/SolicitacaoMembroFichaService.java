@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class SolicitacaoMembroFichaService {
@@ -90,7 +89,7 @@ public class SolicitacaoMembroFichaService {
                 .findByLiderIdOrderByDataSolicitacaoDesc(lider.getId())
                 .stream()
                 .map(SolicitacaoMembroFichaResponseDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // -------------------------------------------------------

@@ -8,6 +8,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.*;
 import com.gestaoigrejaemcelula.demo.domain.enums.DecisaoEspiritual;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusCasaDePaz;
 import com.gestaoigrejaemcelula.demo.domain.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,11 +50,11 @@ public class CasaDePazService {
     @Transactional
     public CasaDePaz criar(CasaDePazRequestDTO dto) {
         Celula celula = celulaRepository.findById(dto.getCelulaId())
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
         Membro lider = membroRepository.findById(dto.getLiderId())
-                .orElseThrow(() -> new RuntimeException("Líder não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Líder não encontrado"));
         Membro auxiliar = membroRepository.findById(dto.getAuxiliarId())
-                .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Auxiliar não encontrado"));
 
         CasaDePaz casa = new CasaDePaz();
         casa.setNome(dto.getNome());
@@ -72,13 +73,13 @@ public class CasaDePazService {
     @Transactional
     public CasaDePaz atualizar(Long id, CasaDePazRequestDTO dto) {
         CasaDePaz casa = casaDePazRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Casa de Paz não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Casa de Paz não encontrada"));
         Celula celula = celulaRepository.findById(dto.getCelulaId())
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
         Membro lider = membroRepository.findById(dto.getLiderId())
-                .orElseThrow(() -> new RuntimeException("Líder não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Líder não encontrado"));
         Membro auxiliar = membroRepository.findById(dto.getAuxiliarId())
-                .orElseThrow(() -> new RuntimeException("Auxiliar não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Auxiliar não encontrado"));
 
         casa.setNome(dto.getNome());
         casa.setNomeAnfitriao(dto.getNomeAnfitriao());
@@ -107,7 +108,7 @@ public class CasaDePazService {
     public CasaDePaz adicionarVisitante(Long casaId, Long visitanteId) {
         CasaDePaz casa = buscarPorId(casaId);
         Visitante visitante = visitanteRepository.findById(visitanteId)
-                .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Visitante não encontrado"));
 
         if (!casa.getVisitantes().contains(visitante)) {
             casa.getVisitantes().add(visitante);
@@ -129,17 +130,17 @@ public class CasaDePazService {
         CasaDePaz casa = buscarPorId(casaId);
 
         if (casa.getStatus() != StatusCasaDePaz.EM_ANDAMENTO) {
-            throw new RuntimeException("Esta Casa de Paz não está em andamento.");
+            throw new IllegalStateException("Esta Casa de Paz não está em andamento.");
         }
         if (casa.getEncontrosRestantes() <= 0) {
-            throw new RuntimeException("Todos os encontros já foram realizados.");
+            throw new IllegalStateException("Todos os encontros já foram realizados.");
         }
 
         // ── Validação: impede dois encontros na mesma data ───────
         boolean dataJaRegistrada = encontroRepository
                 .existsByCasaDePazIdAndDataEncontro(casaId, dto.getDataEncontro());
         if (dataJaRegistrada) {
-            throw new RuntimeException(
+            throw new IllegalStateException(
                     "Já existe um encontro registrado nesta data: " + dto.getDataEncontro()
                             + ". Escolha outra data.");
         }
@@ -155,7 +156,7 @@ public class CasaDePazService {
         if (dto.getDecisoes() != null) {
             for (EncontroRequestDTO.DecisaoDTO decisaoDTO : dto.getDecisoes()) {
                 Visitante visitante = visitanteRepository.findById(decisaoDTO.getVisitanteId())
-                        .orElseThrow(() -> new RuntimeException("Visitante não encontrado"));
+                        .orElseThrow(() -> new EntityNotFoundException("Visitante não encontrado"));
 
                 DecisaoEncontro decisao = new DecisaoEncontro();
                 decisao.setTipoDecisao(decisaoDTO.getTipoDecisao());
@@ -235,7 +236,7 @@ public class CasaDePazService {
     @Transactional(readOnly = true)
     public CasaDePaz buscarPorId(Long id) {
         return casaDePazRepository.findByIdWithAssociations(id)
-                .orElseThrow(() -> new RuntimeException("Casa de Paz não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Casa de Paz não encontrada"));
     }
 
     @Transactional(readOnly = true)
