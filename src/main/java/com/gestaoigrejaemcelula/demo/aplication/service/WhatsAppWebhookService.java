@@ -17,6 +17,8 @@ import java.util.List;
 public class WhatsAppWebhookService {
 
     private static final String LOCATION = "location";
+    private static final String KEY_STATUS = "status";
+    private static final String KEY_TEMPLATE = "template";
 
     private final RegistroWebhookRepository repository;
     private final BloqueioService bloqueioService; // <-- novo
@@ -37,7 +39,7 @@ public class WhatsAppWebhookService {
             JsonNode statuses = value.path("statuses");
             if (statuses.isArray()) {
                 for (JsonNode s : statuses) {
-                    salvarRegistro(s, "status");
+                    salvarRegistro(s, KEY_STATUS);
                 }
             }
 
@@ -65,7 +67,7 @@ public class WhatsAppWebhookService {
         RegistroWebhook r = new RegistroWebhook();
         r.setTipoEvento(tipo);
 
-        if ("status".equals(tipo)) {
+        if (KEY_STATUS.equals(tipo)) {
             preencherStatus(node, r);
         } else {
             preencherMensagem(node, r);
@@ -95,7 +97,7 @@ public class WhatsAppWebhookService {
     private String extrairTextoMensagem(JsonNode node, String tipoMensagem, String remetente) {
         return switch (tipoMensagem) {
             case "text" -> extrairTexto(node, remetente);
-            case "template" -> extrairTemplate(node, remetente);
+            case KEY_TEMPLATE -> extrairTemplate(node, remetente);
             case "image" -> extrairMedia(node, "image", "Imagem");
             case "video" -> extrairMedia(node, "video", "Vídeo");
             case "document" -> extrairMedia(node, "document", "Documento");
@@ -118,10 +120,10 @@ public class WhatsAppWebhookService {
     }
 
     private String extrairTemplate(JsonNode node, String remetente) {
-        String nomeTemplate = node.path("template").path("name").asText("");
+        String nomeTemplate = node.path(KEY_TEMPLATE).path("name").asText("");
         List<String> params = new ArrayList<>();
 
-        JsonNode components = node.path("template").path("components");
+        JsonNode components = node.path(KEY_TEMPLATE).path("components");
         for (JsonNode comp : components) {
             if ("body".equalsIgnoreCase(comp.path("type").asText())) {
                 for (JsonNode param : comp.path("parameters")) {

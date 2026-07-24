@@ -36,6 +36,7 @@ public class UsuarioService {
     private static final String ENTIDADE_USUARIO = "USUARIO";
     private static final String CAMPO_PERFIL  = "CAMPO_PERFIL";
     private static final String CAMPO_EMAIL   = "e-mail";
+    private static final String KEY_EMAIL     = "email";
     private static final String CAMPO_ATIVO   = "CAMPO_ATIVO";
     private static final String CAMPO_SENHA   = "CAMPO_SENHA";
     private static final String ACAO_UPDATE   = "UPDATE";
@@ -81,7 +82,7 @@ public class UsuarioService {
 
         auditoria.registrar(ENTIDADE_USUARIO, salvo.getId(), salvo.getNome(), "CREATE",
                 Map.of(
-                        "email",  Map.of("para", str(salvo.getEmail())),
+                        KEY_EMAIL,  Map.of("para", str(salvo.getEmail())),
                         CAMPO_PERFIL, Map.of("para", str(salvo.getPerfil())),
                         CAMPO_ATIVO,  Map.of("para", str(salvo.isAtivo()))
                 )
@@ -151,7 +152,7 @@ public class UsuarioService {
         if (!Objects.equals(usuario.getNome(), dto.nome()))
             diff.put("nome",   Map.of("de", str(usuario.getNome()),   "para", str(dto.nome())));
         if (!Objects.equals(usuario.getEmail(), dto.email()))
-            diff.put("email",  Map.of("de", str(usuario.getEmail()),  "para", str(dto.email())));
+            diff.put(KEY_EMAIL,  Map.of("de", str(usuario.getEmail()),  "para", str(dto.email())));
         if (!Objects.equals(usuario.getPerfil(), dto.perfil()))
             diff.put(CAMPO_PERFIL, Map.of("de", str(usuario.getPerfil()), "para", str(dto.perfil())));
         if (dto.celulaId() != null) {
@@ -387,7 +388,7 @@ public class UsuarioService {
         Map<String, Object> diff = new LinkedHashMap<>();
 
         if (usuario.getEmailPendente() != null) {
-            diff.put("email", Map.of("de", str(usuario.getEmail()), "para", str(usuario.getEmailPendente())));
+            diff.put(KEY_EMAIL, Map.of("de", str(usuario.getEmail()), "para", str(usuario.getEmailPendente())));
             usuario.setEmail(usuario.getEmailPendente());
             usuario.setEmailPendente(null);
         }
