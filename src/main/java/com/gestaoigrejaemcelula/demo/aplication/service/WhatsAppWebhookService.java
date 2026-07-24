@@ -16,6 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WhatsAppWebhookService {
 
+    private static final String LOCATION = "location";
+
     private final RegistroWebhookRepository repository;
     private final BloqueioService bloqueioService; // <-- novo
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -64,98 +66,102 @@ public class WhatsAppWebhookService {
         r.setTipoEvento(tipo);
 
         if ("status".equals(tipo)) {
-            r.setIdMensagem(node.path("id").asText());
-            r.setStatus(node.path("status").asText());
-            r.setNumeroDestino(node.path("recipient_id").asText());
-
+            preencherStatus(node, r);
         } else {
-            r.setIdMensagem(node.path("id").asText());
-            r.setNumeroDestino(node.path("from").asText());
-            r.setStatus("recebida");
-
-            String tipoMensagem = node.path("type").asText();
-            r.setTipoMensagem(tipoMensagem);
-
-            switch (tipoMensagem) {
-
-                case "text" -> {
-                    String texto = node.path("text").path("body").asText("");
-                    r.setTextoMensagem(texto);
-                    log.info("Texto recebido de {}: {}", r.getNumeroDestino(), texto);
-                }
-
-                case "template" -> {
-                    // nome do template
-                    String nomeTemplate = node.path("template").path("name").asText("");
-
-                    // extrai parâmetros do componente body
-                    List<String> params = new ArrayList<>();
-                    JsonNode components = node.path("template").path("components");
-                    for (JsonNode comp : components) {
-                        if ("body".equalsIgnoreCase(comp.path("type").asText())) {
-                            for (JsonNode param : comp.path("parameters")) {
-                                String val = param.path("text").asText("");
-                                if (!val.isBlank()) params.add(val);
-                            }
-                        }
-                    }
-
-                    String texto = "[Template: " + nomeTemplate + "]";
-                    if (!params.isEmpty()) texto += " | " + String.join(", ", params);
-                    r.setTextoMensagem(texto);
-                    log.info("Template recebido de {}: {}", r.getNumeroDestino(), texto);
-                }
-
-                case "image" -> {
-                    String caption = node.path("image").path("caption").asText("");
-                    r.setTextoMensagem("[Imagem]" + (caption.isBlank() ? "" : " " + caption));
-                }
-
-                case "audio" -> {
-                    r.setTextoMensagem("[Áudio]");
-                }
-
-                case "video" -> {
-                    String caption = node.path("video").path("caption").asText("");
-                    r.setTextoMensagem("[Vídeo]" + (caption.isBlank() ? "" : " " + caption));
-                }
-
-                case "document" -> {
-                    String filename = node.path("document").path("filename").asText("");
-                    r.setTextoMensagem("[Documento]" + (filename.isBlank() ? "" : " " + filename));
-                }
-
-                case "sticker" -> r.setTextoMensagem("[Sticker]");
-
-                case "location" -> {
-                    String name = node.path("location").path("name").asText("");
-                    String address = node.path("location").path("address").asText("");
-                    r.setTextoMensagem("[Localização]" + (name.isBlank() ? "" : " " + name + (address.isBlank() ? "" : " — " + address)));
-                }
-
-                case "contacts" -> {
-                    JsonNode contacts = node.path("contacts");
-                    String nome = contacts.isArray() && contacts.size() > 0
-                            ? contacts.get(0).path("name").path("formatted_name").asText("")
-                            : "";
-                    r.setTextoMensagem("[Contato]" + (nome.isBlank() ? "" : " " + nome));
-                }
-
-                case "reaction" -> {
-                    String emoji = node.path("reaction").path("emoji").asText("");
-                    r.setTextoMensagem("[Reação] " + emoji);
-                }
-
-                default -> {
-                    r.setTextoMensagem("[Tipo: " + tipoMensagem + "]");
-                    log.warn("Tipo não tratado: {}", tipoMensagem);
-                }
-            }
+            preencherMensagem(node, r);
         }
 
         r.setPayload(node.toString());
         repository.save(r);
         log.info("Webhook {} registrado: status={}, para={}", tipo, r.getStatus(), r.getNumeroDestino());
+    }
+
+    private void preencherStatus(JsonNode node, RegistroWebhook r) {
+        r.setIdMensagem(node.path("id").asText());
+        r.setStatus(node.path("status").asText());
+        r.setNumeroDestino(node.path("recipient_id").asText());
+    }
+
+    private void preencherMensagem(JsonNode node, RegistroWebhook r) {
+        r.setIdMensagem(node.path("id").asText());
+        r.setNumeroDestino(node.path("from").asText());
+        r.setStatus("recebida");
+
+        String tipoMensagem = node.path("type").asText();
+        r.setTipoMensagem(tipoMensagem);
+        r.setTextoMensagem(extrairTextoMensagem(node, tipoMensagem, r.getNumeroDestino()));
+    }
+
+    private String extrairTextoMensagem(JsonNode node, String tipoMensagem, String remetente) {
+        return switch (tipoMensagem) {
+            case "text" -> extrairTexto(node, remetente);
+            case "template" -> extrairTemplate(node, remetente);
+            case "image" -> extrairMedia(node, "image", "Imagem");
+            case "video" -> extrairMedia(node, "video", "Vídeo");
+            case "document" -> extrairMedia(node, "document", "Documento");
+            case "audio" -> "[Áudio]";
+            case "sticker" -> "[Sticker]";
+            case LOCATION -> extrairLocalizacao(node);
+            case "contacts" -> extrairContato(node);
+            case "reaction" -> extrairReacao(node);
+            default -> {
+                log.warn("Tipo não tratado: {}", tipoMensagem);
+                yield "[Tipo: " + tipoMensagem + "]";
+            }
+        };
+    }
+
+    private String extrairTexto(JsonNode node, String remetente) {
+        String texto = node.path("text").path("body").asText("");
+        log.info("Texto recebido de {}: {}", remetente, texto);
+        return texto;
+    }
+
+    private String extrairTemplate(JsonNode node, String remetente) {
+        String nomeTemplate = node.path("template").path("name").asText("");
+        List<String> params = new ArrayList<>();
+
+        JsonNode components = node.path("template").path("components");
+        for (JsonNode comp : components) {
+            if ("body".equalsIgnoreCase(comp.path("type").asText())) {
+                for (JsonNode param : comp.path("parameters")) {
+                    String val = param.path("text").asText("");
+                    if (!val.isBlank()) params.add(val);
+                }
+            }
+        }
+
+        String texto = "[Template: " + nomeTemplate + "]";
+        if (!params.isEmpty()) texto += " | " + String.join(", ", params);
+        log.info("Template recebido de {}: {}", remetente, texto);
+        return texto;
+    }
+
+    private String extrairMedia(JsonNode node, String campo, String label) {
+        String caption = node.path(campo).path("caption").asText("");
+        return "[" + label + "]" + (caption.isBlank() ? "" : " " + caption);
+    }
+
+    private String extrairLocalizacao(JsonNode node) {
+        String name = node.path(LOCATION).path("name").asText("");
+        String address = node.path(LOCATION).path("address").asText("");
+        String result = "[Localização]";
+        if (!name.isBlank()) result += " " + name;
+        if (!address.isBlank()) result += " — " + address;
+        return result;
+    }
+
+    private String extrairContato(JsonNode node) {
+        JsonNode contacts = node.path("contacts");
+        String nome = contacts.isArray() && !contacts.isEmpty()
+                ? contacts.get(0).path("name").path("formatted_name").asText("")
+                : "";
+        return "[Contato]" + (nome.isBlank() ? "" : " " + nome);
+    }
+
+    private String extrairReacao(JsonNode node) {
+        String emoji = node.path("reaction").path("emoji").asText("");
+        return "[Reação] " + emoji;
     }
 
 }

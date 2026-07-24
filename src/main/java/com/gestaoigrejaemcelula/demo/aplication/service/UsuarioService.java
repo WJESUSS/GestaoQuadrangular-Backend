@@ -32,7 +32,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UsuarioService {
 
-    private static final String MSG_CELULA_NAO_ENCONTRADA_COM_ID = "MSG_CELULA_NAO_ENCONTRADA_COM_ID";
+    private static final String MSG_CELULA_NAO_ENCONTRADA_COM_ID = "Célula não encontrada com ID: ";
+    private static final String ENTIDADE_USUARIO = "USUARIO";
+    private static final String CAMPO_PERFIL  = "CAMPO_PERFIL";
+    private static final String CAMPO_EMAIL   = "e-mail";
+    private static final String CAMPO_ATIVO   = "CAMPO_ATIVO";
+    private static final String CAMPO_SENHA   = "CAMPO_SENHA";
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -72,11 +77,11 @@ public class UsuarioService {
 
         Usuario salvo = usuarioRepository.save(usuario);
 
-        auditoria.registrar("USUARIO", salvo.getId(), salvo.getNome(), "CREATE",
+        auditoria.registrar(ENTIDADE_USUARIO, salvo.getId(), salvo.getNome(), "CREATE",
                 Map.of(
                         "email",  Map.of("para", str(salvo.getEmail())),
-                        "perfil", Map.of("para", str(salvo.getPerfil())),
-                        "ativo",  Map.of("para", str(salvo.isAtivo()))
+                        CAMPO_PERFIL, Map.of("para", str(salvo.getPerfil())),
+                        CAMPO_ATIVO,  Map.of("para", str(salvo.isAtivo()))
                 )
         );
 
@@ -134,7 +139,7 @@ public class UsuarioService {
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
 
         if (!diff.isEmpty())
-            auditoria.registrar("USUARIO", id, usuarioSalvo.getNome(), "UPDATE", diff);
+            auditoria.registrar(ENTIDADE_USUARIO, id, usuarioSalvo.getNome(), "UPDATE", diff);
 
         return new UsuarioResponseDTO(usuarioSalvo);
     }
@@ -146,14 +151,14 @@ public class UsuarioService {
         if (!Objects.equals(usuario.getEmail(), dto.email()))
             diff.put("email",  Map.of("de", str(usuario.getEmail()),  "para", str(dto.email())));
         if (!Objects.equals(usuario.getPerfil(), dto.perfil()))
-            diff.put("perfil", Map.of("de", str(usuario.getPerfil()), "para", str(dto.perfil())));
+            diff.put(CAMPO_PERFIL, Map.of("de", str(usuario.getPerfil()), "para", str(dto.perfil())));
         if (dto.celulaId() != null) {
             Long celulaAtualId = usuario.getCelula() != null ? usuario.getCelula().getId() : null;
             if (!Objects.equals(celulaAtualId, dto.celulaId()))
                 diff.put("celulaId", Map.of("de", str(celulaAtualId), "para", str(dto.celulaId())));
         }
         if (dto.senha() != null && !dto.senha().trim().isEmpty())
-            diff.put("senha", Map.of("para", "*** alterada ***"));
+            diff.put(CAMPO_SENHA, Map.of("para", "*** alterada ***"));
         if (!Objects.equals(usuario.getTelefoneWhatsapp(), dto.telefoneWhatsapp()))
             diff.put("telefoneWhatsapp", Map.of("de", str(usuario.getTelefoneWhatsapp()), "para", str(dto.telefoneWhatsapp())));
         return diff;
@@ -166,7 +171,7 @@ public class UsuarioService {
     public void deletar(Long id) {
         Usuario usuario = buscarPorId(id);
         usuarioRepository.delete(usuario);
-        auditoria.registrar("USUARIO", id, usuario.getNome(), "DELETE", null);
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "DELETE", null);
     }
 
     // =========================
@@ -177,8 +182,8 @@ public class UsuarioService {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(true);
         usuarioRepository.save(usuario);
-        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
-                Map.of("ativo", Map.of("de", "false", "para", "true"))
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+                Map.of(CAMPO_ATIVO, Map.of("de", "false", "para", "true"))
         );
     }
 
@@ -190,8 +195,8 @@ public class UsuarioService {
         Usuario usuario = buscarPorId(id);
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
-        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
-                Map.of("ativo", Map.of("de", "true", "para", "false"))
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+                Map.of(CAMPO_ATIVO, Map.of("de", "true", "para", "false"))
         );
     }
 
@@ -204,8 +209,8 @@ public class UsuarioService {
         boolean anterior = usuario.isAtivo();
         usuario.setAtivo(!anterior);
         usuarioRepository.save(usuario);
-        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
-                Map.of("ativo", Map.of("de", str(anterior), "para", str(!anterior)))
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
+                Map.of(CAMPO_ATIVO, Map.of("de", str(anterior), "para", str(!anterior)))
         );
     }
 
@@ -307,10 +312,10 @@ public class UsuarioService {
 
         Usuario salvo = usuarioRepository.save(usuario);
 
-        auditoria.registrar("USUARIO", salvo.getId(), salvo.getNome(), "CREATE",
+        auditoria.registrar(ENTIDADE_USUARIO, salvo.getId(), salvo.getNome(), "CREATE",
                 Map.of(
-                        "perfil", Map.of("para", "LIDER_CELULA"),
-                        "ativo",  Map.of("para", "false (pendente aprovação)")
+                        CAMPO_PERFIL, Map.of("para", "LIDER_CELULA"),
+                        CAMPO_ATIVO,  Map.of("para", "false (pendente aprovação)")
                 )
         );
 
@@ -345,7 +350,7 @@ public class UsuarioService {
         usuario.setSenhaPendente(null);
         usuarioRepository.save(usuario);
 
-        auditoria.registrarComAprovador("USUARIO", usuarioId, usuario.getNome(),
+        auditoria.registrarComAprovador(ENTIDADE_USUARIO, usuarioId, usuario.getNome(),
                 "REJECT", str(getEmailLogado()), str(getEmailLogado())
         );
 
@@ -386,14 +391,14 @@ public class UsuarioService {
         }
 
         if (usuario.getSenhaPendente() != null) {
-            diff.put("senha", Map.of("para", "*** alterada ***"));
+            diff.put(CAMPO_SENHA, Map.of("para", "*** alterada ***"));
             usuario.setSenha(usuario.getSenhaPendente());
             usuario.setSenhaPendente(null);
         }
 
         usuarioRepository.save(usuario);
 
-        auditoria.registrarComAprovador("USUARIO", usuarioId, usuario.getNome(),
+        auditoria.registrarComAprovador(ENTIDADE_USUARIO, usuarioId, usuario.getNome(),
                 "APPROVE", str(getEmailLogado()), str(getEmailLogado())
         );
 
@@ -413,10 +418,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + dto.getEmail()));
 
-        if (dto.getSenhaAtual() == null || dto.getSenhaAtual().isBlank())
-            throw new IllegalArgumentException("A senha atual é obrigatória.");
-        if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha()))
-            throw new IllegalArgumentException("Senha atual incorreta.");
+        validarSenhaAtual(dto.getSenhaAtual(), usuario.getSenha());
 
         boolean trocaEmail = dto.getEmailNovo() != null && !dto.getEmailNovo().isBlank();
         boolean trocaSenha = dto.getNovaSenha() != null && !dto.getNovaSenha().isBlank();
@@ -425,37 +427,24 @@ public class UsuarioService {
             throw new IllegalArgumentException("Informe um novo e-mail e/ou uma nova senha.");
 
         if (trocaEmail) {
-            String emailNovo = dto.getEmailNovo().trim().toLowerCase();
-            if (emailNovo.equalsIgnoreCase(usuario.getEmail()))
-                throw new IllegalArgumentException("O novo e-mail não pode ser igual ao e-mail atual.");
-            if (usuarioRepository.findByEmailIgnoreCase(emailNovo).isPresent())
-                throw new IllegalArgumentException("Este e-mail já está em uso por outro usuário.");
-            usuario.setEmailPendente(emailNovo);
+            aplicarTrocaEmail(dto, usuario);
         }
-
         if (trocaSenha) {
-            if (dto.getConfirmarNovaSenha() == null || dto.getConfirmarNovaSenha().isBlank())
-                throw new IllegalArgumentException("A confirmação da nova senha é obrigatória.");
-            if (!dto.getNovaSenha().equals(dto.getConfirmarNovaSenha()))
-                throw new IllegalArgumentException("A nova senha e a confirmação não coincidem.");
-            if (passwordEncoder.matches(dto.getNovaSenha(), usuario.getSenha()))
-                throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
-            usuario.setSenhaPendente(passwordEncoder.encode(dto.getNovaSenha()));
+            aplicarTrocaSenha(dto, usuario);
         }
 
         usuarioRepository.save(usuario);
 
-        auditoria.registrar("USUARIO", usuario.getId(), usuario.getNome(), "UPDATE",
-                Map.of("solicitacao", Map.of("para",
-                        trocaEmail && trocaSenha ? "e-mail e senha pendentes" :
-                                trocaEmail ? "e-mail pendente" : "senha pendente"))
+        String tipoAlteracao = resolverTipoAlteracao(trocaEmail, trocaSenha);
+
+        auditoria.registrar(ENTIDADE_USUARIO, usuario.getId(), usuario.getNome(), "UPDATE",
+                Map.of("solicitacao", Map.of("para", tipoAlteracao + " pendentes"))
         );
 
         notificacaoService.enviarNotificacao(
                 usuario.getId(),
                 "Solicitação de alteração de dados",
-                "O usuário " + usuario.getNome() + " solicitou alteração de " +
-                        (trocaEmail && trocaSenha ? "e-mail e senha" : trocaEmail ? "e-mail" : "senha") +
+                "O usuário " + usuario.getNome() + " solicitou alteração de " + tipoAlteracao +
                         ". Acesse o painel para aprovar ou rejeitar.",
                 Notificacao.TipoNotificacao.SOLICITACAO_ALTERACAO
         );
@@ -466,6 +455,37 @@ public class UsuarioService {
                 trocaSenha,
                 "Solicitação recebida! Aguarde a aprovação do administrador."
         );
+    }
+
+    private void validarSenhaAtual(String senhaAtual, String senhaHash) {
+        if (senhaAtual == null || senhaAtual.isBlank())
+            throw new IllegalArgumentException("A senha atual é obrigatória.");
+        if (!passwordEncoder.matches(senhaAtual, senhaHash))
+            throw new IllegalArgumentException("Senha atual incorreta.");
+    }
+
+    private void aplicarTrocaEmail(SolicitacaoAlteracaoDTO dto, Usuario usuario) {
+        String emailNovo = dto.getEmailNovo().trim().toLowerCase();
+        if (emailNovo.equalsIgnoreCase(usuario.getEmail()))
+            throw new IllegalArgumentException("O novo e-mail não pode ser igual ao e-mail atual.");
+        if (usuarioRepository.findByEmailIgnoreCase(emailNovo).isPresent())
+            throw new IllegalArgumentException("Este e-mail já está em uso por outro usuário.");
+        usuario.setEmailPendente(emailNovo);
+    }
+
+    private void aplicarTrocaSenha(SolicitacaoAlteracaoDTO dto, Usuario usuario) {
+        if (dto.getConfirmarNovaSenha() == null || dto.getConfirmarNovaSenha().isBlank())
+            throw new IllegalArgumentException("A confirmação da nova senha é obrigatória.");
+        if (!dto.getNovaSenha().equals(dto.getConfirmarNovaSenha()))
+            throw new IllegalArgumentException("A nova senha e a confirmação não coincidem.");
+        if (passwordEncoder.matches(dto.getNovaSenha(), usuario.getSenha()))
+            throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
+        usuario.setSenhaPendente(passwordEncoder.encode(dto.getNovaSenha()));
+    }
+
+    private String resolverTipoAlteracao(boolean trocaEmail, boolean trocaSenha) {
+        if (trocaEmail && trocaSenha) return "e-mail e senha";
+        return trocaEmail ? CAMPO_EMAIL : CAMPO_SENHA;
     }
 
     // =========================
@@ -494,7 +514,7 @@ public class UsuarioService {
 
         usuario.setFotoPerfil(fotoBase64);
         usuarioRepository.save(usuario);
-        auditoria.registrar("USUARIO", id, usuario.getNome(), "UPDATE",
+        auditoria.registrar(ENTIDADE_USUARIO, id, usuario.getNome(), "UPDATE",
                 Map.of("fotoPerfil", Map.of("para", "*** imagem atualizada ***"))
         );
     }
