@@ -80,7 +80,7 @@ public class WhatsAppWebhookService {
 
     private void preencherStatus(JsonNode node, RegistroWebhook r) {
         r.setIdMensagem(node.path("id").asText());
-        r.setStatus(node.path("status").asText());
+        r.setStatus(node.path(KEY_STATUS).asText());
         r.setNumeroDestino(node.path("recipient_id").asText());
     }
 
