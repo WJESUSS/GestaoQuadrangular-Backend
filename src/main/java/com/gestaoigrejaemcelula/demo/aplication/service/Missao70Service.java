@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 public class Missao70Service {
 
+    private static final String MSG_MISSAO70_NAO_ENCONTRADA = "MSG_MISSAO70_NAO_ENCONTRADA";
+
     private final Missao70Repository missao70Repository;
     private final EncontroMissao70Repository encontroRepository;
     private final CelulaRepository celulaRepository;
@@ -85,7 +87,7 @@ public class Missao70Service {
     @Transactional
     public Missao70 atualizar(Long id, Missao70RequestDTO dto) {
         Missao70 missao = missao70Repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Missão 70 não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_MISSAO70_NAO_ENCONTRADA));
 
         missao.setNome(dto.getNome());
         missao.setNomeAnfitriao(dto.getNomeAnfitriao());
@@ -328,7 +330,7 @@ public class Missao70Service {
     @Transactional
     public void alterarDecisaoVisitante(Long missaoId, Long visitanteId, AlterarDecisaoVisitanteDTO dto) {
         Missao70 missao = missao70Repository.findByIdWithAssociations(missaoId)
-                .orElseThrow(() -> new RuntimeException("Missão 70 não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_MISSAO70_NAO_ENCONTRADA));
 
         boolean visitantePertence = missao.getVisitantes().stream()
                 .anyMatch(v -> v.getId().equals(visitanteId));
@@ -393,6 +395,6 @@ public class Missao70Service {
     @Transactional(readOnly = true)
     public Missao70 buscarPorId(Long id) {
         return missao70Repository.findByIdWithAssociations(id)
-                .orElseThrow(() -> new RuntimeException("Missão 70 não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_MISSAO70_NAO_ENCONTRADA));
     }
 }

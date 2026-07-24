@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UsuarioService {
 
+    private static final String MSG_CELULA_NAO_ENCONTRADA_COM_ID = "MSG_CELULA_NAO_ENCONTRADA_COM_ID";
+
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final CelulaRepository celulaRepository;
@@ -64,7 +66,7 @@ public class UsuarioService {
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
-                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.getCelulaId()));
+                    .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA_COM_ID + dto.getCelulaId()));
             usuario.setCelula(celula);
         }
 
@@ -111,7 +113,33 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com ID: " + id));
 
-        // Monta diff ANTES de alterar
+        Map<String, Object> diff = montarDiff(usuario, dto);
+
+        usuario.setNome(dto.nome());
+        usuario.setEmail(dto.email());
+        usuario.setPerfil(dto.perfil());
+        usuario.setTelefoneWhatsapp(dto.telefoneWhatsapp());
+
+        if (dto.senha() != null && !dto.senha().trim().isEmpty())
+            usuario.setSenha(passwordEncoder.encode(dto.senha()));
+
+        if (dto.celulaId() != null) {
+            Celula celula = celulaRepository.findById(dto.celulaId())
+                    .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA_COM_ID + dto.celulaId()));
+            usuario.setCelula(celula);
+        } else {
+            usuario.setCelula(null);
+        }
+
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+
+        if (!diff.isEmpty())
+            auditoria.registrar("USUARIO", id, usuarioSalvo.getNome(), "UPDATE", diff);
+
+        return new UsuarioResponseDTO(usuarioSalvo);
+    }
+
+    private Map<String, Object> montarDiff(Usuario usuario, UsuarioRequestDTO dto) {
         Map<String, Object> diff = new LinkedHashMap<>();
         if (!Objects.equals(usuario.getNome(), dto.nome()))
             diff.put("nome",   Map.of("de", str(usuario.getNome()),   "para", str(dto.nome())));
@@ -128,29 +156,7 @@ public class UsuarioService {
             diff.put("senha", Map.of("para", "*** alterada ***"));
         if (!Objects.equals(usuario.getTelefoneWhatsapp(), dto.telefoneWhatsapp()))
             diff.put("telefoneWhatsapp", Map.of("de", str(usuario.getTelefoneWhatsapp()), "para", str(dto.telefoneWhatsapp())));
-
-        usuario.setNome(dto.nome());
-        usuario.setEmail(dto.email());
-        usuario.setPerfil(dto.perfil());
-        usuario.setTelefoneWhatsapp(dto.telefoneWhatsapp());
-
-        if (dto.senha() != null && !dto.senha().trim().isEmpty())
-            usuario.setSenha(passwordEncoder.encode(dto.senha()));
-
-        if (dto.celulaId() != null) {
-            Celula celula = celulaRepository.findById(dto.celulaId())
-                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.celulaId()));
-            usuario.setCelula(celula);
-        } else {
-            usuario.setCelula(null);
-        }
-
-        Usuario usuarioSalvo = usuarioRepository.save(usuario);
-
-        if (!diff.isEmpty())
-            auditoria.registrar("USUARIO", id, usuarioSalvo.getNome(), "UPDATE", diff);
-
-        return new UsuarioResponseDTO(usuarioSalvo);
+        return diff;
     }
 
     // =========================
@@ -295,7 +301,7 @@ public class UsuarioService {
 
         if (dto.getCelulaId() != null) {
             Celula celula = celulaRepository.findById(dto.getCelulaId())
-                    .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + dto.getCelulaId()));
+                    .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA_COM_ID + dto.getCelulaId()));
             usuario.setCelula(celula);
         }
 

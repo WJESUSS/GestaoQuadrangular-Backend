@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 @Service
 public class TesourariaService {
 
+    private static final String TIPO_BRONZE = "TIPO_BRONZE";
+    private static final String TIPO_PRATA  = "TIPO_PRATA";
+
     private final LancamentoTesourariaRepository repository;
     private final MembroRepository membroRepository;
     private final AuditoriaHelper auditoria;
@@ -81,8 +84,8 @@ public class TesourariaService {
     @Transactional(readOnly = true)
     public Map<String, Object> getResumo() {
         Map<String, Object> resumo = new HashMap<>();
-        resumo.put("BRONZE", BigDecimal.ZERO);
-        resumo.put("PRATA",  BigDecimal.ZERO);
+        resumo.put(TIPO_BRONZE, BigDecimal.ZERO);
+        resumo.put(TIPO_PRATA,  BigDecimal.ZERO);
         resumo.put("OURO",   BigDecimal.ZERO);
 
         List<Object[]> resultados = repository.sumAgrupadoPorTipo();
@@ -144,14 +147,14 @@ public class TesourariaService {
     @Transactional(readOnly = true)
     public Map<String, BigDecimal> resumoMensal(int mes, int ano) {
         BigDecimal totalDizimo = repository.totalDizimoPorMesAno(mes, ano);
-        BigDecimal totalBronze = repository.totalOfertaPorMesAnoETipo(mes, ano, "BRONZE");
-        BigDecimal totalPrata  = repository.totalOfertaPorMesAnoETipo(mes, ano, "PRATA");
+        BigDecimal totalBronze = repository.totalOfertaPorMesAnoETipo(mes, ano, TIPO_BRONZE);
+        BigDecimal totalPrata  = repository.totalOfertaPorMesAnoETipo(mes, ano, TIPO_PRATA);
         BigDecimal totalOuro   = repository.totalOfertaPorMesAnoETipo(mes, ano, "OURO");
 
         Map<String, BigDecimal> resumo = new HashMap<>();
         resumo.put("DIZIMO", totalDizimo != null ? totalDizimo : BigDecimal.ZERO);
-        resumo.put("BRONZE", totalBronze != null ? totalBronze : BigDecimal.ZERO);
-        resumo.put("PRATA",  totalPrata  != null ? totalPrata  : BigDecimal.ZERO);
+        resumo.put(TIPO_BRONZE, totalBronze != null ? totalBronze : BigDecimal.ZERO);
+        resumo.put(TIPO_PRATA,  totalPrata  != null ? totalPrata  : BigDecimal.ZERO);
         resumo.put("OURO",   totalOuro   != null ? totalOuro   : BigDecimal.ZERO);
 
         return resumo;

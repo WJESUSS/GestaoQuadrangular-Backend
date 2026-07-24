@@ -33,7 +33,10 @@ public class CelulaService {
     private static final String ENTIDADE_MEMBRO = "MEMBRO";
     private static final String CAMPO_CELULA = "celula";
     private static final String CAMPO_STATUS_MULTIPLICACAO = "CAMPO_STATUS_MULTIPLICACAO";
-    private static final String MSG_MEMBRO_NAO_ENCONTRADO = "MSG_MEMBRO_NAO_ENCONTRADO";
+    private static final String MSG_MEMBRO_NAO_ENCONTRADO = "Membro não encontrado";
+    private static final String ENTIDADE_CELULA = "ENTIDADE_CELULA";
+    private static final String MSG_CELULA_NAO_ENCONTRADA = "MSG_CELULA_NAO_ENCONTRADA";
+    private static final String MSG_CELULA_NAO_ENCONTRADA_COM_ID = "MSG_CELULA_NAO_ENCONTRADA_COM_ID";
 
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
@@ -84,7 +87,7 @@ public class CelulaService {
         lider.setCelula(celulaSalva);
         usuarioRepository.saveAndFlush(lider);
 
-        auditoria.registrar("CELULA", celulaSalva.getId(), celulaSalva.getNome(), ACAO_CREATE,
+        auditoria.registrar(ENTIDADE_CELULA, celulaSalva.getId(), celulaSalva.getNome(), ACAO_CREATE,
                 Map.of(
                         "lider",    Map.of("para", str(lider.getNome())),
                         "endereco", Map.of("para", str(dto.endereco())),
@@ -123,7 +126,7 @@ public class CelulaService {
     @Transactional
     public CelulaResponseDTO atualizar(Long id, CelulaRequestDTO dto) {
         Celula celula = celulaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
 
         // Monta diff ANTES de alterar
         Map<String, Object> diff = new LinkedHashMap<>();
@@ -162,7 +165,7 @@ public class CelulaService {
         CelulaResponseDTO resposta = new CelulaResponseDTO(celulaRepository.save(celula));
 
         if (!diff.isEmpty())
-            auditoria.registrar("CELULA", id, celula.getNome(), ACAO_UPDATE, diff);
+            auditoria.registrar(ENTIDADE_CELULA, id, celula.getNome(), ACAO_UPDATE, diff);
 
         return resposta;
     }
@@ -182,7 +185,7 @@ public class CelulaService {
     @Transactional
     public void adicionarMembro(Long celulaId, Long membroId) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
 
         Membro membro = membroRepository.findById(membroId)
                 .orElseThrow(() -> new RuntimeException(MSG_MEMBRO_NAO_ENCONTRADO));
@@ -253,7 +256,7 @@ public class CelulaService {
     @Transactional
     public VisitanteResponseDTO salvarVisitanteNaCelula(Long celulaId, VisitanteRequestDTO dto) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
 
         Visitante visitante = new Visitante();
         visitante.setNome(dto.getNome());
@@ -300,7 +303,7 @@ public class CelulaService {
     @Transactional
     public void verificarELancarAlertaMultiplicacao(Long celulaId) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + celulaId));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA_COM_ID + celulaId));
 
         int qtdMembros = celula.getQuantidadeMembrosAtivos();
 
@@ -323,7 +326,7 @@ public class CelulaService {
     @Transactional
     public void solicitarMultiplicacao(Long celulaId, String motivo, Long usuarioSolicitanteId) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada com ID: " + celulaId));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA_COM_ID + celulaId));
 
         if (celula.getStatusMultiplicacao() == Celula.StatusMultiplicacao.EM_ANALISE) {
             throw new IllegalStateException("Esta célula já possui uma solicitação em análise pela secretaria.");
@@ -338,7 +341,7 @@ public class CelulaService {
         celula.setDataSolicitacaoMultiplicacao(LocalDateTime.now());
         celulaRepository.save(celula);
 
-        auditoria.registrar("CELULA", celulaId, celula.getNome(), ACAO_UPDATE,
+        auditoria.registrar(ENTIDADE_CELULA, celulaId, celula.getNome(), ACAO_UPDATE,
                 Map.of(CAMPO_STATUS_MULTIPLICACAO, Map.of("de", "NORMAL", "para", "EM_ANALISE"),
                         "motivo",              Map.of("para", str(celula.getMotivoSolicitacao())))
         );
@@ -419,7 +422,7 @@ public class CelulaService {
     @Transactional
     public void decidirMultiplicacao(Long celulaId, boolean aprovado) {
         Celula celula = celulaRepository.findById(celulaId)
-                .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException(MSG_CELULA_NAO_ENCONTRADA));
 
         String statusAnterior = str(celula.getStatusMultiplicacao());
 
@@ -429,7 +432,7 @@ public class CelulaService {
 
         celulaRepository.save(celula);
 
-        auditoria.registrar("CELULA", celulaId, celula.getNome(),
+        auditoria.registrar(ENTIDADE_CELULA, celulaId, celula.getNome(),
                 aprovado ? "APPROVE" : "REJECT",
                 Map.of(CAMPO_STATUS_MULTIPLICACAO, Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
         );
@@ -445,7 +448,7 @@ public class CelulaService {
     @Transactional
     public CelulaStatusMultiplicacaoDTO atualizarStatusMultiplicacao(Long id, boolean aprovado) {
         Celula celula = celulaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
 
         String statusAnterior = str(celula.getStatusMultiplicacao());
 
@@ -455,7 +458,7 @@ public class CelulaService {
 
         celulaRepository.save(celula);
 
-        auditoria.registrar("CELULA", id, celula.getNome(),
+        auditoria.registrar(ENTIDADE_CELULA, id, celula.getNome(),
                 aprovado ? "APPROVE" : "REJECT",
                 Map.of(CAMPO_STATUS_MULTIPLICACAO, Map.of("de", statusAnterior, "para", str(celula.getStatusMultiplicacao())))
         );
@@ -466,7 +469,7 @@ public class CelulaService {
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> buscarMembrosPorCelula(Long celulaId) {
         Celula celula = celulaRepository.findByIdWithMembros(celulaId)
-                .orElseThrow(() -> new RuntimeException("Célula não encontrada"));
+                .orElseThrow(() -> new RuntimeException(MSG_CELULA_NAO_ENCONTRADA));
         return celula.getMembros()
                 .stream()
                 .map(MembroResponseDTO::new)
