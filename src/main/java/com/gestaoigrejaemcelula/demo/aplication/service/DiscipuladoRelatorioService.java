@@ -41,6 +41,7 @@ public class DiscipuladoRelatorioService {
     private final MembroRepository               membroRepository;
     private final UsuarioRepository              usuarioRepository;
     private final CelulaRepository               celulaRepository;
+    private final RelatorioMensalService         relatorioMensalService;
 
     // ── helpers ─────────────────────────────────────────────────────────────
 
@@ -157,6 +158,13 @@ public class DiscipuladoRelatorioService {
         }
 
         repository.saveAll(paraSalvar);
+
+        if (!paraSalvar.isEmpty()) {
+            Celula celula = paraSalvar.get(0).getCelula();
+            if (celula != null) {
+                relatorioMensalService.verificarEEnviarParabens(celula.getId());
+            }
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════

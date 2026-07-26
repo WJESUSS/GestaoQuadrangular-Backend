@@ -24,6 +24,9 @@ public class NotificacaoService {
     @Value("${whatsapp.api.template.notificacao:notificacao_geral}")
     private String templateNotificacao;
 
+    @Value("${whatsapp.api.template.parabens:parabens_relatorio_mensal}")
+    private String templateParabens;
+
     @Transactional
     public void enviarNotificacao(Long usuarioId, String titulo, String mensagem, Notificacao.TipoNotificacao tipo) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -63,15 +66,31 @@ public class NotificacaoService {
     }
 
     private void enviarWhatsAppSePossivel(Usuario usuario, String titulo) {
+        enviarWhatsApp(usuario, titulo, templateNotificacao);
+    }
+
+    private void enviarWhatsApp(Usuario usuario, String titulo, String template) {
         if (usuario.getTelefoneWhatsapp() == null || usuario.getTelefoneWhatsapp().isBlank()) {
             return;
         }
         whatsAppService.enviarTemplate(
                 usuario.getTelefoneWhatsapp(),
-                templateNotificacao,
+                template,
                 "pt_BR",
                 usuario.getNome().split(" ")[0],
                 titulo
+        );
+    }
+
+    public void enviarWhatsAppParabens(Usuario usuario) {
+        if (usuario.getTelefoneWhatsapp() == null || usuario.getTelefoneWhatsapp().isBlank()) {
+            return;
+        }
+        whatsAppService.enviarTemplate(
+                usuario.getTelefoneWhatsapp(),
+                templateParabens,
+                "pt_BR",
+                usuario.getNome().split(" ")[0]
         );
     }
 

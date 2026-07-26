@@ -31,6 +31,7 @@ public class RelatorioService {
     @Autowired private UsuarioService usuarioService;
     @Autowired private DiscipuladoRelatorioRepository discipuladoRelatorioRepository;
     @Autowired private RankingCelulaService rankingCelulaService;
+    @Autowired private RelatorioMensalService relatorioMensalService;
 
     private static final String CELULA_NAO_INFORMADA = "CELULA_NAO_INFORMADA";
     private static final String LIDER_DESCONHECIDO  =" LIDER_DESCONHECIDO";
@@ -75,6 +76,8 @@ public class RelatorioService {
 
         relatorioRepository.save(relatorio);
         salvarMembrosAusentes(dto, relatorio);
+
+        relatorioMensalService.verificarEEnviarParabens(celula.getId());
     }
 
     /* =========================
@@ -309,6 +312,8 @@ public class RelatorioService {
 
         presencaRepository.deleteAll(presencaRepository.findByRelatorioId(relatorio.getId()));
         salvarMembrosAusentes(dto, relatorio);
+
+        relatorioMensalService.verificarEEnviarParabens(celula.getId());
     }
 
     @Transactional(readOnly = true)

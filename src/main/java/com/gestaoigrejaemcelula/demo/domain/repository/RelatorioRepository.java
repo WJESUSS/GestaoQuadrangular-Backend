@@ -104,4 +104,6 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
     int totalVisitantesNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
     boolean existsByCelulaIdAndDataReuniao(Long celulaId, LocalDate dataReuniao);
+
+    long countByCelulaIdAndDataReuniaoBetween(Long celulaId, LocalDate inicio, LocalDate fim);
 }

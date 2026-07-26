@@ -174,4 +174,5 @@ public class Usuario implements UserDetails {
     public void setTelefoneWhatsapp(String telefoneWhatsapp) {
         this.telefoneWhatsapp = telefoneWhatsapp;
     }
+
 }

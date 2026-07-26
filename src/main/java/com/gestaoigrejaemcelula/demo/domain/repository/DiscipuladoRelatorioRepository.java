@@ -207,4 +207,16 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("mes")    int mes,
             @Param("ano")    int ano,
             @Param("mesRef") String mesRef);
+
+    @Query("""
+        SELECT COUNT(DISTINCT r.semanaInicio)
+        FROM DiscipuladoRelatorio r
+        WHERE r.celula.id = :celulaId
+          AND r.semanaInicio <= :fim
+          AND r.semanaFim >= :inicio
+    """)
+    long countSemanasByCelulaIdAndPeriodo(
+            @Param("celulaId") Long celulaId,
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim);
 }

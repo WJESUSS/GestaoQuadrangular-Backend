@@ -21,22 +21,16 @@ public class AuthService {
 
     public TokenDTO login(LoginDTO dto) {
 
-        // ✅ NORMALIZAÇÃO COMPLETA (ESSENCIAL)
         String email = dto.email().trim().toLowerCase();
 
-        // 1. Autentica
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        email,
-                        dto.senha()
-                )
-        );
-
-        // 2. Busca usuário
-        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.email())
+        usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-        // 3. Gera token
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, dto.senha())
+        );
+
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email).get();
         String token = jwtService.gerarToken(usuario);
 
         return new TokenDTO(token);
