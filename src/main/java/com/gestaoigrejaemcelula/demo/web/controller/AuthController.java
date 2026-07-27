@@ -59,6 +59,14 @@ public class AuthController {
 
             return ResponseEntity.ok(token);
 
+        } catch (org.springframework.security.authentication.DisabledException e) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "erro",   "Conta suspensa.",
+                            "mensagem", "Sua conta foi desativada por inatividade. Entre em contato com o administrador."
+                    ));
+
         } catch (Exception e) {
             long tentativasRestantes = probe.getRemainingTokens();
 

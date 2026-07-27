@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import java.nio.file.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +68,7 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping("/{id}/ativar")
     public ResponseEntity<Void> ativar(@PathVariable Long id) {
         service.ativar(id);

@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -173,6 +174,17 @@ public class Usuario implements UserDetails {
 
     public void setTelefoneWhatsapp(String telefoneWhatsapp) {
         this.telefoneWhatsapp = telefoneWhatsapp;
+    }
+
+    @Column(name = "ultimo_acesso")
+    private LocalDateTime ultimoAcesso;
+
+    public LocalDateTime getUltimoAcesso() {
+        return ultimoAcesso;
+    }
+
+    public void setUltimoAcesso(LocalDateTime ultimoAcesso) {
+        this.ultimoAcesso = ultimoAcesso;
     }
 
 }
