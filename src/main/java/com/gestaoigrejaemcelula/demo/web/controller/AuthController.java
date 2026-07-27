@@ -64,7 +64,7 @@ public class AuthController {
                     .status(HttpStatus.FORBIDDEN)
                     .body(Map.of(
                             "erro",   "Conta suspensa.",
-                            "mensagem", "Sua conta foi desativada por inatividade. Entre em contato com o administrador."
+                            "mensagem", "Sua conta foi desativada por inatividade (mais de 2 semanas sem acesso). Entre em contato com o administrador."
                     ));
 
         } catch (Exception e) {

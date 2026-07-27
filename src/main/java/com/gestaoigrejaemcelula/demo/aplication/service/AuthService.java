@@ -7,6 +7,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.UsuarioRepository;
 import com.gestaoigrejaemcelula.demo.security.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -25,14 +26,17 @@ public class AuthService {
 
         String email = dto.email().trim().toLowerCase();
 
-        usuarioRepository.findByEmailIgnoreCase(email)
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+
+        if (!usuario.isEnabled()) {
+            throw new DisabledException("Conta desativada");
+        }
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, dto.senha())
         );
 
-        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email).get();
         usuario.setUltimoAcesso(LocalDateTime.now());
         usuarioRepository.save(usuario);
 
