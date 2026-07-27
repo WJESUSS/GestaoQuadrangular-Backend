@@ -21,7 +21,7 @@ public class InatividadeScheduler {
 
     private final UsuarioRepository usuarioRepository;
 
-    @Scheduled(cron = "0 17 23 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 44 23 * * *", zone = "America/Sao_Paulo")
     @Transactional
     public void suspenderInativos() {
         LocalDateTime dataLimite = LocalDateTime.now().minusDays(DIAS_INATIVIDADE);
