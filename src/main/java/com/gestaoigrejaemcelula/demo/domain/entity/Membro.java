@@ -1,12 +1,15 @@
 package com.gestaoigrejaemcelula.demo.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.EstadoCivil;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "membros", indexes = {
@@ -109,6 +112,16 @@ public class Membro {
 
     private String jurisdicaoArrolamento;
     private String arroladoPor;
+
+    // -------------------------------------------------------
+    // CARGOS
+    // -------------------------------------------------------
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "membro_cargos", joinColumns = @JoinColumn(name = "membro_id"))
+    @Column(name = "cargo")
+    @Enumerated(EnumType.STRING)
+    private Set<CargoMembro> cargos = new HashSet<>();
 
     // -------------------------------------------------------
     // OUTROS
@@ -234,6 +247,9 @@ public class Membro {
 
     public String getArroladoPor() { return arroladoPor; }
     public void setArroladoPor(String arroladoPor) { this.arroladoPor = arroladoPor; }
+
+    public Set<CargoMembro> getCargos() { return cargos; }
+    public void setCargos(Set<CargoMembro> cargos) { this.cargos = cargos; }
 
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String observacoes) { this.observacoes = observacoes; }

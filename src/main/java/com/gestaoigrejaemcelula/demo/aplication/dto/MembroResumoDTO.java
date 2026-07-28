@@ -1,17 +1,22 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
+
+import java.util.Set;
+
 public class MembroResumoDTO {
 
     private Long id;
     private String nome;
     private String telefone;
     private String status;
+    private Set<CargoMembro> cargos;
 
     // CONSTRUTOR PADRÃO (Necessário para o Jackson/JSON)
     public MembroResumoDTO() {
     }
 
-    // CONSTRUTOR PERSONALIZADO (O que o seu Service está chamando)
+    // CONSTRUTOR PERSONALIZADO (usado por JPQL em MembroRepository)
     public MembroResumoDTO(Long id, String nome) {
         this.id = id;
         this.nome = nome;
@@ -26,4 +31,6 @@ public class MembroResumoDTO {
     public void setTelefone(String telefone) { this.telefone = telefone; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Set<CargoMembro> getCargos() { return cargos; }
+    public void setCargos(Set<CargoMembro> cargos) { this.cargos = cargos; }
 }

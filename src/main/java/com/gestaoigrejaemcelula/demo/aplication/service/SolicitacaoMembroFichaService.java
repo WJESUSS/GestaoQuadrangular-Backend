@@ -7,6 +7,7 @@ import com.gestaoigrejaemcelula.demo.domain.entity.Celula;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.entity.SolicitacaoMembroFicha;
 import com.gestaoigrejaemcelula.demo.domain.entity.Usuario;
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusSolicitacaoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -206,6 +208,7 @@ public class SolicitacaoMembroFichaService {
         membro.setTipoArrolamento(ficha.getTipoArrolamento());
         membro.setJurisdicaoArrolamento(ficha.getJurisdicaoArrolamento());
         membro.setArroladoPor(ficha.getArroladoPor());
+        membro.setCargos(ficha.getCargos() != null ? ficha.getCargos() : new HashSet<>());
         membro.setObservacoes(ficha.getObservacoes());
 
         // Vincula à célula do líder que enviou a ficha
@@ -273,6 +276,7 @@ public class SolicitacaoMembroFichaService {
         ficha.setTipoArrolamento(dto.getTipoArrolamento());
         ficha.setJurisdicaoArrolamento(dto.getJurisdicaoArrolamento());
         ficha.setArroladoPor(dto.getArroladoPor());
+        ficha.setCargos(dto.getCargos() != null ? dto.getCargos() : new HashSet<>());
         ficha.setObservacoes(dto.getObservacoes());
     }
 

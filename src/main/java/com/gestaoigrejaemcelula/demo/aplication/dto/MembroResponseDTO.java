@@ -1,11 +1,13 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.EstadoCivil;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public record MembroResponseDTO(
 
@@ -76,6 +78,11 @@ public record MembroResponseDTO(
         String arroladoPor,
 
         // -------------------------------------------------------
+        // CARGOS
+        // -------------------------------------------------------
+        Set<CargoMembro> cargos,
+
+        // -------------------------------------------------------
         // OUTROS
         // -------------------------------------------------------
         String observacoes
@@ -123,6 +130,7 @@ public record MembroResponseDTO(
                 m.getTipoArrolamento(),
                 m.getJurisdicaoArrolamento(),
                 m.getArroladoPor(),
+                m.getCargos(),
                 m.getObservacoes()
         );
     }

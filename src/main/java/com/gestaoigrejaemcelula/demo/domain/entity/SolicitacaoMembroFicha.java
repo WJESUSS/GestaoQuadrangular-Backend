@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.domain.entity;
 
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.EstadoCivil;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusSolicitacaoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
@@ -7,6 +8,8 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Ficha de solicitação de cadastro de novo membro enviada pelo Líder.
@@ -119,6 +122,16 @@ public class SolicitacaoMembroFicha {
 
     @Column(columnDefinition = "TEXT")
     private String observacoes;
+
+    // -------------------------------------------------------
+    // CARGOS
+    // -------------------------------------------------------
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "solicitacao_membro_cargos", joinColumns = @JoinColumn(name = "solicitacao_id"))
+    @Column(name = "cargo")
+    @Enumerated(EnumType.STRING)
+    private Set<CargoMembro> cargos = new HashSet<>();
 
     // -------------------------------------------------------
     // LIFECYCLE
@@ -252,6 +265,9 @@ public class SolicitacaoMembroFicha {
 
     public String getArroladoPor() { return arroladoPor; }
     public void setArroladoPor(String arroladoPor) { this.arroladoPor = arroladoPor; }
+
+    public Set<CargoMembro> getCargos() { return cargos; }
+    public void setCargos(Set<CargoMembro> cargos) { this.cargos = cargos; }
 
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String observacoes) { this.observacoes = observacoes; }

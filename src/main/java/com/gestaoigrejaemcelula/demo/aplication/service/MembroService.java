@@ -4,6 +4,7 @@ import com.gestaoigrejaemcelula.demo.aplication.dto.*;
 import com.gestaoigrejaemcelula.demo.domain.entity.HistoricoStatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.entity.Membro;
 import com.gestaoigrejaemcelula.demo.domain.entity.Visitante;
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.Tipo;
 import com.gestaoigrejaemcelula.demo.domain.repository.HistoricoStatusMembroRepository;
@@ -53,6 +54,7 @@ public class MembroService {
                     dto.setNome(m.getNome());
                     dto.setTelefone(m.getTelefone());
                     dto.setStatus(m.getStatus().getDescricao());
+                    dto.setCargos(m.getCargos());
                     dto.setTipo(Tipo.MEMBRO);
                     return dto;
                 }).toList();
@@ -109,6 +111,9 @@ public class MembroService {
         addDiff(diff, "dataConversao",         m.getDataConversao(),         dto.getDataConversao());
         addDiff(diff, "dataBatismo",           m.getDataBatismo(),           dto.getDataBatismo());
 
+        // Cargos
+        addDiff(diff, "cargos",                m.getCargos(),                dto.getCargos());
+
         copiarDtoParaEntidade(dto, m);
         Membro salvo = repository.save(m);
 
@@ -126,6 +131,7 @@ public class MembroService {
                     dto.setNome(membro.getNome());
                     dto.setTelefone(membro.getTelefone());
                     dto.setStatus(membro.getStatus().getDescricao());
+                    dto.setCargos(membro.getCargos());
                     return dto;
                 });
     }
@@ -204,6 +210,9 @@ public class MembroService {
         membro.setTipoArrolamento(dto.getTipoArrolamento());
         membro.setJurisdicaoArrolamento(dto.getJurisdicaoArrolamento());
         membro.setArroladoPor(dto.getArroladoPor());
+
+        // Cargos
+        membro.setCargos(dto.getCargos() != null ? dto.getCargos() : new HashSet<>());
 
         // Observações
         membro.setObservacoes(dto.getObservacoes());

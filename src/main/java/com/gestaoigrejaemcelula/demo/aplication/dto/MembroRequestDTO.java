@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
+import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.EstadoCivil;
 import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public class MembroRequestDTO {
 
@@ -81,6 +83,12 @@ public class MembroRequestDTO {
     private TipoArrolamento tipoArrolamento;
     private String jurisdicaoArrolamento;
     private String arroladoPor;
+
+    // -------------------------------------------------------
+    // CARGOS
+    // -------------------------------------------------------
+
+    private Set<CargoMembro> cargos;
 
     // -------------------------------------------------------
     // OUTROS
@@ -187,6 +195,9 @@ public class MembroRequestDTO {
 
     public String getArroladoPor() { return arroladoPor; }
     public void setArroladoPor(String arroladoPor) { this.arroladoPor = arroladoPor; }
+
+    public Set<CargoMembro> getCargos() { return cargos; }
+    public void setCargos(Set<CargoMembro> cargos) { this.cargos = cargos; }
 
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
