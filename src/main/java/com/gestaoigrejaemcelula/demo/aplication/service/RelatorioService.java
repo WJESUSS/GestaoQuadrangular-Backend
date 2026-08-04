@@ -7,6 +7,7 @@ import com.gestaoigrejaemcelula.demo.domain.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -226,6 +227,7 @@ public class RelatorioService {
                 .toList();
     }
 
+    @Cacheable(value = "relatorios-discipulado-todos", key = "'todos'")
     @Transactional(readOnly = true)
     public List<RelatorioDiscipuladoDTO> listarTodosOsRelatorios() {
         List<DiscipuladoRelatorio> todos = discipuladoRelatorioRepository.findAllWithEagerRelationships();

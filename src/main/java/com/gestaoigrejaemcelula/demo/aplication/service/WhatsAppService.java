@@ -41,7 +41,7 @@ public class WhatsAppService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
+            .connectTimeout(Duration.ofSeconds(5))
             .build();
 
     public void enviarTemplate(String numeroDestino, String templateName, String idiomaCode, String... parametros) {
@@ -94,32 +94,45 @@ public class WhatsAppService {
                     .uri(URI.create(url))
                     .header("Authorization", "Bearer " + token)
                     .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(5))
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                log.info("Template '{}' enviado para {}", templateName, numeroLimpo);
-
-                // ── Extrai o wamid da resposta ────────────────────────
-                String wamid = null;
-                try {
-                    JsonNode resp = objectMapper.readTree(response.body());
-                    wamid = resp.path("messages").get(0).path("id").asText(null);
-                } catch (Exception ex) {
-                    log.warn("Não foi possível extrair wamid da resposta: {}", ex.getMessage());
-                }
-
-                // ── ✅ Salva o registro no banco ──────────────────────
-                salvarRegistroEnvio(numeroLimpo, templateName, wamid, parametros, json);
-
-            } else {
-                log.error("Erro ao enviar para {}: status={}, body={}", numeroLimpo, response.statusCode(), response.body());
-            }
+            // Assíncrono: não bloqueia a resposta do relatório esperando a Meta.
+            // Timeout de 5s evita travar o request por ~10s quando a API demora/fica indisponível.
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response ->
+                            processarResposta(numeroLimpo, templateName, response, parametros, json))
+                    .exceptionally(ex -> {
+                        log.error("Exceção ao enviar para {}: {}", numeroLimpo, ex.getMessage(), ex);
+                        return null;
+                    });
 
         } catch (Exception e) {
             log.error("Exceção ao enviar para {}: {}", numeroLimpo, e.getMessage(), e);
+        }
+    }
+
+    private void processarResposta(String numero, String templateName,
+                                   HttpResponse<String> response,
+                                   String[] parametros, String json) {
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            log.info("Template '{}' enviado para {}", templateName, numero);
+
+            // ── Extrai o wamid da resposta ────────────────────────
+            String wamid = null;
+            try {
+                JsonNode resp = objectMapper.readTree(response.body());
+                wamid = resp.path("messages").get(0).path("id").asText(null);
+            } catch (Exception ex) {
+                log.warn("Não foi possível extrair wamid da resposta: {}", ex.getMessage());
+            }
+
+            // ── ✅ Salva o registro no banco ──────────────────────
+            salvarRegistroEnvio(numero, templateName, wamid, parametros, json);
+
+        } else {
+            log.error("Erro ao enviar para {}: status={}, body={}", numero, response.statusCode(), response.body());
         }
     }
 

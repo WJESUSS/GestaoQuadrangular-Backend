@@ -45,13 +45,20 @@ public class CacheConfig {
                         .expireAfterWrite(2, TimeUnit.MINUTES)
                         .build());
 
+        CaffeineCache relatoriosDiscipuladoCache = new CaffeineCache("relatorios-discipulado-todos",
+                Caffeine.newBuilder()
+                        .maximumSize(1)
+                        .expireAfterWrite(2, TimeUnit.MINUTES)
+                        .build());
+
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
                 metricasCache,
                 rankingCache,
                 aniversariantesCache,
                 alertasCache,
-                secretariaCache
+                secretariaCache,
+                relatoriosDiscipuladoCache
         ));
 
         return manager;

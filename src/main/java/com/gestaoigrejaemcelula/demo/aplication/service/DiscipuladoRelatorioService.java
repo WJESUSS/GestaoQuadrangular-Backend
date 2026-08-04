@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -76,6 +77,7 @@ public class DiscipuladoRelatorioService {
     //  SALVAR (criar ou atualizar) relatório semanal
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
+    @CacheEvict(value = {"relatorios-discipulado-todos", "secretaria-discipulado"}, allEntries = true)
     public void salvarRelatorioSemanal(List<DiscipuladoRequestDTO> lista,
                                        LocalDate inicio,
                                        LocalDate fim) {
@@ -317,6 +319,7 @@ public class DiscipuladoRelatorioService {
     //  ATUALIZAR um único registro (PUT /{id})
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
+    @CacheEvict(value = {"relatorios-discipulado-todos", "secretaria-discipulado"}, allEntries = true)
     public RelatorioDiscipuladoDTO atualizarRelatorio(Long id, DiscipuladoRequestDTO dto) {
         DiscipuladoRelatorio relatorio = repository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
@@ -491,6 +494,7 @@ public class DiscipuladoRelatorioService {
     //  ATUALIZAR semana completa (PUT /relatorio-semanal/{id})
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
+    @CacheEvict(value = {"relatorios-discipulado-todos", "secretaria-discipulado"}, allEntries = true)
     public void atualizarRelatorioSemanal(Long id,
                                           List<DiscipuladoRequestDTO> lista,
                                           LocalDate inicio,
