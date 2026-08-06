@@ -73,7 +73,7 @@ public class LembreteWhatsAppScheduler {
         log.info("Lembrete relatório discipulado finalizado para {} líderes", lideres.size());
     }
 
-    @Scheduled(cron = "0 30 8 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 30 08 * * *", zone = "America/Sao_Paulo")
     public void lembrarAniversariantesDoDia() {
         List<AniversarianteDTO> aniversariantes = aniversarioService.listarAniversariantesDoDia();
 
@@ -85,11 +85,11 @@ public class LembreteWhatsAppScheduler {
         List<Usuario> pastores = usuarioRepository
                 .findByPerfilAndAtivoTrueAndTelefoneWhatsappIsNotNull(Perfil.PASTOR);
 
-        log.info("Lembrete aniversariantes: {} aniversariante(s), {} pastor(es) para notificar",
+        log.info("_Lembrete aniversariantes: {} aniversariante(s), {} pastor(es) para notificar",
                 aniversariantes.size(), pastores.size());
 
         String nomes = aniversariantes.stream()
-                .map(AniversarianteDTO::getNome)
+                .map(dto -> "*" + dto.getNome() + "*")
                 .collect(Collectors.joining(", "));
 
         for (Usuario pastor : pastores) {

@@ -1,5 +1,6 @@
 package com.gestaoigrejaemcelula.demo.web.controller;
 
+import com.gestaoigrejaemcelula.demo.aplication.service.LembreteWhatsAppScheduler;
 import com.gestaoigrejaemcelula.demo.aplication.service.WhatsAppService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -18,6 +19,9 @@ public class WhatsAppTestController {
 
     @Autowired
     private final WhatsAppService whatsAppService;
+
+    @Autowired
+    private final LembreteWhatsAppScheduler lembreteWhatsAppScheduler;
 
     public record EnviarRequest(
             @NotBlank String telefone,
@@ -61,6 +65,14 @@ public class WhatsAppTestController {
                 "template", tmpl,
                 "idioma", lang,
                 "parametros", (Object) params
+        ));
+    }
+
+    @PostMapping("/aniversariantes")
+    public ResponseEntity<Map<String, Object>> enviarAniversariantesParaPastores() {
+        lembreteWhatsAppScheduler.lembrarAniversariantesDoDia();
+        return ResponseEntity.ok(Map.of(
+                "mensagem", "Fluxo de aniversariantes disparado para os pastores"
         ));
     }
 }
