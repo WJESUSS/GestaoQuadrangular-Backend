@@ -38,7 +38,7 @@ public class LembreteWhatsAppScheduler {
                 whatsAppService.enviarTemplate(
                         lider.getTelefoneWhatsapp(),
                         "lembrete_relatorio_celula",
-                        "pt_BR",
+                        "en",
                         primeiroNome
                 );
             } catch (Exception e) {
@@ -62,7 +62,7 @@ public class LembreteWhatsAppScheduler {
                 whatsAppService.enviarTemplate(
                         lider.getTelefoneWhatsapp(),
                         "lembrete_relatorio_discipulado",
-                        "pt_BR",
+                        "en",
                         primeiroNome
                 );
             } catch (Exception e) {
@@ -73,7 +73,7 @@ public class LembreteWhatsAppScheduler {
         log.info("Lembrete relatório discipulado finalizado para {} líderes", lideres.size());
     }
 
-    @Scheduled(cron = "0 30 08 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 30 8 * * *", zone = "America/Sao_Paulo")
     public void lembrarAniversariantesDoDia() {
         List<AniversarianteDTO> aniversariantes = aniversarioService.listarAniversariantesDoDia();
 
@@ -85,11 +85,11 @@ public class LembreteWhatsAppScheduler {
         List<Usuario> pastores = usuarioRepository
                 .findByPerfilAndAtivoTrueAndTelefoneWhatsappIsNotNull(Perfil.PASTOR);
 
-        log.info("_Lembrete aniversariantes: {} aniversariante(s), {} pastor(es) para notificar",
+        log.info("Lembrete aniversariantes: {} aniversariante(s), {} pastor(es) para notificar",
                 aniversariantes.size(), pastores.size());
 
         String nomes = aniversariantes.stream()
-                .map(dto -> "*" + dto.getNome() + "*")
+                .map(AniversarianteDTO::getNome)
                 .collect(Collectors.joining(", "));
 
         for (Usuario pastor : pastores) {
@@ -97,7 +97,7 @@ public class LembreteWhatsAppScheduler {
                 whatsAppService.enviarTemplate(
                         pastor.getTelefoneWhatsapp(),
                         templateAniversariantes,
-                        "pt_BR",
+                        "en",
                         pastor.getNome().split(" ")[0],
                         String.valueOf(aniversariantes.size()),
                         nomes
