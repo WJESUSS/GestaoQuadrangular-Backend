@@ -73,7 +73,7 @@ public class LembreteWhatsAppScheduler {
         log.info("Lembrete relatório discipulado finalizado para {} líderes", lideres.size());
     }
 
-    @Scheduled(cron = "0 00 12 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 30 07 * * *", zone = "America/Sao_Paulo")
     public void lembrarAniversariantesDoDia() {
         List<AniversarianteDTO> aniversariantes = aniversarioService.listarAniversariantesDoDia();
 
