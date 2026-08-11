@@ -38,7 +38,7 @@ public class LembreteWhatsAppScheduler {
                 whatsAppService.enviarTemplate(
                         lider.getTelefoneWhatsapp(),
                         "lembrete_relatorio_celula",
-                        "en",
+                        "pt_BR",
                         primeiroNome
                 );
             } catch (Exception e) {
@@ -62,7 +62,7 @@ public class LembreteWhatsAppScheduler {
                 whatsAppService.enviarTemplate(
                         lider.getTelefoneWhatsapp(),
                         "lembrete_relatorio_discipulado",
-                        "en",
+                        "pt_BR",
                         primeiroNome
                 );
             } catch (Exception e) {
@@ -73,7 +73,7 @@ public class LembreteWhatsAppScheduler {
         log.info("Lembrete relatório discipulado finalizado para {} líderes", lideres.size());
     }
 
-    @Scheduled(cron = "0 30 8 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 00 12 * * *", zone = "America/Sao_Paulo")
     public void lembrarAniversariantesDoDia() {
         List<AniversarianteDTO> aniversariantes = aniversarioService.listarAniversariantesDoDia();
 
@@ -97,7 +97,7 @@ public class LembreteWhatsAppScheduler {
                 whatsAppService.enviarTemplate(
                         pastor.getTelefoneWhatsapp(),
                         templateAniversariantes,
-                        "en",
+                        "pt_BR",
                         pastor.getNome().split(" ")[0],
                         String.valueOf(aniversariantes.size()),
                         nomes

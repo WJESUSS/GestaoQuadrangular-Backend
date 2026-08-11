@@ -548,7 +548,7 @@ public class UsuarioService {
         whatsAppService.enviarTemplate(
                 usuario.getTelefoneWhatsapp(),
                 templateBoasVindas,
-                "en",
+                "pt_BR",
                 primeiroNome
         );
     }

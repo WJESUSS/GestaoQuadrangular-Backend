@@ -56,7 +56,7 @@ public class WhatsAppTestController {
     @PostMapping("/enviar")
     public ResponseEntity<Map<String, Object>> enviarTeste(@Valid @RequestBody EnviarRequest req) {
         String tmpl = req.template() != null ? req.template() : "lembrete_relatorio_celula";
-        String lang = req.idioma() != null ? req.idioma() : "en";
+        String lang = req.idioma() != null ? req.idioma() : "pt_BR";
         String[] params = req.parametros() != null ? req.parametros() : new String[]{"Teste"};
 
         whatsAppService.enviarTemplate(req.telefone(), tmpl, lang, params);

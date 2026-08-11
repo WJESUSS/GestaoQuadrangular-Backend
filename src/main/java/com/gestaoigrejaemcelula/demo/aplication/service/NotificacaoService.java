@@ -76,7 +76,7 @@ public class NotificacaoService {
         whatsAppService.enviarTemplate(
                 usuario.getTelefoneWhatsapp(),
                 template,
-                "en",
+                "pt_BR",
                 usuario.getNome().split(" ")[0],
                 titulo
         );
@@ -89,7 +89,7 @@ public class NotificacaoService {
         whatsAppService.enviarTemplate(
                 usuario.getTelefoneWhatsapp(),
                 templateParabens,
-                "en",
+                "pt_BR",
                 usuario.getNome().split(" ")[0]
         );
     }
