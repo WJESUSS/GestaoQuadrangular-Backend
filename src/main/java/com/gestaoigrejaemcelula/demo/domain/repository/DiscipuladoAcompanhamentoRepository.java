@@ -23,15 +23,14 @@ public interface DiscipuladoAcompanhamentoRepository
 
     /**
      * Versão para o Painel do Pastor:
-     * Busca membros com 2 ou mais faltas no mês que NÃO possuem registro de acompanhamento.
+     * Busca membros com 2 ou mais faltas (por culto, domingo = 1) no mês que NÃO possuem registro de acompanhamento.
      */
     @Query(value = """
     SELECT COALESCE(COUNT(*), 0) FROM (
         SELECT dr.membro_id
         FROM discipulado_relatorio dr
         JOIN membros m ON m.id = dr.membro_id
-        WHERE (dr.domingo_manha = false OR dr.domingo_noite = false) 
-          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
+        WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
           AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano
           AND m.id NOT IN (
               SELECT da.membro_id 
@@ -39,7 +38,11 @@ public interface DiscipuladoAcompanhamentoRepository
               WHERE da.mes_referencia = :mesRef
           )
         GROUP BY dr.membro_id
-        HAVING COUNT(dr.id) >= 2
+        HAVING SUM(
+            CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
+          + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
+          + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+        ) >= 2
     ) AS alertas
     """, nativeQuery = true)
     Long contarPendentesPastor(
@@ -50,16 +53,14 @@ public interface DiscipuladoAcompanhamentoRepository
 
     /**
      * Versão Real/Rigorosa:
-     * Busca membros com 3 ou mais faltas totais (dia inteiro) no mês.
+     * Busca membros com 3 ou mais faltas (por culto, domingo = 1) no mês.
      */
     @Query(value = """
     SELECT COALESCE(COUNT(*), 0) FROM (
         SELECT dr.membro_id
         FROM discipulado_relatorio dr
         JOIN membros m ON m.id = dr.membro_id
-        WHERE dr.domingo_manha = false 
-          AND dr.domingo_noite = false
-          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
+        WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
           AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano
           AND m.id NOT IN (
               SELECT da.membro_id 
@@ -67,7 +68,11 @@ public interface DiscipuladoAcompanhamentoRepository
               WHERE da.mes_referencia = :mesRef
           )
         GROUP BY dr.membro_id
-        HAVING COUNT(dr.id) >= 3
+        HAVING SUM(
+            CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
+          + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
+          + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+        ) >= 3
     ) AS alertas
     """, nativeQuery = true)
     Long contarPendentesReal(

@@ -294,11 +294,9 @@ public class DiscipuladoRelatorioService {
                 .stream()
                 .map(r -> {
                     int faltas = 0;
-                    if (!safe(r.isEscolaBiblica())) faltas++;
                     if (!safe(r.isQuartaNoite()))   faltas++;
                     if (!safe(r.isQuintaNoite()))   faltas++;
-                    if (!safe(r.isDomingoManha()))  faltas++;
-                    if (!safe(r.isDomingoNoite()))  faltas++;
+                    if (!safe(r.isDomingoManha()) || !safe(r.isDomingoNoite())) faltas++;
                     return new Object[]{r, faltas};
                 })
                 .filter(obj -> (int) obj[1] >= 2)

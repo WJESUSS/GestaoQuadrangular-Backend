@@ -53,3 +53,5 @@ ALTER TABLE missao70 ADD COLUMN motivo_cancelamento VARCHAR(50);
 ALTER TABLE missao70 ADD COLUMN observacao_cancelamento VARCHAR(500);
 
 
+
+

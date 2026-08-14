@@ -142,26 +142,31 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
     // ── Alertas nativos ──────────────────────────────────────────────────────
 
     @Query(value = """
-        SELECT
-            m.id,
-            m.nome,
-            m.telefone,
-            c.nome          AS nome_celula,
-            COUNT(dr.id)    AS total_faltas
-        FROM discipulado_relatorio dr
-        JOIN membros m  ON m.id = dr.membro_id
-        JOIN celulas c  ON c.id = m.celula_id
-        WHERE dr.domingo_manha = false
-          AND dr.domingo_noite = false
-          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-          AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
-          AND m.id NOT IN (
-              SELECT da.membro_id
-              FROM discipulado_acompanhamento da
-              WHERE da.mes_referencia = :mesRef
-          )
-        GROUP BY m.id, m.nome, m.telefone, c.nome
-        HAVING COUNT(dr.id) >= 3
+        SELECT *
+        FROM (
+            SELECT
+                m.id,
+                m.nome,
+                m.telefone,
+                c.nome          AS nome_celula,
+                SUM(
+                    CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
+                  + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
+                  + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+                )               AS total_faltas
+            FROM discipulado_relatorio dr
+            JOIN membros m  ON m.id = dr.membro_id
+            JOIN celulas c  ON c.id = m.celula_id
+            WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
+              AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
+              AND m.id NOT IN (
+                  SELECT da.membro_id
+                  FROM discipulado_acompanhamento da
+                  WHERE da.mes_referencia = :mesRef
+              )
+            GROUP BY m.id, m.nome, m.telefone, c.nome
+        ) alertas
+        WHERE total_faltas >= 3
     """, nativeQuery = true)
     List<Object[]> buscarAlertasPastor(
             @Param("mes")    int mes,
@@ -182,26 +187,31 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("fim")    LocalDate fim,
             Pageable pageable);
     @Query(value = """
-        SELECT
-            m.id,
-            m.nome,
-            m.telefone,
-            COALESCE(c.nome, 'Sem Célula') AS nome_celula,
-            COUNT(dr.id)                   AS total_faltas
-        FROM discipulado_relatorio dr
-        JOIN membros m      ON m.id = dr.membro_id
-        LEFT JOIN celulas c ON m.celula_id = c.id
-        WHERE dr.domingo_manha = false
-          AND dr.domingo_noite = false
-          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-          AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
-          AND m.id NOT IN (
-              SELECT da.membro_id
-              FROM discipulado_acompanhamento da
-              WHERE da.mes_referencia = :mesRef
-          )
-        GROUP BY m.id, m.nome, m.telefone, c.nome
-        HAVING COUNT(dr.id) >= 2
+        SELECT *
+        FROM (
+            SELECT
+                m.id,
+                m.nome,
+                m.telefone,
+                COALESCE(c.nome, 'Sem Célula') AS nome_celula,
+                SUM(
+                    CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
+                  + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
+                  + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+                )                             AS total_faltas
+            FROM discipulado_relatorio dr
+            JOIN membros m      ON m.id = dr.membro_id
+            LEFT JOIN celulas c ON m.celula_id = c.id
+            WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
+              AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
+              AND m.id NOT IN (
+                  SELECT da.membro_id
+                  FROM discipulado_acompanhamento da
+                  WHERE da.mes_referencia = :mesRef
+              )
+            GROUP BY m.id, m.nome, m.telefone, c.nome
+        ) alertas
+        WHERE total_faltas >= 2
     """, nativeQuery = true)
     List<Object[]> buscarAlertasDetalhados(
             @Param("mes")    int mes,
