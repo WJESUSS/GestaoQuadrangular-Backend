@@ -106,6 +106,11 @@ public class MembroService {
         addDiff(diff, "batizadoNasAguas",      m.getBatizadoNasAguas(),      dto.getBatizadoNasAguas());
         addDiff(diff, "batizadoEspiritoSanto", m.getBatizadoEspiritoSanto(), dto.getBatizadoEspiritoSanto());
 
+        // Arrolamento
+        addDiff(diff, "tipoArrolamento",         m.getTipoArrolamento(),         dto.getTipoArrolamento());
+        addDiff(diff, "jurisdicaoArrolamento",   m.getJurisdicaoArrolamento(),   dto.getJurisdicaoArrolamento());
+        addDiff(diff, "arroladoPor",             m.getArroladoPor(),             dto.getArroladoPor());
+
         // Datas
         addDiff(diff, "dataNascimento",        m.getDataNascimento(),        dto.getDataNascimento());
         addDiff(diff, "dataConversao",         m.getDataConversao(),         dto.getDataConversao());
