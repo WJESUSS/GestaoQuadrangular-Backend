@@ -6,10 +6,13 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.Set;
-
+@Getter
+@Setter
 public class MembroRequestDTO {
 
     // -------------------------------------------------------
@@ -100,105 +103,5 @@ public class MembroRequestDTO {
     // GETTERS E SETTERS
     // -------------------------------------------------------
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
 
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getCpf() { return cpf; }
-    public void setCpf(String cpf) { this.cpf = cpf; }
-
-    public String getRg() { return rg; }
-    public void setRg(String rg) { this.rg = rg; }
-
-    public EstadoCivil getEstadoCivil() { return estadoCivil; }
-    public void setEstadoCivil(EstadoCivil estadoCivil) { this.estadoCivil = estadoCivil; }
-
-    public StatusMembro getStatus() { return status; }
-    public void setStatus(StatusMembro status) { this.status = status; }
-
-    public LocalDate getDataNascimento() { return dataNascimento; }
-    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
-
-    public LocalDate getDataConversao() { return dataConversao; }
-    public void setDataConversao(LocalDate dataConversao) { this.dataConversao = dataConversao; }
-
-    public LocalDate getDataBatismo() { return dataBatismo; }
-    public void setDataBatismo(LocalDate dataBatismo) { this.dataBatismo = dataBatismo; }
-
-    public String getNomeMae() { return nomeMae; }
-    public void setNomeMae(String nomeMae) { this.nomeMae = nomeMae; }
-
-    public String getNomePai() { return nomePai; }
-    public void setNomePai(String nomePai) { this.nomePai = nomePai; }
-
-    public String getNomeConjuge() { return nomeConjuge; }
-    public void setNomeConjuge(String nomeConjuge) { this.nomeConjuge = nomeConjuge; }
-
-    public String getNaturalidade() { return naturalidade; }
-    public void setNaturalidade(String naturalidade) { this.naturalidade = naturalidade; }
-
-    public String getGrauEscolaridade() { return grauEscolaridade; }
-    public void setGrauEscolaridade(String grauEscolaridade) { this.grauEscolaridade = grauEscolaridade; }
-
-    public String getCurso() { return curso; }
-    public void setCurso(String curso) { this.curso = curso; }
-
-    public String getProfissao() { return profissao; }
-    public void setProfissao(String profissao) { this.profissao = profissao; }
-
-    public String getEndereco() { return endereco; }
-    public void setEndereco(String endereco) { this.endereco = endereco; }
-
-    public String getNumero() { return numero; }
-    public void setNumero(String numero) { this.numero = numero; }
-
-    public String getBairro() { return bairro; }
-    public void setBairro(String bairro) { this.bairro = bairro; }
-
-    public String getCidade() { return cidade; }
-    public void setCidade(String cidade) { this.cidade = cidade; }
-
-    public String getCep() { return cep; }
-    public void setCep(String cep) { this.cep = cep; }
-
-    public String getUf() { return uf; }
-    public void setUf(String uf) { this.uf = uf; }
-
-    public Boolean getPertenceOutraReligiao() { return pertenceOutraReligiao; }
-    public void setPertenceOutraReligiao(Boolean pertenceOutraReligiao) { this.pertenceOutraReligiao = pertenceOutraReligiao; }
-
-    public String getQualReligiao() { return qualReligiao; }
-    public void setQualReligiao(String qualReligiao) { this.qualReligiao = qualReligiao; }
-
-    public Boolean getBatizadoNasAguas() { return batizadoNasAguas; }
-    public void setBatizadoNasAguas(Boolean batizadoNasAguas) { this.batizadoNasAguas = batizadoNasAguas; }
-
-    public LocalDate getDataBatizadoNasAguas() { return dataBatizadoNasAguas; }
-    public void setDataBatizadoNasAguas(LocalDate dataBatizadoNasAguas) { this.dataBatizadoNasAguas = dataBatizadoNasAguas; }
-
-    public String getIgrejaBatizadoNasAguas() { return igrejaBatizadoNasAguas; }
-    public void setIgrejaBatizadoNasAguas(String igrejaBatizadoNasAguas) { this.igrejaBatizadoNasAguas = igrejaBatizadoNasAguas; }
-
-    public Boolean getBatizadoEspiritoSanto() { return batizadoEspiritoSanto; }
-    public void setBatizadoEspiritoSanto(Boolean batizadoEspiritoSanto) { this.batizadoEspiritoSanto = batizadoEspiritoSanto; }
-
-    public TipoArrolamento getTipoArrolamento() { return tipoArrolamento; }
-    public void setTipoArrolamento(TipoArrolamento tipoArrolamento) { this.tipoArrolamento = tipoArrolamento; }
-
-    public String getJurisdicaoArrolamento() { return jurisdicaoArrolamento; }
-    public void setJurisdicaoArrolamento(String jurisdicaoArrolamento) { this.jurisdicaoArrolamento = jurisdicaoArrolamento; }
-
-    public String getArroladoPor() { return arroladoPor; }
-    public void setArroladoPor(String arroladoPor) { this.arroladoPor = arroladoPor; }
-
-    public Set<CargoMembro> getCargos() { return cargos; }
-    public void setCargos(Set<CargoMembro> cargos) { this.cargos = cargos; }
-
-    public String getObservacoes() { return observacoes; }
-    public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
 }

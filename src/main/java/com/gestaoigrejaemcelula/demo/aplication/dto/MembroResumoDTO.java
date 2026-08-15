@@ -1,9 +1,12 @@
 package com.gestaoigrejaemcelula.demo.aplication.dto;
 
 import com.gestaoigrejaemcelula.demo.domain.enums.CargoMembro;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
-
+@Getter
+@Setter
 public class MembroResumoDTO {
 
     private Long id;
@@ -22,15 +25,5 @@ public class MembroResumoDTO {
         this.nome = nome;
     }
 
-    // Getters e Setters...
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public Set<CargoMembro> getCargos() { return cargos; }
-    public void setCargos(Set<CargoMembro> cargos) { this.cargos = cargos; }
+
 }
