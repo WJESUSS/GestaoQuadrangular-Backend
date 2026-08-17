@@ -8,6 +8,7 @@ import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,6 +52,11 @@ public class Membro {
 
     @Enumerated(EnumType.STRING)
     private StatusMembro status = StatusMembro.ATIVO;
+
+    @Column(columnDefinition = "TEXT")
+    private String observacaoStatus;
+
+    private LocalDateTime dataAtualizacaoStatus;
 
     @ManyToOne
     @JoinColumn(name = "celula_id")
@@ -178,6 +184,12 @@ public class Membro {
 
     public StatusMembro getStatus() { return status; }
     public void setStatus(StatusMembro status) { this.status = status; }
+
+    public String getObservacaoStatus() { return observacaoStatus; }
+    public void setObservacaoStatus(String observacaoStatus) { this.observacaoStatus = observacaoStatus; }
+
+    public LocalDateTime getDataAtualizacaoStatus() { return dataAtualizacaoStatus; }
+    public void setDataAtualizacaoStatus(LocalDateTime dataAtualizacaoStatus) { this.dataAtualizacaoStatus = dataAtualizacaoStatus; }
 
     public Celula getCelula() { return celula; }
     public void setCelula(Celula celula) { this.celula = celula; }

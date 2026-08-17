@@ -7,6 +7,7 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusMembro;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 public record MembroResponseDTO(
@@ -22,6 +23,8 @@ public record MembroResponseDTO(
         String rg,
         EstadoCivil estadoCivil,
         StatusMembro status,
+        String observacaoStatus,
+        LocalDateTime dataAtualizacaoStatus,
         LocalDate dataNascimento,
         LocalDate dataConversao,
         LocalDate dataBatismo,
@@ -98,6 +101,8 @@ public record MembroResponseDTO(
                 m.getRg(),
                 m.getEstadoCivil(),
                 m.getStatus(),
+                m.getObservacaoStatus(),
+                m.getDataAtualizacaoStatus(),
                 m.getDataNascimento(),
                 m.getDataConversao(),
                 m.getDataBatismo(),

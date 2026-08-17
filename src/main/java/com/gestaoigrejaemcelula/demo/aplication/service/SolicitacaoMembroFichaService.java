@@ -208,7 +208,7 @@ public class SolicitacaoMembroFichaService {
         membro.setTipoArrolamento(ficha.getTipoArrolamento());
         membro.setJurisdicaoArrolamento(ficha.getJurisdicaoArrolamento());
         membro.setArroladoPor(ficha.getArroladoPor());
-        membro.setCargos(ficha.getCargos() != null ? ficha.getCargos() : new HashSet<>());
+        membro.setCargos(ficha.getCargos() != null ? new HashSet<>(ficha.getCargos()) : new HashSet<>());
         membro.setObservacoes(ficha.getObservacoes());
 
         // Vincula à célula do líder que enviou a ficha
@@ -276,7 +276,7 @@ public class SolicitacaoMembroFichaService {
         ficha.setTipoArrolamento(dto.getTipoArrolamento());
         ficha.setJurisdicaoArrolamento(dto.getJurisdicaoArrolamento());
         ficha.setArroladoPor(dto.getArroladoPor());
-        ficha.setCargos(dto.getCargos() != null ? dto.getCargos() : new HashSet<>());
+        ficha.setCargos(dto.getCargos() != null ? new HashSet<>(dto.getCargos()) : new HashSet<>());
         ficha.setObservacoes(dto.getObservacoes());
     }
 

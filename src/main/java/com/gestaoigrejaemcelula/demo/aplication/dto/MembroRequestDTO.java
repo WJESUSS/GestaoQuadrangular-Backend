@@ -34,6 +34,8 @@ public class MembroRequestDTO {
     private EstadoCivil estadoCivil;
     private StatusMembro status;
 
+    private String observacaoStatus;
+
     private LocalDate dataNascimento;
     private LocalDate dataConversao;
     private LocalDate dataBatismo;

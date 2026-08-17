@@ -85,6 +85,7 @@ public class MembroService {
         addDiff(diff, "telefone",              m.getTelefone(),              dto.getTelefone());
         addDiff(diff, "email",                 m.getEmail(),                 dto.getEmail());
         addDiff(diff, "status",                m.getStatus(),                dto.getStatus());
+        addDiff(diff, "observacaoStatus",      m.getObservacaoStatus(),      dto.getObservacaoStatus());
         addDiff(diff, "estadoCivil",           m.getEstadoCivil(),           dto.getEstadoCivil());
 
         // Filiação
@@ -217,7 +218,7 @@ public class MembroService {
         membro.setArroladoPor(dto.getArroladoPor());
 
         // Cargos
-        membro.setCargos(dto.getCargos() != null ? dto.getCargos() : new HashSet<>());
+        membro.setCargos(dto.getCargos() != null ? new HashSet<>(dto.getCargos()) : new HashSet<>());
 
         // Observações
         membro.setObservacoes(dto.getObservacoes());
@@ -241,8 +242,15 @@ public class MembroService {
         StatusMembro statusAnterior = membro.getStatus();
         membro.setStatus(novoStatus);
 
+        if (novoStatus == StatusMembro.ATIVO) {
+            membro.setObservacaoStatus(null);
+        } else if (observacao != null && !observacao.isBlank()) {
+            membro.setObservacaoStatus(observacao);
+        }
+
         if (novoStatus.deveRemoverVinculos()) removerVinculos(membro);
 
+        membro.setDataAtualizacaoStatus(LocalDateTime.now());
         repository.save(membro);
         registrarHistorico(membro, statusAnterior, novoStatus, observacao);
 
