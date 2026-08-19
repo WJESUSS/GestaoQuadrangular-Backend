@@ -31,20 +31,23 @@ public class Missao70Service {
     private final CelulaRepository celulaRepository;
     private final MembroRepository membroRepository;
     private final VisitanteRepository visitanteRepository;
-    private final MetaService metaService; // ← injeção para recalcular metas
+    private final MetaService metaService;
+    private final RankingCelulaService rankingCelulaService;
 
     public Missao70Service(Missao70Repository missao70Repository,
                            EncontroMissao70Repository encontroRepository,
                            CelulaRepository celulaRepository,
                            MembroRepository membroRepository,
                            VisitanteRepository visitanteRepository,
-                           MetaService metaService) {
+                           MetaService metaService,
+                           RankingCelulaService rankingCelulaService) {
         this.missao70Repository = missao70Repository;
         this.encontroRepository = encontroRepository;
         this.celulaRepository   = celulaRepository;
         this.membroRepository   = membroRepository;
         this.visitanteRepository = visitanteRepository;
         this.metaService        = metaService;
+        this.rankingCelulaService = rankingCelulaService;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -168,7 +171,9 @@ public class Missao70Service {
             }
         }
 
-        return missao70Repository.save(missao);
+        missao70Repository.save(missao);
+        rankingCelulaService.limparCache();
+        return missao;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -225,6 +230,8 @@ public class Missao70Service {
         if (houveDecisao && missao.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(missao.getCelula().getId());
         }
+
+        rankingCelulaService.limparCache();
 
         return Map.of(
                 "semanaRegistrada", semanaAtual,
@@ -353,6 +360,8 @@ public class Missao70Service {
         if (missao.getCelula() != null) {
             metaService.recalcularTodasMetasCelula(missao.getCelula().getId());
         }
+
+        rankingCelulaService.limparCache();
     }
 
     // ─────────────────────────────────────────────────────────────

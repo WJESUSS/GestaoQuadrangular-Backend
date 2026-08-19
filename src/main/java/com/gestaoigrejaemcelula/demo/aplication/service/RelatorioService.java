@@ -78,6 +78,7 @@ public class RelatorioService {
         relatorioRepository.save(relatorio);
         salvarMembrosAusentes(dto, relatorio);
 
+        rankingCelulaService.limparCache();
         relatorioMensalService.verificarEEnviarParabens(celula.getId());
     }
 
@@ -315,6 +316,7 @@ public class RelatorioService {
         presencaRepository.deleteAll(presencaRepository.findByRelatorioId(relatorio.getId()));
         salvarMembrosAusentes(dto, relatorio);
 
+        rankingCelulaService.limparCache();
         relatorioMensalService.verificarEEnviarParabens(celula.getId());
     }
 
@@ -354,6 +356,8 @@ public class RelatorioService {
         relatorio.setMotivoNaoRealizacao(request.getMotivoNaoRealizacao());
 
         Relatorio salvo = relatorioRepository.save(relatorio);
+
+        rankingCelulaService.limparCache();
 
         RelatorioNaoRealizadaResponse response = new RelatorioNaoRealizadaResponse();
         response.setId(salvo.getId());
