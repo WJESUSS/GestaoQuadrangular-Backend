@@ -115,6 +115,13 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
     FROM celulas c
     LEFT JOIN usuarios u ON u.id = c.lider_id
     WHERE c.ativo = TRUE
+      AND EXISTS (
+          SELECT 1
+          FROM relatorio r
+          WHERE r.celula_id = c.id
+            AND r.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+            AND r.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+      )
     ORDER BY c.nome
 """, nativeQuery = true)
     List<RankingCelulaProjection> buscarDadosRankingNativo(@Param("mes") String mesAno);
