@@ -62,9 +62,9 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
             ) mc
         ), 0)                                           AS presencaMedia,
 
-        -- Total de visitantes únicos no mês (sem dupla contagem)
+        -- Total de presenças de visitantes no mês (soma todas as visitas)
         COALESCE((
-            SELECT COUNT(DISTINCT rvp.visitante_id)
+            SELECT COUNT(rvp.visitante_id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r3 ON r3.id = rvp.relatorio_id
             WHERE r3.celula_id = c.id
@@ -76,9 +76,9 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
         0                                               AS batismos,
         FALSE                                           AS multiplicou,
 
-        -- Decisões espirituais: conta visitante uma vez por mês (DISTINCT por visitante)
+        -- Decisões espirituais: soma todas as presenças
         COALESCE((
-            SELECT COUNT(DISTINCT v.id)
+            SELECT COUNT(v.id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r4 ON r4.id = rvp.relatorio_id
             INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
@@ -89,7 +89,7 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
         ), 0)                                           AS aceitouJesus,
 
         COALESCE((
-            SELECT COUNT(DISTINCT v.id)
+            SELECT COUNT(v.id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r5 ON r5.id = rvp.relatorio_id
             INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
@@ -100,7 +100,7 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
         ), 0)                                           AS desejaBatismo,
 
         COALESCE((
-            SELECT COUNT(DISTINCT v.id)
+            SELECT COUNT(v.id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r6 ON r6.id = rvp.relatorio_id
             INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
