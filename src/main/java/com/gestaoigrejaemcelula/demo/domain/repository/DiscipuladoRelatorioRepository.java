@@ -88,7 +88,7 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
         JOIN FETCH r.membro
         JOIN FETCH r.celula
         LEFT JOIN FETCH r.lider
-        WHERE r.celula.id    = :celulaId
+        WHERE r.celula.id = :celulaId
           AND r.semanaInicio = :inicio
           AND r.semanaFim    = :fim
     """)
@@ -96,6 +96,23 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("celulaId") Long celulaId,
             @Param("inicio")   LocalDate inicio,
             @Param("fim")      LocalDate fim);
+
+    /**
+     * Busca registros de múltiplas semanas em uma única query (evita N+1).
+     * Usado pelo listarHistorico() para buscar todos os registros da página de uma vez.
+     */
+    @Query("""
+        SELECT r FROM DiscipuladoRelatorio r
+        JOIN FETCH r.membro
+        JOIN FETCH r.celula
+        LEFT JOIN FETCH r.lider
+        WHERE r.celula.id = :celulaId
+          AND r.semanaInicio IN :semanasInicio
+        ORDER BY r.semanaInicio DESC
+    """)
+    List<DiscipuladoRelatorio> findRegistrosPorSemanasInicio(
+            @Param("celulaId") Long celulaId,
+            @Param("semanasInicio") List<LocalDate> semanasInicio);
 
     // ── Queries por semana/célula ────────────────────────────────────────────
 
@@ -174,18 +191,33 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("mesRef") String mesRef);
 // DiscipuladoRelatorioRepository
 
+    /**
+     * Query paginada SEM JOIN FETCH — retorna apenas os registros leves.
+     * A paginação é feita de verdade no banco (sem warning HHH90003004).
+     */
     @Query("""
-    SELECT r FROM DiscipuladoRelatorio r
-    JOIN FETCH r.membro
-    LEFT JOIN FETCH r.celula
-    LEFT JOIN FETCH r.lider
-    WHERE r.semanaInicio BETWEEN :inicio AND :fim
-    ORDER BY r.semanaInicio DESC
-""")
+        SELECT r FROM DiscipuladoRelatorio r
+        WHERE r.semanaInicio BETWEEN :inicio AND :fim
+        ORDER BY r.semanaInicio DESC
+    """)
     Page<DiscipuladoRelatorio> findBySemanaInicioBetween(
             @Param("inicio") LocalDate inicio,
             @Param("fim")    LocalDate fim,
             Pageable pageable);
+
+    /**
+     * Busca registros com relationships carregados para uma lista de IDs específicos.
+     * Usado em conjunto com findBySemanaInicioBetween para buscar os JOINs em batch.
+     */
+    @Query("""
+        SELECT r FROM DiscipuladoRelatorio r
+        JOIN FETCH r.membro
+        LEFT JOIN FETCH r.celula
+        LEFT JOIN FETCH r.lider
+        WHERE r.id IN :ids
+    """)
+    List<DiscipuladoRelatorio> findWithRelationshipsByIds(
+            @Param("ids") List<Long> ids);
     @Query(value = """
         SELECT *
         FROM (

@@ -36,19 +36,19 @@ public class CacheConfig {
 
         CaffeineCache alertasCache = new CaffeineCache("alertas-discipulado",
                 Caffeine.newBuilder()
-                        .maximumSize(20)                          // 50 → 20
-                        .expireAfterWrite(3, TimeUnit.MINUTES)    // 5m → 3m
+                        .maximumSize(50)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
                         .build());
         CaffeineCache secretariaCache = new CaffeineCache("secretaria-discipulado",
                 Caffeine.newBuilder()
-                        .maximumSize(1)
-                        .expireAfterWrite(2, TimeUnit.MINUTES)
+                        .maximumSize(5)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
                         .build());
 
         CaffeineCache relatoriosDiscipuladoCache = new CaffeineCache("relatorios-discipulado-todos",
                 Caffeine.newBuilder()
-                        .maximumSize(1)
-                        .expireAfterWrite(2, TimeUnit.MINUTES)
+                        .maximumSize(5)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
                         .build());
 
         SimpleCacheManager manager = new SimpleCacheManager();

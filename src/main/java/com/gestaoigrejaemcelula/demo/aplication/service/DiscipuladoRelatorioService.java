@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,7 +78,11 @@ public class DiscipuladoRelatorioService {
     //  SALVAR (criar ou atualizar) relatório semanal
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
-    @CacheEvict(value = {"relatorios-discipulado-todos", "secretaria-discipulado"}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "relatorios-discipulado-todos", key = "'todos'"),
+            @CacheEvict(value = "secretaria-discipulado", key = "'todos'"),
+            @CacheEvict(value = "alertas-discipulado", allEntries = true)
+    })
     public void salvarRelatorioSemanal(List<DiscipuladoRequestDTO> lista,
                                        LocalDate inicio,
                                        LocalDate fim) {
@@ -221,10 +226,30 @@ public class DiscipuladoRelatorioService {
         if (inicio == null) inicio = LocalDate.now().minusMonths(6);
         if (fim    == null) fim    = LocalDate.now();
 
+        // Query 1: Paginação real no banco (sem JOIN FETCH)
         Page<DiscipuladoRelatorio> page =
                 repository.findBySemanaInicioBetween(inicio, fim, pageable);
 
-        List<RelatorioDiscipuladoDTO> dtos = page.getContent()
+        if (page.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        // Query 2: Busca os relationships em batch para apenas os IDs da página
+        List<Long> ids = page.getContent().stream()
+                .map(DiscipuladoRelatorio::getId)
+                .toList();
+        List<DiscipuladoRelatorio> completos =
+                repository.findWithRelationshipsByIds(ids);
+
+        // Mantém a ordem da paginação
+        Map<Long, DiscipuladoRelatorio> porId = completos.stream()
+                .collect(Collectors.toMap(DiscipuladoRelatorio::getId, r -> r));
+
+        List<DiscipuladoRelatorio> ordenados = page.getContent().stream()
+                .map(r -> porId.getOrDefault(r.getId(), r))
+                .toList();
+
+        List<RelatorioDiscipuladoDTO> dtos = ordenados
                 .stream()
                 .collect(Collectors.groupingBy(
                         // ← null-safe: lider pode ser null
@@ -317,7 +342,11 @@ public class DiscipuladoRelatorioService {
     //  ATUALIZAR um único registro (PUT /{id})
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
-    @CacheEvict(value = {"relatorios-discipulado-todos", "secretaria-discipulado"}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "relatorios-discipulado-todos", key = "'todos'"),
+            @CacheEvict(value = "secretaria-discipulado", key = "'todos'"),
+            @CacheEvict(value = "alertas-discipulado", allEntries = true)
+    })
     public RelatorioDiscipuladoDTO atualizarRelatorio(Long id, DiscipuladoRequestDTO dto) {
         DiscipuladoRelatorio relatorio = repository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
@@ -399,7 +428,19 @@ public class DiscipuladoRelatorioService {
         final int TOTAL_COLUNAS = 5;
         final Long celulaId = celula.getId();
 
-        // 2) Para cada semana da página, busca os registros e monta o DTO
+        // 2) Busca TODOS os registros das semanas da página em UMA única query (evita N+1)
+        List<LocalDate> semanasInicio = semanasPaginadas.getContent().stream()
+                .map(row -> (LocalDate) row[0])
+                .toList();
+
+        List<DiscipuladoRelatorio> todosRegistros =
+                repository.findRegistrosPorSemanasInicio(celulaId, semanasInicio);
+
+        // Agrupa por semanaInicio em memória (operacao barata)
+        Map<LocalDate, List<DiscipuladoRelatorio>> porSemana = todosRegistros.stream()
+                .collect(Collectors.groupingBy(DiscipuladoRelatorio::getSemanaInicio));
+
+        // 3) Monta o DTO para cada semana da página
         List<DiscipuladoHistoricoItemDTO> itens = semanasPaginadas.getContent()
                 .stream()
                 .map(row -> {
@@ -407,9 +448,20 @@ public class DiscipuladoRelatorioService {
                     LocalDate fim    = (LocalDate) row[1];
 
                     List<DiscipuladoRelatorio> registros =
-                            repository.findRegistrosDaSemana(celulaId, inicio, fim);
+                            porSemana.getOrDefault(inicio, List.of());
 
-                    // Pega o primeiro para usar como referência de ID
+                    if (registros.isEmpty()) {
+                        return DiscipuladoHistoricoItemDTO.builder()
+                                .id(0L)
+                                .inicio(inicio)
+                                .fim(fim)
+                                .totalMembros(0)
+                                .totalPresencas(0)
+                                .totalPossivel(0)
+                                .frequencia(0)
+                                .build();
+                    }
+
                     DiscipuladoRelatorio primeiro = registros.get(0);
 
                     int totalPresencas = registros.stream()
@@ -492,7 +544,11 @@ public class DiscipuladoRelatorioService {
     //  ATUALIZAR semana completa (PUT /relatorio-semanal/{id})
     // ════════════════════════════════════════════════════════════════════════
     @Transactional
-    @CacheEvict(value = {"relatorios-discipulado-todos", "secretaria-discipulado"}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "relatorios-discipulado-todos", key = "'todos'"),
+            @CacheEvict(value = "secretaria-discipulado", key = "'todos'"),
+            @CacheEvict(value = "alertas-discipulado", allEntries = true)
+    })
     public void atualizarRelatorioSemanal(Long id,
                                           List<DiscipuladoRequestDTO> lista,
                                           LocalDate inicio,
