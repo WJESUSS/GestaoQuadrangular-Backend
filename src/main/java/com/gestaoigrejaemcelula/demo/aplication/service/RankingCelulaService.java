@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class RankingCelulaService {
     private static final Logger log = LoggerFactory.getLogger(RankingCelulaService.class);
 
     private final CelulaRepository celulaRepository;
+    private final PontuacaoDiscipuladoService pontuacaoDiscipuladoService;
     private static final DateTimeFormatter MES_ANO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
     @Cacheable(value = "ranking-celulas", key = "#mesAno")
@@ -45,8 +47,19 @@ public class RankingCelulaService {
             return List.of();
         }
 
+        Map<Long, Integer> unidadesDiscipuladoPorCelula =
+                pontuacaoDiscipuladoService.unidadesDiscipuladoPorCelulaNoMes(mesAno);
+
+        Map<Long, Integer> pontosCultosPorCelula = pontuacaoDiscipuladoService.pontosCultosPorCelulaNoMes(mesAno);
+
         List<RankingCelulaDTO> listaRanking = dadosBrutos.stream()
                 .map(RankingCelulaDTO::new)
+                .peek(dto -> {
+                    int unidades = unidadesDiscipuladoPorCelula.getOrDefault(dto.getCelulaId(), 0);
+                    dto.setQuantidadeDiscipulados(unidades);
+                    dto.setPontosDiscipulado(pontuacaoDiscipuladoService.calcularPontos(unidades));
+                })
+                .peek(dto -> dto.setPontosCultos(pontosCultosPorCelula.getOrDefault(dto.getCelulaId(), 0)))
                 .peek(this::calcularPontuacaoManual)
                 .toList();
 
@@ -71,6 +84,8 @@ public class RankingCelulaService {
         pontos += (dto.getDesejaBatismo()  != null ? dto.getDesejaBatismo()  : 0) * 10;
         pontos += (dto.getReconciliou()    != null ? dto.getReconciliou()    : 0) * 8;
         pontos += Boolean.TRUE.equals(dto.getMultiplicou()) ? 20 : 0;
+        pontos += dto.getPontosDiscipulado() != null ? dto.getPontosDiscipulado() : 0;
+        pontos += dto.getPontosCultos() != null ? dto.getPontosCultos() : 0;
 
         // Log temporário para debug
         log.debug("=== {} ===", dto.getNomeCelula());

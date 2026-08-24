@@ -21,6 +21,9 @@ public class RankingCelulaDTO {
     private Integer aceitouJesus;
     private Integer desejaBatismo;
     private Integer reconciliou;
+    private Integer pontosDiscipulado;
+    private Integer quantidadeDiscipulados;
+    private Integer pontosCultos;
 
 // No construtor RankingCelulaDTO(RankingCelulaProjection p):
 
@@ -39,6 +42,9 @@ public class RankingCelulaDTO {
         this.aceitouJesus  = p.getAceitouJesus()  != null ? p.getAceitouJesus().intValue()  : 0;
         this.desejaBatismo = p.getDesejaBatismo() != null ? p.getDesejaBatismo().intValue() : 0;
         this.reconciliou   = p.getReconciliou()   != null ? p.getReconciliou().intValue()   : 0;
+        this.pontosDiscipulado = p.getPontosDiscipulado() != null ? p.getPontosDiscipulado().intValue() : 0;
+        this.quantidadeDiscipulados = 0;
+        this.pontosCultos = 0;
         this.posicao = 0;
     }
 }

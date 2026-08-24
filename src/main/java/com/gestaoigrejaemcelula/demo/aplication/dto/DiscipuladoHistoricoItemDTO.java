@@ -19,4 +19,5 @@ public class DiscipuladoHistoricoItemDTO {
     private int totalPresencas;
     private int totalPossivel;   // ← novo
     private int frequencia;
+    private int totalPontos;     // quarta=2, quinta=2, domingo=4, escola bíblica=5
 }

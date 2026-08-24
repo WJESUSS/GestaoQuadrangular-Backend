@@ -20,5 +20,7 @@ public record PresencaMembroDTO(
         String justQuartaNoite,
         String justQuintaNoite,
         String justDomingoManha,
-        String justDomingoNoite
+        String justDomingoNoite,
+        // Pontuação: quarta=2, quinta=2, domingo=4, escola bíblica=5
+        int totalPontos
 ) {}

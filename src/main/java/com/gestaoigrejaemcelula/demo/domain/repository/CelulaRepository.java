@@ -35,6 +35,8 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
     @EntityGraph(attributePaths = {"membros"})
     Optional<Celula> findByLider_IdAndAtivaTrue(Long liderId);
 
+    List<Celula> findByPastor_IdAndAtivaTrue(Long pastorId);
+
     @Query("SELECT c FROM Celula c LEFT JOIN FETCH c.lider WHERE c.ativa = true")
     List<Celula> findByAtivaTrue();
 

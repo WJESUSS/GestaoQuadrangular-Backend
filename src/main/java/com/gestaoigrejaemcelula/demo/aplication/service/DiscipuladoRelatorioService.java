@@ -81,7 +81,8 @@ public class DiscipuladoRelatorioService {
     @Caching(evict = {
             @CacheEvict(value = "relatorios-discipulado-todos", key = "'todos'"),
             @CacheEvict(value = "secretaria-discipulado", key = "'todos'"),
-            @CacheEvict(value = "alertas-discipulado", allEntries = true)
+            @CacheEvict(value = "alertas-discipulado", allEntries = true),
+            @CacheEvict(value = "ranking-celulas", allEntries = true)
     })
     public void salvarRelatorioSemanal(List<DiscipuladoRequestDTO> lista,
                                        LocalDate inicio,
@@ -199,7 +200,8 @@ public class DiscipuladoRelatorioService {
                             r.getJustQuartaNoite(),
                             r.getJustQuintaNoite(),
                             r.getJustDomingoManha(),
-                            r.getJustDomingoNoite()
+                            r.getJustDomingoNoite(),
+                            r.getTotalPontos()
                     ));
                     Celula  cel = r.getCelula();
                     Usuario lid = r.getLider();
@@ -289,7 +291,8 @@ public class DiscipuladoRelatorioService {
                                     r.getJustQuartaNoite(),
                                     r.getJustQuintaNoite(),
                                     r.getJustDomingoManha(),
-                                    r.getJustDomingoNoite()
+                                    r.getJustDomingoNoite(),
+                                    r.getTotalPontos()
                             ))
                             .toList();
 
@@ -345,7 +348,8 @@ public class DiscipuladoRelatorioService {
     @Caching(evict = {
             @CacheEvict(value = "relatorios-discipulado-todos", key = "'todos'"),
             @CacheEvict(value = "secretaria-discipulado", key = "'todos'"),
-            @CacheEvict(value = "alertas-discipulado", allEntries = true)
+            @CacheEvict(value = "alertas-discipulado", allEntries = true),
+            @CacheEvict(value = "ranking-celulas", allEntries = true)
     })
     public RelatorioDiscipuladoDTO atualizarRelatorio(Long id, DiscipuladoRequestDTO dto) {
         DiscipuladoRelatorio relatorio = repository.findById(id)
@@ -387,7 +391,8 @@ public class DiscipuladoRelatorioService {
                         relatorio.getJustQuartaNoite(),
                         relatorio.getJustQuintaNoite(),
                         relatorio.getJustDomingoManha(),
-                        relatorio.getJustDomingoNoite()
+                        relatorio.getJustDomingoNoite(),
+                        relatorio.getTotalPontos()
                 ))
         );
     }
@@ -459,6 +464,7 @@ public class DiscipuladoRelatorioService {
                                 .totalPresencas(0)
                                 .totalPossivel(0)
                                 .frequencia(0)
+                                .totalPontos(0)
                                 .build();
                     }
 
@@ -466,6 +472,10 @@ public class DiscipuladoRelatorioService {
 
                     int totalPresencas = registros.stream()
                             .mapToInt(this::contarPresencas)
+                            .sum();
+
+                    int totalPontos = registros.stream()
+                            .mapToInt(DiscipuladoRelatorio::getTotalPontos)
                             .sum();
 
                     int totalPossivel = registros.size() * TOTAL_COLUNAS;
@@ -481,6 +491,7 @@ public class DiscipuladoRelatorioService {
                             .totalPresencas(totalPresencas)
                             .totalPossivel(totalPossivel)
                             .frequencia(frequencia)
+                            .totalPontos(totalPontos)
                             .build();
                 })
                 .toList();
@@ -547,7 +558,8 @@ public class DiscipuladoRelatorioService {
     @Caching(evict = {
             @CacheEvict(value = "relatorios-discipulado-todos", key = "'todos'"),
             @CacheEvict(value = "secretaria-discipulado", key = "'todos'"),
-            @CacheEvict(value = "alertas-discipulado", allEntries = true)
+            @CacheEvict(value = "alertas-discipulado", allEntries = true),
+            @CacheEvict(value = "ranking-celulas", allEntries = true)
     })
     public void atualizarRelatorioSemanal(Long id,
                                           List<DiscipuladoRequestDTO> lista,

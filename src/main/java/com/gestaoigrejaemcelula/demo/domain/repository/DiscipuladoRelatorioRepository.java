@@ -261,4 +261,25 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
             @Param("celulaId") Long celulaId,
             @Param("inicio") LocalDate inicio,
             @Param("fim") LocalDate fim);
+
+    /**
+     * Pontos de culto/escola bíblica por célula no mês (semanas iniciadas no mês).
+     * quarta=2 · quinta=2 · domingo manhã=4 · domingo noite=4 · escola bíblica=5.
+     */
+    @Query(value = """
+        SELECT dr.celula_id AS celulaId,
+               COALESCE(SUM(
+                   (CASE WHEN dr.quarta_noite   THEN 2 ELSE 0 END)
+                 + (CASE WHEN dr.quinta_noite   THEN 2 ELSE 0 END)
+                 + (CASE WHEN dr.domingo_manha  THEN 4 ELSE 0 END)
+                 + (CASE WHEN dr.domingo_noite  THEN 4 ELSE 0 END)
+                 + (CASE WHEN dr.escola_biblica THEN 5 ELSE 0 END)
+               ), 0) AS pontos
+        FROM discipulado_relatorio dr
+        WHERE dr.celula_id IS NOT NULL
+          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
+          AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
+        GROUP BY dr.celula_id
+    """, nativeQuery = true)
+    List<Object[]> somarPontosCultosPorCelulaNoMes(@Param("mes") int mes, @Param("ano") int ano);
 }

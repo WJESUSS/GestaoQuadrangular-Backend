@@ -16,4 +16,8 @@ public interface RankingCelulaProjection {
     Number getAceitouJesus();
     Number getDesejaBatismo();
     Number getReconciliou();
+
+    default Number getPontosDiscipulado() {
+        return 0;
+    }
 }

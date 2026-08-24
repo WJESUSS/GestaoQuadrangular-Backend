@@ -60,6 +60,7 @@ public class RelatorioService {
         Relatorio relatorio = new Relatorio();
         relatorio.setCelula(celula);
         relatorio.setDataReuniao(dto.getDataReuniao());
+
         relatorio.setEstudo(dto.getEstudo());
         relatorio.setQuantidadeVisitantes(dto.getQuantidadeVisitantes() != null ? dto.getQuantidadeVisitantes() : 0);
 
@@ -268,7 +269,8 @@ public class RelatorioService {
                                     r.getJustQuartaNoite(),
                                     r.getJustQuintaNoite(),
                                     r.getJustDomingoManha(),
-                                    r.getJustDomingoNoite()
+                                    r.getJustDomingoNoite(),
+                                    r.getTotalPontos()
                             ))
                             .toList();
 

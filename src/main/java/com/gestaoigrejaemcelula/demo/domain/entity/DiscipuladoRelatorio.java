@@ -205,4 +205,18 @@ public class DiscipuladoRelatorio {
         if (domingoNoite) total++;
         this.totalPresencas = total;
     }
+
+    /**
+     * Pontuação por presença marcada:
+     * quarta = 2 · quinta = 2 · domingo (manhã ou noite) = 4 cada · escola bíblica = 5.
+     */
+    public int getTotalPontos() {
+        int pontos = 0;
+        if (Boolean.TRUE.equals(quartaNoite))    pontos += 2;
+        if (Boolean.TRUE.equals(quintaNoite))    pontos += 2;
+        if (Boolean.TRUE.equals(domingoManha))   pontos += 4;
+        if (Boolean.TRUE.equals(domingoNoite))   pontos += 4;
+        if (Boolean.TRUE.equals(escolaBiblica))  pontos += 5;
+        return pontos;
+    }
 }
