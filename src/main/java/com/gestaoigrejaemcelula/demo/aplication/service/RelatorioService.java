@@ -17,6 +17,7 @@ import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,8 @@ public class RelatorioService {
         Celula celula = celulaRepository.findByLider_Id(lider.getId())
                 .orElseThrow(() -> new RuntimeException("Líder não possui célula vinculada"));
 
+        validarSemanaCorrente(dto.getDataReuniao());
+
         // ✅ CORREÇÃO: Bloqueia relatório duplicado para a mesma célula e data
         if (relatorioRepository.existsByCelulaIdAndDataReuniao(celula.getId(), dto.getDataReuniao())) {
             throw new IllegalStateException("Já existe um relatório para esta célula nesta data. Não é permitido enviar mais de um relatório por reunião.");
@@ -81,6 +84,30 @@ public class RelatorioService {
 
         rankingCelulaService.limparCache();
         relatorioMensalService.verificarEEnviarParabens(celula.getId());
+    }
+
+    /* =========================
+        VALIDAÇÃO DA SEMANA CORRENTE
+        O líder só pode enviar relatório com data entre o domingo e o sábado
+        da semana atual, e nunca com data futura.
+        ========================= */
+
+    private void validarSemanaCorrente(LocalDate dataReuniao) {
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        LocalDate inicioSemana = hoje.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)); // domingo desta semana
+        LocalDate fimSemana   = inicioSemana.plusDays(6);                                        // sábado desta semana
+
+        if (dataReuniao.isBefore(inicioSemana)) {
+            throw new IllegalArgumentException(
+                    "Relatório em atraso: só é possível enviar relatórios com data entre "
+                            + inicioSemana + " e " + fimSemana
+                            + ". Relatórios de semanas anteriores não são aceitos.");
+        }
+        if (dataReuniao.isAfter(fimSemana) || dataReuniao.isAfter(hoje)) {
+            throw new IllegalArgumentException(
+                    "Data futura não permitida: o relatório deve ser enviado na semana atual "
+                            + "(domingo a sábado), com data igual ou anterior ao dia de hoje.");
+        }
     }
 
     /* =========================
@@ -346,6 +373,8 @@ public class RelatorioService {
     public RelatorioNaoRealizadaResponse registrarNaoRealizada(RelatorioNaoRealizadaRequest request, String username) {
         Celula celula = celulaRepository.findById(request.getCelulaId())
                 .orElseThrow(() -> new EntityNotFoundException("Célula não encontrada"));
+
+        validarSemanaCorrente(request.getDataReuniao());
 
         if (relatorioRepository.existsByCelulaIdAndDataReuniao(request.getCelulaId(), request.getDataReuniao())) {
             throw new IllegalStateException("Já existe um relatório para esta data.");

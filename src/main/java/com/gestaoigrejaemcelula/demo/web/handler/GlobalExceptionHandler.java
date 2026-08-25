@@ -23,6 +23,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
+        String message = ex.getMessage();
+
+        if (message != null && message.contains("Relatório em atraso")) {
+            log.info("Tentativa de envio de relatório em atraso: {}", message);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(400, "Relatório em atraso", message, "REPORT_LATE"));
+        }
+
+        if (message != null && message.contains("Data futura")) {
+            log.info("Tentativa de envio de relatório com data futura: {}", message);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(400, "Data futura não permitida", message, "FUTURE_DATE"));
+        }
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(400, "Requisição inválida", ex.getMessage()));
     }
