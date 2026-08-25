@@ -81,7 +81,7 @@ public class RankingCelulaService {
         pontos += (dto.getConsolidados()   != null ? dto.getConsolidados()   : 0) * 3;
         pontos += (dto.getBatismos()       != null ? dto.getBatismos()       : 0) * 5;
         pontos += (dto.getAceitouJesus()   != null ? dto.getAceitouJesus()   : 0) * 15;
-        pontos += (dto.getDesejaBatismo()  != null ? dto.getDesejaBatismo()  : 0) * 10;
+        pontos += (dto.getDesejaBatismo()  != null ? dto.getDesejaBatismo()  : 0) * 20;
         pontos += (dto.getReconciliou()    != null ? dto.getReconciliou()    : 0) * 8;
         pontos += Boolean.TRUE.equals(dto.getMultiplicou()) ? 20 : 0;
         pontos += dto.getPontosDiscipulado() != null ? dto.getPontosDiscipulado() : 0;
