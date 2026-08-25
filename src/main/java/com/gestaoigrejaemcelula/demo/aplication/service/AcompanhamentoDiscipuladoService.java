@@ -170,6 +170,14 @@ public class AcompanhamentoDiscipuladoService {
         }
         presentes.forEach(m -> validarMembroDaCelula(m, celula));
 
+        int mes = dto.getData().getMonthValue();
+        int ano = dto.getData().getYear();
+        boolean jaColetivoNoMes = coletivoRepository.existsByCelula_IdAndMesAndAnoAndStatus(
+                celula.getId(), mes, ano, StatusAcompanhamentoDiscipulado.CONCLUIDO.name());
+        if (jaColetivoNoMes) {
+            throw new BusinessException("Já existe um acompanhamento coletivo registrado nesta célula neste mês. Um novo coletivo poderá ser registrado somente no próximo mês.");
+        }
+
         AcompanhamentoDiscipuladoColetivo coletivo = new AcompanhamentoDiscipuladoColetivo();
         coletivo.setLider(lider);
         coletivo.setCelula(celula);

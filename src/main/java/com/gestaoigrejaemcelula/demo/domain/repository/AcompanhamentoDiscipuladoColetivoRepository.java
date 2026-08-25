@@ -64,4 +64,18 @@ public interface AcompanhamentoDiscipuladoColetivoRepository
             @Param("fim") LocalDate fim,
             @Param("tema") String tema,
             @Param("tipoEstudo") TipoEstudoDiscipulado tipoEstudo);
+
+    @Query(value = """
+        SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
+        FROM acompanhamento_discipulado_coletivo
+        WHERE celula_id = :celulaId
+          AND EXTRACT(MONTH FROM data) = :mes
+          AND EXTRACT(YEAR FROM data) = :ano
+          AND status = :status
+    """, nativeQuery = true)
+    boolean existsByCelula_IdAndMesAndAnoAndStatus(
+            @Param("celulaId") Long celulaId,
+            @Param("mes") int mes,
+            @Param("ano") int ano,
+            @Param("status") String status);
 }
