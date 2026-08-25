@@ -17,7 +17,7 @@ public class PresenceService {
 
     private final Cache<Long, Instant> presencaCache = Caffeine.newBuilder()
             .maximumSize(200)
-            .expireAfterWrite(90, TimeUnit.SECONDS)
+            .expireAfterWrite(45, TimeUnit.SECONDS)
             .build();
 
     private final UsuarioRepository usuarioRepository;
