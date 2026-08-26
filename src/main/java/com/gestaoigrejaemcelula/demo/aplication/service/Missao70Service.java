@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -186,6 +187,13 @@ public class Missao70Service {
      */
     @Transactional
     public Map<String, Object> registrarEncontro(Long missaoId, EncontroMissao70RequestDTO dto) {
+        YearMonth mesAtual = YearMonth.now();
+        YearMonth mesEncontro = YearMonth.from(dto.getDataEncontro());
+        if (mesEncontro.isBefore(mesAtual)) {
+            throw new IllegalStateException(
+                    "Não é permitido registrar encontros de meses anteriores. O ranking deste mês já foi finalizado.");
+        }
+
         Missao70 missao = buscarPorId(missaoId);
 
         if (missao.getStatus() != StatusMissao70.EM_ANDAMENTO) {

@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,6 +88,13 @@ public class DiscipuladoRelatorioService {
     public void salvarRelatorioSemanal(List<DiscipuladoRequestDTO> lista,
                                        LocalDate inicio,
                                        LocalDate fim) {
+        YearMonth mesAtual = YearMonth.now();
+        YearMonth mesRelatorio = YearMonth.from(inicio);
+        if (mesRelatorio.isBefore(mesAtual)) {
+            throw new IllegalArgumentException(
+                    "Não é permitido enviar relatórios de meses anteriores. O ranking deste mês já foi finalizado.");
+        }
+
         Usuario lider = usuarioLogado(loggedUserEmail());
 
         List<Long> membroIds = lista.stream()

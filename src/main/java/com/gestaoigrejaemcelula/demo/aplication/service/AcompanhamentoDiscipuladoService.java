@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -66,6 +67,13 @@ public class AcompanhamentoDiscipuladoService {
     @CacheEvict(value = "ranking-celulas", allEntries = true)
     public AcompanhamentoIndividualResponseDTO registrarIndividual(Authentication authentication,
                                                                    AcompanhamentoIndividualRequestDTO dto) {
+        YearMonth mesAtual = YearMonth.now();
+        YearMonth mesDiscipulado = YearMonth.from(dto.getData());
+        if (mesDiscipulado.isBefore(mesAtual)) {
+            throw new BusinessException(
+                    "Não é permitido registrar discipulados de meses anteriores. O ranking deste mês já foi finalizado.");
+        }
+
         Usuario lider = usuarioLogado(authentication);
         Celula celula = celulaParaEscrita(lider);
         Membro membro = membroRepository.findById(dto.getMembroId())
@@ -154,6 +162,13 @@ public class AcompanhamentoDiscipuladoService {
     @CacheEvict(value = "ranking-celulas", allEntries = true)
     public AcompanhamentoColetivoResponseDTO registrarColetivo(Authentication authentication,
                                                                AcompanhamentoColetivoRequestDTO dto) {
+        YearMonth mesAtual = YearMonth.now();
+        YearMonth mesColetivo = YearMonth.from(dto.getData());
+        if (mesColetivo.isBefore(mesAtual)) {
+            throw new BusinessException(
+                    "Não é permitido registrar acompanhamentos coletivos de meses anteriores. O ranking deste mês já foi finalizado.");
+        }
+
         Usuario lider = usuarioLogado(authentication);
         Celula celula = celulaParaEscrita(lider);
         validarTipoEstudo(dto.getTipoEstudo(), dto.getTipoEstudoOutro());

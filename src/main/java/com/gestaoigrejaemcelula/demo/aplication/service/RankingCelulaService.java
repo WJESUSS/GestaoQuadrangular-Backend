@@ -6,10 +6,8 @@ import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +27,6 @@ public class RankingCelulaService {
 
     private final CelulaRepository celulaRepository;
     private final PontuacaoDiscipuladoService pontuacaoDiscipuladoService;
-
-    @Lazy
-    @Autowired
-    private RankingFreezeService rankingFreezeService;
     private static final DateTimeFormatter MES_ANO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
     @Cacheable(value = "ranking-celulas", key = "#mesAno")
@@ -45,11 +39,6 @@ public class RankingCelulaService {
             YearMonth.parse(mesAno, MES_ANO_FORMATTER);
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Formato de mês inválido. Use YYYY-MM (ex: 2026-03)");
-        }
-
-        if (rankingFreezeService.isMesFinalizado(mesAno)) {
-            log.info("Mês {} já finalizado, retornando ranking congelado", mesAno);
-            return rankingFreezeService.buscarRankingFinalizado(mesAno);
         }
 
         List<RankingCelulaProjection> dadosBrutos = celulaRepository.buscarDadosRankingNativo(mesAno);

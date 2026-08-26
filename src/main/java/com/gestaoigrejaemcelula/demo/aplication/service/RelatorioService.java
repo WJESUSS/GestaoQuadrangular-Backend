@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
@@ -94,6 +95,14 @@ public class RelatorioService {
 
     private void validarSemanaCorrente(LocalDate dataReuniao) {
         LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        YearMonth mesAtual = YearMonth.now(ZoneId.of("America/Sao_Paulo"));
+        YearMonth mesReuniao = YearMonth.from(dataReuniao);
+
+        if (mesReuniao.isBefore(mesAtual)) {
+            throw new IllegalArgumentException(
+                    "Não é permitido enviar relatórios de meses anteriores. O ranking deste mês já foi finalizado.");
+        }
+
         LocalDate inicioSemana = hoje.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)); // domingo desta semana
         LocalDate fimSemana   = inicioSemana.plusDays(6);                                        // sábado desta semana
 
