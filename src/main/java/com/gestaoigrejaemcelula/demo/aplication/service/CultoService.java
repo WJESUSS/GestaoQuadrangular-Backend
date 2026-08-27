@@ -309,7 +309,8 @@ public class CultoService {
 
     private boolean isPastorOuAdmin(Usuario usuario) {
         return usuario.getPerfil() == Perfil.ADMIN
-                || usuario.getPerfil() == Perfil.PASTOR;
+                || usuario.getPerfil() == Perfil.PASTOR
+                || usuario.getPerfil() == Perfil.TESOUREIRO;
     }
 
     private LocalDate parseData(String dataStr) {

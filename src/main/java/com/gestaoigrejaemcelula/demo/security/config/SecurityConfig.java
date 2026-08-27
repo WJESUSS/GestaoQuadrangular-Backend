@@ -91,7 +91,7 @@ public class SecurityConfig {
                         .requestMatchers("/membros/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, TESOUREIRO, LIDER_CELULA, DIACONO)
                         .requestMatchers("/tesouraria/**").hasAnyAuthority(ADMIN, TESOUREIRO, PASTOR)
                         .requestMatchers("/relatorios/**").hasAnyAuthority(ADMIN, SECRETARIO, PASTOR, LIDER_CELULA, DIACONO)
-                        .requestMatchers("/cultos/**").hasAnyAuthority(ADMIN, PASTOR, DIACONO)
+                        .requestMatchers("/cultos/**").hasAnyAuthority(ADMIN, PASTOR, DIACONO,TESOUREIRO)
 
                         .anyRequest().authenticated()
 
