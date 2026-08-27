@@ -7,7 +7,8 @@ public enum Perfil {
     LIDER_CELULA,
     SUPERINTENDENTE,
     SECRETARIO,
-    TESOUREIRO;
+    TESOUREIRO,
+    DIACONO;
 
     public String getRole() {
         return "ROLE_" + this.name();

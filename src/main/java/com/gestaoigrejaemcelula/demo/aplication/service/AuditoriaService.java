@@ -54,7 +54,7 @@ public class AuditoriaService {
     // ── Listar com filtros e paginação ───────────────────────────────────────
     public Page<AuditoriaDTO> listar(
             String entidade, String acao, String usuario,
-            Long entidadeId,
+            String entidadeId,
             OffsetDateTime de,  // ✅ era LocalDateTime
             OffsetDateTime ate, // ✅ era LocalDateTime
             int page, int size
@@ -67,7 +67,7 @@ public class AuditoriaService {
 
     // ── Histórico de um registro específico ──────────────────────────────────
     public Page<AuditoriaDTO> historicoPorRegistro(
-            String entidade, Long entidadeId, int page, int size
+            String entidade, String entidadeId, int page, int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("dataHora").descending());
         return repo.findByEntidadeAndEntidadeIdOrderByDataHoraDesc(entidade, entidadeId, pageable)

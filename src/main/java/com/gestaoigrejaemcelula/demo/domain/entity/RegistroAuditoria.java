@@ -28,8 +28,8 @@ public class RegistroAuditoria {
     private String entidade;
 
     /** PK da entidade auditada */
-    @Column(nullable = false)
-    private Long entidadeId;
+    @Column(nullable = false, length = 50)
+    private String entidadeId;
 
     /** Nome legível do registro (ex: "João Silva") */
     @Column(length = 120)

@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 public class AuditoriaDTO {
     private Long          id;
     private String        entidade;
-    private Long          entidadeId;
+    private String        entidadeId;
     private String        entidadeNome;
     private String        acao;
     private String        detalhes;

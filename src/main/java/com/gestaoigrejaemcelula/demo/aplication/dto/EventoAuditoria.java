@@ -4,7 +4,7 @@ import java.util.Map;
 
 public record EventoAuditoria(
         String entidade,
-        Long entidadeId,
+        String entidadeId,
         String entidadeNome,
         String acao,
         Map<String, Object> detalhes,

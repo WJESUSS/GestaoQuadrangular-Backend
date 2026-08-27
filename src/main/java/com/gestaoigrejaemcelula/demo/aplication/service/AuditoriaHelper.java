@@ -14,7 +14,7 @@ public class AuditoriaHelper {
 
     private final AuditoriaService auditoriaService;
 
-    public void registrar(String entidade, Long id, String nome,
+    public void registrar(String entidade, String id, String nome,
                           String acao, Map<String, Object> diff) {
         String nomeUsuario = resolverUsuario();
         auditoriaService.registrar(new EventoAuditoria(
@@ -24,7 +24,12 @@ public class AuditoriaHelper {
         ));
     }
 
-    public void registrarComAprovador(String entidade, Long id, String nome,
+    public void registrar(String entidade, Long id, String nome,
+                          String acao, Map<String, Object> diff) {
+        registrar(entidade, id != null ? String.valueOf(id) : null, nome, acao, diff);
+    }
+
+    public void registrarComAprovador(String entidade, String id, String nome,
                                       String acao, String aprovadorNome, String aprovadorEmail) {
         String nomeUsuario = resolverUsuario();
         auditoriaService.registrar(new EventoAuditoria(
@@ -32,6 +37,11 @@ public class AuditoriaHelper {
                 nomeUsuario, nomeUsuario,
                 aprovadorNome, aprovadorEmail, null
         ));
+    }
+
+    public void registrarComAprovador(String entidade, Long id, String nome,
+                                      String acao, String aprovadorNome, String aprovadorEmail) {
+        registrarComAprovador(entidade, id != null ? String.valueOf(id) : null, nome, acao, aprovadorNome, aprovadorEmail);
     }
 
     private String resolverUsuario() {

@@ -24,7 +24,7 @@ public interface AuditoriaRepository extends JpaRepository<RegistroAuditoria, Lo
 // No AuditoriaRepository — troque LocalDateTime por OffsetDateTime nos params de data:
     Page<RegistroAuditoria> filtrar(
             String entidade, String acao, String usuario,
-            Long entidadeId,
+            String entidadeId,
             OffsetDateTime de,      // ← era LocalDateTime
             OffsetDateTime ate,     // ← era LocalDateTime
             Pageable pageable
@@ -32,6 +32,6 @@ public interface AuditoriaRepository extends JpaRepository<RegistroAuditoria, Lo
 
     // Histórico de um registro específico
     Page<RegistroAuditoria> findByEntidadeAndEntidadeIdOrderByDataHoraDesc(
-            String entity, Long entidadeId, Pageable pageable
+            String entity, String entidadeId, Pageable pageable
     );
 }

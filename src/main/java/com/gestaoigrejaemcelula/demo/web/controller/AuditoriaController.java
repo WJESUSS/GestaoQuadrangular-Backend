@@ -29,7 +29,7 @@ public class AuditoriaController {
             @RequestParam(required = false) String entidade,
             @RequestParam(required = false) String acao,
             @RequestParam(required = false) String usuario,
-            @RequestParam(required = false) Long   entidadeId,
+            @RequestParam(required = false) String entidadeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime de,  // ✅
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime ate, // ✅
             @RequestParam(defaultValue = "0") int page,
@@ -49,7 +49,7 @@ public class AuditoriaController {
 
     public ResponseEntity<Page<AuditoriaDTO>> historico(
             @PathVariable String entidade,
-            @PathVariable Long   id,
+            @PathVariable String id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam int size
     ) {
