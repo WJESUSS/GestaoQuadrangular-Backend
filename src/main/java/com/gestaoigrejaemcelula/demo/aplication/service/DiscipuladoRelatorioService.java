@@ -89,7 +89,7 @@ public class DiscipuladoRelatorioService {
                                        LocalDate inicio,
                                        LocalDate fim) {
         YearMonth mesAtual = YearMonth.now();
-        YearMonth mesRelatorio = YearMonth.from(inicio);
+        YearMonth mesRelatorio = YearMonth.from(fim);
         if (mesRelatorio.isBefore(mesAtual)) {
             throw new IllegalArgumentException(
                     "Não é permitido enviar relatórios de meses anteriores. O ranking deste mês já foi finalizado.");
