@@ -167,15 +167,19 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
                 m.telefone,
                 c.nome          AS nome_celula,
                 SUM(
-                    CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
-                  + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
-                  + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+                    CASE WHEN NOT dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano THEN 1 ELSE 0 END
+                  + CASE WHEN NOT dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano THEN 1 ELSE 0 END
+                  + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano THEN 1 ELSE 0 END
                 )               AS total_faltas
             FROM discipulado_relatorio dr
             JOIN membros m  ON m.id = dr.membro_id
             JOIN celulas c  ON c.id = m.celula_id
-            WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-              AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
+            WHERE (
+                (dr.quarta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano)
+                OR (dr.quinta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano)
+                OR (dr.domingo_manha IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+                OR (dr.domingo_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+            )
               AND m.id NOT IN (
                   SELECT da.membro_id
                   FROM discipulado_acompanhamento da
@@ -227,15 +231,19 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
                 m.telefone,
                 COALESCE(c.nome, 'Sem Célula') AS nome_celula,
                 SUM(
-                    CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
-                  + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
-                  + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+                    CASE WHEN NOT dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano THEN 1 ELSE 0 END
+                  + CASE WHEN NOT dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano THEN 1 ELSE 0 END
+                  + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano THEN 1 ELSE 0 END
                 )                             AS total_faltas
             FROM discipulado_relatorio dr
             JOIN membros m      ON m.id = dr.membro_id
             LEFT JOIN celulas c ON m.celula_id = c.id
-            WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-              AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
+            WHERE (
+                (dr.quarta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano)
+                OR (dr.quinta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano)
+                OR (dr.domingo_manha IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+                OR (dr.domingo_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+            )
               AND m.id NOT IN (
                   SELECT da.membro_id
                   FROM discipulado_acompanhamento da
@@ -269,16 +277,21 @@ public interface DiscipuladoRelatorioRepository extends JpaRepository<Discipulad
     @Query(value = """
         SELECT dr.celula_id AS celulaId,
                COALESCE(SUM(
-                   (CASE WHEN dr.quarta_noite   THEN 2 ELSE 0 END)
-                 + (CASE WHEN dr.quinta_noite   THEN 2 ELSE 0 END)
-                 + (CASE WHEN dr.domingo_manha  THEN 4 ELSE 0 END)
-                 + (CASE WHEN dr.domingo_noite  THEN 4 ELSE 0 END)
-                 + (CASE WHEN dr.escola_biblica THEN 5 ELSE 0 END)
+                   (CASE WHEN dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano THEN 2 ELSE 0 END)
+                 + (CASE WHEN dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano THEN 2 ELSE 0 END)
+                 + (CASE WHEN dr.domingo_manha  AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano THEN 4 ELSE 0 END)
+                 + (CASE WHEN dr.domingo_noite  AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano THEN 4 ELSE 0 END)
+                 + (CASE WHEN dr.escola_biblica AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '1 day') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '1 day') = :ano THEN 5 ELSE 0 END)
                ), 0) AS pontos
         FROM discipulado_relatorio dr
         WHERE dr.celula_id IS NOT NULL
-          AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-          AND EXTRACT(YEAR  FROM dr.semana_inicio) = :ano
+          AND (
+              (dr.domingo_manha  AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+              OR (dr.domingo_noite  AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+              OR (dr.escola_biblica AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '1 day') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '1 day') = :ano)
+              OR (dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano)
+              OR (dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano)
+          )
         GROUP BY dr.celula_id
     """, nativeQuery = true)
     List<Object[]> somarPontosCultosPorCelulaNoMes(@Param("mes") int mes, @Param("ano") int ano);

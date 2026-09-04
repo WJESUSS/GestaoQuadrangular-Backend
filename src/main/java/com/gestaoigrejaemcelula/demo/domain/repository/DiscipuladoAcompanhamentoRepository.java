@@ -30,8 +30,12 @@ public interface DiscipuladoAcompanhamentoRepository
         SELECT dr.membro_id
         FROM discipulado_relatorio dr
         JOIN membros m ON m.id = dr.membro_id
-        WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-          AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano
+        WHERE (
+            (dr.quarta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano)
+            OR (dr.quinta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano)
+            OR (dr.domingo_manha IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+            OR (dr.domingo_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+        )
           AND m.id NOT IN (
               SELECT da.membro_id 
               FROM discipulado_acompanhamento da 
@@ -39,9 +43,9 @@ public interface DiscipuladoAcompanhamentoRepository
           )
         GROUP BY dr.membro_id
         HAVING SUM(
-            CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
-          + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
-          + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+            CASE WHEN NOT dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano THEN 1 ELSE 0 END
+          + CASE WHEN NOT dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano THEN 1 ELSE 0 END
+          + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano THEN 1 ELSE 0 END
         ) >= 2
     ) AS alertas
     """, nativeQuery = true)
@@ -60,8 +64,12 @@ public interface DiscipuladoAcompanhamentoRepository
         SELECT dr.membro_id
         FROM discipulado_relatorio dr
         JOIN membros m ON m.id = dr.membro_id
-        WHERE EXTRACT(MONTH FROM dr.semana_inicio) = :mes
-          AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano
+        WHERE (
+            (dr.quarta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano)
+            OR (dr.quinta_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano)
+            OR (dr.domingo_manha IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+            OR (dr.domingo_noite IS NOT NULL AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano)
+        )
           AND m.id NOT IN (
               SELECT da.membro_id 
               FROM discipulado_acompanhamento da 
@@ -69,9 +77,9 @@ public interface DiscipuladoAcompanhamentoRepository
           )
         GROUP BY dr.membro_id
         HAVING SUM(
-            CASE WHEN NOT dr.quarta_noite THEN 1 ELSE 0 END
-          + CASE WHEN NOT dr.quinta_noite THEN 1 ELSE 0 END
-          + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) THEN 1 ELSE 0 END
+            CASE WHEN NOT dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :ano THEN 1 ELSE 0 END
+          + CASE WHEN NOT dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mes AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :ano THEN 1 ELSE 0 END
+          + CASE WHEN (NOT dr.domingo_manha OR NOT dr.domingo_noite) AND EXTRACT(MONTH FROM dr.semana_inicio) = :mes AND EXTRACT(YEAR FROM dr.semana_inicio) = :ano THEN 1 ELSE 0 END
         ) >= 3
     ) AS alertas
     """, nativeQuery = true)

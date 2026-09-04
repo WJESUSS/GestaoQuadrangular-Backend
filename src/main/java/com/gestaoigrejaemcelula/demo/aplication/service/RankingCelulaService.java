@@ -41,7 +41,9 @@ public class RankingCelulaService {
             throw new IllegalArgumentException("Formato de mês inválido. Use YYYY-MM (ex: 2026-03)");
         }
 
-        List<RankingCelulaProjection> dadosBrutos = celulaRepository.buscarDadosRankingNativo(mesAno);
+        List<RankingCelulaProjection> dadosBrutos = celulaRepository.buscarDadosRankingNativo(mesAno,
+                YearMonth.parse(mesAno, MES_ANO_FORMATTER).getMonthValue(),
+                YearMonth.parse(mesAno, MES_ANO_FORMATTER).getYear());
 
         if (dadosBrutos.isEmpty()) {
             return List.of();

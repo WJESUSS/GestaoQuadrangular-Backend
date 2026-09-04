@@ -117,14 +117,31 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
     FROM celulas c
     LEFT JOIN usuarios u ON u.id = c.lider_id
     WHERE c.ativo = TRUE
-      AND EXISTS (
-          SELECT 1
-          FROM relatorio r
-          WHERE r.celula_id = c.id
-            AND r.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
-            AND r.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+      AND (
+          EXISTS (
+              SELECT 1
+              FROM relatorio r
+              WHERE r.celula_id = c.id
+                AND r.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+                AND r.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+          )
+          OR EXISTS (
+              SELECT 1
+              FROM discipulado_relatorio dr
+              WHERE dr.celula_id = c.id
+                AND (
+                    (dr.domingo_manha  AND EXTRACT(MONTH FROM dr.semana_inicio) = :mesInt AND EXTRACT(YEAR FROM dr.semana_inicio) = :anoInt)
+                    OR (dr.domingo_noite  AND EXTRACT(MONTH FROM dr.semana_inicio) = :mesInt AND EXTRACT(YEAR FROM dr.semana_inicio) = :anoInt)
+                    OR (dr.escola_biblica AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '1 day') = :mesInt AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '1 day') = :anoInt)
+                    OR (dr.quarta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '3 days') = :mesInt AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '3 days') = :anoInt)
+                    OR (dr.quinta_noite   AND EXTRACT(MONTH FROM dr.semana_inicio + INTERVAL '4 days') = :mesInt AND EXTRACT(YEAR FROM dr.semana_inicio + INTERVAL '4 days') = :anoInt)
+                )
+          )
       )
     ORDER BY c.nome
-""", nativeQuery = true)
-    List<RankingCelulaProjection> buscarDadosRankingNativo(@Param("mes") String mesAno);
+    """, nativeQuery = true)
+    List<RankingCelulaProjection> buscarDadosRankingNativo(
+            @Param("mes") String mesAno,
+            @Param("mesInt") int mesInt,
+            @Param("anoInt") int anoInt);
 }
