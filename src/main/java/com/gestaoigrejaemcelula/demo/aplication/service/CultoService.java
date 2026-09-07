@@ -43,11 +43,11 @@ public class CultoService {
     public static TipoCulto calcularTipoCulto(LocalDate data) {
         DayOfWeek diaSemana = data.getDayOfWeek();
 
-        if (diaSemana == DayOfWeek.WEDNESDAY || diaSemana == DayOfWeek.THURSDAY) {
+        if (diaSemana.equals(DayOfWeek.WEDNESDAY) || diaSemana.equals(DayOfWeek.THURSDAY)) {
             return TipoCulto.VITORIA;
         }
 
-        if (diaSemana == DayOfWeek.SUNDAY) {
+        if (diaSemana.equals(DayOfWeek.SUNDAY)) {
             int semanaDoMes = data.getDayOfMonth();
             LocalDate primeiroDomingo = data.with(TemporalAdjusters.firstInMonth(DayOfWeek.SUNDAY));
             int ordinalDomingo = (int) ((data.getDayOfMonth() - primeiroDomingo.getDayOfMonth()) / 7) + 1;
@@ -264,14 +264,14 @@ public class CultoService {
 
     private void validarTipoCultoPorDia(LocalDate data, TipoCulto tipoCulto) {
         DayOfWeek diaSemana = data.getDayOfWeek();
-        boolean isDomingo = diaSemana == DayOfWeek.SUNDAY;
-        boolean isQuartaQuinta = diaSemana == DayOfWeek.WEDNESDAY || diaSemana == DayOfWeek.THURSDAY;
+        boolean isDomingo = diaSemana.equals(DayOfWeek.SUNDAY);
+        boolean isQuartaQuinta = diaSemana.equals(DayOfWeek.WEDNESDAY) || diaSemana.equals(DayOfWeek.THURSDAY);
 
-        if (isDomingo && tipoCulto == TipoCulto.VITORIA) {
+        if (isDomingo && tipoCulto.equals(TipoCulto.VITORIA)) {
             throw new BusinessException("Culto da Vitória não pode ser registrado em domingo. É permitido apenas quarta e quinta-feira.");
         }
 
-        if (isQuartaQuinta && tipoCulto != TipoCulto.VITORIA) {
+        if (isQuartaQuinta && !tipoCulto.equals(TipoCulto.VITORIA)) {
             throw new BusinessException("Cultos de " + tipoCulto.getDescricao() + " não podem ser registrados em quarta/quinta-feira. É permitido apenas aos domingos.");
         }
     }
@@ -308,9 +308,9 @@ public class CultoService {
     }
 
     private boolean isPastorOuAdmin(Usuario usuario) {
-        return usuario.getPerfil() == Perfil.ADMIN
-                || usuario.getPerfil() == Perfil.PASTOR
-                || usuario.getPerfil() == Perfil.TESOUREIRO;
+        return Perfil.ADMIN.equals(usuario.getPerfil())
+                || Perfil.PASTOR.equals(usuario.getPerfil())
+                || Perfil.TESOUREIRO.equals(usuario.getPerfil());
     }
 
     private LocalDate parseData(String dataStr) {
@@ -331,7 +331,7 @@ public class CultoService {
         Double media = cultoRepository.mediaTotalGeralPorTipoAteData(
                 culto.getTipoCulto(), culto.getData());
 
-        if (media == null || media == 0) return;
+        if (media == null || media.equals(0)) return;
 
         double percentual = (double) culto.getTotalGeral() / media;
         if (percentual < (1.0 - PERCENTUAL_ALERTA)) {
