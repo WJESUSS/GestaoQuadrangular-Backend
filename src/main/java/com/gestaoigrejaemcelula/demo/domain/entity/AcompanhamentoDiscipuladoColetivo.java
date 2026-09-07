@@ -26,8 +26,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+
 @Getter
-@Setter
 @Entity
 @Table(name = "acompanhamento_discipulado_coletivo", indexes = {
         @Index(name = "idx_acomp_col_celula_data", columnList = "celula_id, data"),
@@ -35,40 +35,51 @@ import java.util.List;
 })
 public class AcompanhamentoDiscipuladoColetivo {
 
+    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lider_id", nullable = false)
     private Usuario lider;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "celula_id", nullable = false)
     private Celula celula;
 
+    @Setter
     @Column(nullable = false)
     private LocalDate data;
 
+    @Setter
     @Column(nullable = false)
     private LocalTime horario;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_estudo", nullable = false, length = 40)
     private TipoEstudoDiscipulado tipoEstudo;
 
+    @Setter
     @Column(name = "tipo_estudo_outro", length = 120)
     private String tipoEstudoOutro;
 
+    @Setter
     @Column(nullable = false, length = 255)
     private String tema;
 
+    @Setter
     @Column(length = 255)
     private String local;
 
+    @Setter
     @Column(columnDefinition = "TEXT")
     private String observacoes;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StatusAcompanhamentoDiscipulado status = StatusAcompanhamentoDiscipulado.CONCLUIDO;
@@ -76,12 +87,15 @@ public class AcompanhamentoDiscipuladoColetivo {
     @OneToMany(mappedBy = "discipulado", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AcompanhamentoDiscipuladoColetivoParticipante> participantes = new ArrayList<>();
 
+    @Setter
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
+    @Setter
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
 
+    @Setter
     @Column(name = "criado_por", updatable = false, length = 255)
     private String criadoPor;
 
@@ -93,6 +107,18 @@ public class AcompanhamentoDiscipuladoColetivo {
     @PreUpdate
     public void preUpdate() {
         this.atualizadoEm = LocalDateTime.now();
+    }
+
+    public void setParticipantes(List<AcompanhamentoDiscipuladoColetivoParticipante> participantes) {
+        this.participantes = participantes != null ? participantes : new ArrayList<>();
+    }
+
+    public void adicionarParticipante(Membro membro) {
+        AcompanhamentoDiscipuladoColetivoParticipante participante =
+                new AcompanhamentoDiscipuladoColetivoParticipante();
+        participante.setDiscipulado(this);
+        participante.setMembro(membro);
+        this.participantes.add(participante);
     }
 
 }

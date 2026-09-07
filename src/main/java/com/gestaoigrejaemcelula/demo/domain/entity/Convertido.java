@@ -5,6 +5,7 @@ import com.gestaoigrejaemcelula.demo.domain.enums.StatusConvertido;
 import com.gestaoigrejaemcelula.demo.domain.enums.TipoArrolamento;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Entity
+@Setter
 @Table(name = "convertidos", indexes = {
         @Index(name = "idx_convertido_status", columnList = "status")
 })
