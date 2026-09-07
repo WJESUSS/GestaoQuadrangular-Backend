@@ -11,9 +11,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
-
+@Getter
+@Setter
 @Entity
 @Table(
         name = "acompanhamento_discipulado_coletivo_participante",
@@ -44,15 +47,5 @@ public class AcompanhamentoDiscipuladoColetivoParticipante {
         this.criadoEm = LocalDateTime.now();
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
 
-    public AcompanhamentoDiscipuladoColetivo getDiscipulado() { return discipulado; }
-    public void setDiscipulado(AcompanhamentoDiscipuladoColetivo discipulado) { this.discipulado = discipulado; }
-
-    public Membro getMembro() { return membro; }
-    public void setMembro(Membro membro) { this.membro = membro; }
-
-    public LocalDateTime getCriadoEm() { return criadoEm; }
-    public void setCriadoEm(LocalDateTime criadoEm) { this.criadoEm = criadoEm; }
 }
