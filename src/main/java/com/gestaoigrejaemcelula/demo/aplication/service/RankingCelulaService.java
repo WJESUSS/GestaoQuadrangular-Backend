@@ -3,6 +3,7 @@ package com.gestaoigrejaemcelula.demo.aplication.service;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaDTO;
 import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaProjection;
 import com.gestaoigrejaemcelula.demo.domain.repository.CelulaRepository;
+import com.gestaoigrejaemcelula.demo.domain.repository.RelatorioRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public class RankingCelulaService {
     private static final Logger log = LoggerFactory.getLogger(RankingCelulaService.class);
 
     private final CelulaRepository celulaRepository;
+    private final RelatorioRepository relatorioRepository;
     private final PontuacaoDiscipuladoService pontuacaoDiscipuladoService;
     private static final DateTimeFormatter MES_ANO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
@@ -54,6 +56,13 @@ public class RankingCelulaService {
 
         Map<Long, Integer> pontosCultosPorCelula = pontuacaoDiscipuladoService.pontosCultosPorCelulaNoMes(mesAno);
 
+        Map<Long, Integer> pontosVisitantesPorCelula = new java.util.HashMap<>();
+        for (Object[] linha : relatorioRepository.somarPontosVisitantesPorCelulaNoMes(mesAno)) {
+            Long celulaId = ((Number) linha[0]).longValue();
+            int pontos = ((Number) linha[1]).intValue();
+            pontosVisitantesPorCelula.put(celulaId, pontos);
+        }
+
         List<RankingCelulaDTO> listaRanking = dadosBrutos.stream()
                 .map(RankingCelulaDTO::new)
                 .peek(dto -> {
@@ -62,11 +71,26 @@ public class RankingCelulaService {
                     dto.setPontosDiscipulado(pontuacaoDiscipuladoService.calcularPontos(unidades));
                 })
                 .peek(dto -> dto.setPontosCultos(pontosCultosPorCelula.getOrDefault(dto.getCelulaId(), 0)))
+                .peek(dto -> dto.setPontosVisitantes(
+                        pontosVisitantesPorCelula.getOrDefault(dto.getCelulaId(), 0)))
                 .peek(this::calcularPontuacaoManual)
                 .toList();
 
+        Comparator<RankingCelulaDTO> comparador = Comparator
+                .comparingInt((RankingCelulaDTO d) -> inteiro(d.getPontuacao())).reversed()
+                .thenComparing(Comparator.comparingDouble(
+                        (RankingCelulaDTO d) -> decimal(d.getPresencaMedia())).reversed())
+                .thenComparing(Comparator.comparingInt(
+                        (RankingCelulaDTO d) -> inteiro(d.getPontosCultos())).reversed())
+                .thenComparing(Comparator.comparingInt(
+                        (RankingCelulaDTO d) -> inteiro(d.getDesejaBatismo())).reversed())
+                .thenComparing(Comparator.comparingInt(
+                        (RankingCelulaDTO d) -> inteiro(d.getVisitantes())).reversed())
+                .thenComparing(RankingCelulaDTO::getNomeCelula,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+
         List<RankingCelulaDTO> ordenado = listaRanking.stream()
-                .sorted(Comparator.comparingInt(RankingCelulaDTO::getPontuacao).reversed())
+                .sorted(comparador)
                 .toList();
 
         for (int i = 0; i < ordenado.size(); i++) {
@@ -75,11 +99,19 @@ public class RankingCelulaService {
 
         return ordenado;
     }
-    private void calcularPontuacaoManual(RankingCelulaDTO dto) {
-        int pontos = 0;
+    private static int inteiro(Integer valor) {
+        return valor != null ? valor : 0;
+    }
 
-        pontos += (dto.getPresencaMedia()  != null ? dto.getPresencaMedia()  : 0) * 5;
-        pontos += (dto.getVisitantes()     != null ? dto.getVisitantes()     : 0) * 10;
+    private static double decimal(Double valor) {
+        return valor != null ? valor : 0.0;
+    }
+
+    private void calcularPontuacaoManual(RankingCelulaDTO dto) {
+        double pontos = 0;
+
+        pontos += (dto.getPresencaMedia()  != null ? dto.getPresencaMedia()  : 0.0) * 5;
+        pontos += dto.getPontosVisitantes() != null ? dto.getPontosVisitantes() : 0;
         pontos += (dto.getConsolidados()   != null ? dto.getConsolidados()   : 0) * 3;
         pontos += (dto.getBatismos()       != null ? dto.getBatismos()       : 0) * 5;
         pontos += (dto.getAceitouJesus()   != null ? dto.getAceitouJesus()   : 0) * 15;
@@ -100,7 +132,7 @@ public class RankingCelulaService {
         log.debug("Multiplicou: {}",   dto.getMultiplicou());
         log.debug("TOTAL: {}",         pontos);
 
-        dto.setPontuacao(pontos);
+        dto.setPontuacao((int) Math.round(pontos));
     }
 
     @Cacheable(value = "ranking-celulas", key = "'mes-atual'")

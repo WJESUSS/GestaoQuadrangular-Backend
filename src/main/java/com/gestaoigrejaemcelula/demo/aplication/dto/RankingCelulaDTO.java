@@ -11,8 +11,9 @@ public class RankingCelulaDTO {
     private Long celulaId;
     private String nomeCelula;
     private String lider;
-    private Integer presencaMedia;
+    private Double presencaMedia;
     private Integer visitantes;
+    private Integer pontosVisitantes;
     private Integer consolidados;
     private Integer batismos;
     private Boolean multiplicou;
@@ -33,8 +34,9 @@ public class RankingCelulaDTO {
         this.celulaId = p.getCelulaId();
         this.nomeCelula = p.getNomeCelula();
         this.lider = p.getLider();
-        this.presencaMedia = p.getPresencaMedia() != null ? p.getPresencaMedia().intValue() : 0;
+        this.presencaMedia = p.getPresencaMedia() != null ? p.getPresencaMedia().doubleValue() : 0.0;
         this.visitantes = p.getVisitantes() != null ? p.getVisitantes().intValue() : 0;
+        this.pontosVisitantes = 0;
         this.consolidados = p.getConsolidados() != null ? p.getConsolidados().intValue() : 0;
         this.batismos = p.getBatismos() != null ? p.getBatismos().intValue() : 0;
         this.multiplicou = Boolean.TRUE.equals(p.getMultiplicou());

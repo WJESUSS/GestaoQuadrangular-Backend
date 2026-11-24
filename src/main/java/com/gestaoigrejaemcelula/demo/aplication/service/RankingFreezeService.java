@@ -29,6 +29,11 @@ public class RankingFreezeService {
     }
 
     @Transactional(readOnly = true)
+    public boolean possuiRankingFinalizado(String mesAno) {
+        return rankingFinalizadoRepository.existsByMesAno(mesAno);
+    }
+
+    @Transactional(readOnly = true)
     public List<RankingCelulaDTO> buscarRankingFinalizado(String mesAno) {
         List<RankingFinalizado> finalizados = rankingFinalizadoRepository.findByMesAnoOrderByPosicaoAsc(mesAno);
 
@@ -40,6 +45,8 @@ public class RankingFreezeService {
                     dto.setLider(rf.getLider());
                     dto.setPresencaMedia(rf.getPresencaMedia());
                     dto.setVisitantes(rf.getVisitantes());
+                    dto.setPontosVisitantes(
+                            rf.getPontosVisitantes() != null ? rf.getPontosVisitantes() : 0);
                     dto.setConsolidados(rf.getConsolidados());
                     dto.setBatismos(rf.getBatismos());
                     dto.setMultiplicou(rf.getMultiplicou());
@@ -80,6 +87,7 @@ public class RankingFreezeService {
             rf.setLider(dto.getLider());
             rf.setPresencaMedia(dto.getPresencaMedia());
             rf.setVisitantes(dto.getVisitantes());
+            rf.setPontosVisitantes(dto.getPontosVisitantes());
             rf.setConsolidados(dto.getConsolidados());
             rf.setBatismos(dto.getBatismos());
             rf.setMultiplicou(dto.getMultiplicou());

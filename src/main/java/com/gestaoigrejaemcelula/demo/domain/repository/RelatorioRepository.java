@@ -103,6 +103,28 @@ public interface RelatorioRepository extends JpaRepository<Relatorio, Long> {
     @Query("SELECT COALESCE(SUM(r.quantidadeVisitantes), 0) FROM Relatorio r WHERE r.dataReuniao BETWEEN :inicio AND :fim")
     int totalVisitantesNoPeriodo(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
+    /**
+     * Pontos de visitantes por célula no mês.
+     * A 1ª visita do visitante vale 10, a 2ª vale 8, a 3ª vale 6, a 4ª vale 4,
+     * a 5ª vale 2 e da 6ª em diante vale 0. A contagem reinicia a cada mês.
+     */
+    @Query(value = """
+        SELECT v.celula_id AS celulaId,
+               COALESCE(SUM(GREATEST(0, 10 - 2 * (v.visitas - 1))), 0) AS pontos
+        FROM (
+            SELECT r.celula_id AS celula_id,
+                   rvp.visitante_id AS visitante_id,
+                   COUNT(*) AS visitas
+            FROM relatorio_visitantes_presenca rvp
+            INNER JOIN relatorio r ON r.id = rvp.relatorio_id
+            WHERE r.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND r.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+            GROUP BY r.celula_id, rvp.visitante_id
+        ) v
+        GROUP BY v.celula_id
+    """, nativeQuery = true)
+    List<Object[]> somarPontosVisitantesPorCelulaNoMes(@Param("mes") String mesAno);
+
     boolean existsByCelulaIdAndDataReuniao(Long celulaId, LocalDate dataReuniao);
 
     long countByCelulaIdAndDataReuniaoBetween(Long celulaId, LocalDate inicio, LocalDate fim);

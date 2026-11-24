@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.AccessDeniedException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
@@ -38,6 +37,7 @@ public class RelatorioService {
 
     private static final String CELULA_NAO_INFORMADA = "CELULA_NAO_INFORMADA";
     private static final String LIDER_DESCONHECIDO  =" LIDER_DESCONHECIDO";
+    private static final int SEMANAS_JANELA_ENTREGA = 2;
 
     private boolean safe(Boolean value) {
         return Boolean.TRUE.equals(value);
@@ -88,34 +88,28 @@ public class RelatorioService {
     }
 
     /* =========================
-        VALIDAÇÃO DA SEMANA CORRENTE
-        O líder só pode enviar relatório com data entre o domingo e o sábado
-        da semana atual, e nunca com data futura.
+        VALIDAÇÃO DA JANELA DE ENTREGA
+        O líder pode enviar relatório da semana atual ou da anterior,
+        sempre com data igual ou anterior ao dia de hoje.
         ========================= */
 
     private void validarSemanaCorrente(LocalDate dataReuniao) {
         LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
-        YearMonth mesAtual = YearMonth.now(ZoneId.of("America/Sao_Paulo"));
-        YearMonth mesReuniao = YearMonth.from(dataReuniao);
+        LocalDate inicioSemanaAtual = hoje.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+        LocalDate inicioJanela = inicioSemanaAtual.minusWeeks(SEMANAS_JANELA_ENTREGA - 1);
+        LocalDate fimJanela = inicioSemanaAtual.plusDays(6);
 
-        if (mesReuniao.isBefore(mesAtual)) {
-            throw new IllegalArgumentException(
-                    "Não é permitido enviar relatórios de meses anteriores. O ranking deste mês já foi finalizado.");
-        }
-
-        LocalDate inicioSemana = hoje.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)); // domingo desta semana
-        LocalDate fimSemana   = inicioSemana.plusDays(6);                                        // sábado desta semana
-
-        if (dataReuniao.isBefore(inicioSemana)) {
+        if (dataReuniao.isBefore(inicioJanela)) {
             throw new IllegalArgumentException(
                     "Relatório em atraso: só é possível enviar relatórios com data entre "
-                            + inicioSemana + " e " + fimSemana
-                            + ". Relatórios de semanas anteriores não são aceitos.");
+                            + inicioJanela + " e " + fimJanela
+                            + ". Relatórios mais antigos não são aceitos.");
         }
-        if (dataReuniao.isAfter(fimSemana) || dataReuniao.isAfter(hoje)) {
+        if (dataReuniao.isAfter(hoje)) {
             throw new IllegalArgumentException(
-                    "Data futura não permitida: o relatório deve ser enviado na semana atual "
-                            + "(domingo a sábado), com data igual ou anterior ao dia de hoje.");
+                    "Data futura não permitida: o relatório deve ser enviado nas últimas "
+                            + SEMANAS_JANELA_ENTREGA + " semanas (domingo a sábado), "
+                            + "com data igual ou anterior ao dia de hoje.");
         }
     }
 

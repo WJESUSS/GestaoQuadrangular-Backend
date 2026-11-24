@@ -64,9 +64,9 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
             ) mc
         ), 0)                                           AS presencaMedia,
 
-        -- Total de presenças de visitantes no mês (soma todas as visitas)
+        -- Visitantes distintos no mês (não multiplica por visitas repetidas)
         COALESCE((
-            SELECT COUNT(rvp.visitante_id)
+            SELECT COUNT(DISTINCT rvp.visitante_id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r3 ON r3.id = rvp.relatorio_id
             WHERE r3.celula_id = c.id
@@ -74,13 +74,36 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
               AND r3.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
         ), 0)                                           AS visitantes,
 
-        0                                               AS consolidados,
-        0                                               AS batismos,
-        FALSE                                           AS multiplicou,
-
-        -- Decisões espirituais: soma todas as presenças
+        -- Visitantes distintos já marcados como consolidados
         COALESCE((
-            SELECT COUNT(v.id)
+            SELECT COUNT(DISTINCT v.id)
+            FROM relatorio_visitantes_presenca rvp
+            INNER JOIN relatorio r7 ON r7.id = rvp.relatorio_id
+            INNER JOIN visitantes v ON v.id = rvp.visitante_id
+            WHERE r7.celula_id = c.id
+              AND r7.data_reuniao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND r7.data_reuniao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+              AND v.convertido = TRUE
+        ), 0)                                           AS consolidados,
+
+        -- Batismos de membros da célula realizados no mês
+        COALESCE((
+            SELECT COUNT(DISTINCT m.id)
+            FROM membros m
+            WHERE m.celula_id = c.id
+              AND COALESCE(m.data_batizado_nas_aguas, m.data_batismo) >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+              AND COALESCE(m.data_batizado_nas_aguas, m.data_batismo) <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH'
+        ), 0)                                           AS batismos,
+
+        -- Célula com multiplicação aprovada no mês
+        (c.status_multiplicacao = 'APROVADO'
+            AND c.data_solicitacao_multiplicacao >= TO_DATE(:mes || '-01', 'YYYY-MM-DD')
+            AND c.data_solicitacao_multiplicacao <  TO_DATE(:mes || '-01', 'YYYY-MM-DD') + INTERVAL '1 MONTH')
+                                                        AS multiplicou,
+
+        -- Decisões espirituais: conta cada visitante distinto uma única vez no mês
+        COALESCE((
+            SELECT COUNT(DISTINCT v.id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r4 ON r4.id = rvp.relatorio_id
             INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
@@ -91,7 +114,7 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
         ), 0)                                           AS aceitouJesus,
 
         COALESCE((
-            SELECT COUNT(v.id)
+            SELECT COUNT(DISTINCT v.id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r5 ON r5.id = rvp.relatorio_id
             INNER JOIN visitantes v  ON v.id  = rvp.visitante_id
@@ -102,7 +125,7 @@ public interface CelulaRepository extends JpaRepository<Celula, Long> {
         ), 0)                                           AS desejaBatismo,
 
         COALESCE((
-            SELECT COUNT(v.id)
+            SELECT COUNT(DISTINCT v.id)
             FROM relatorio_visitantes_presenca rvp
             INNER JOIN relatorio r6 ON r6.id = rvp.relatorio_id
             INNER JOIN visitantes v  ON v.id  = rvp.visitante_id

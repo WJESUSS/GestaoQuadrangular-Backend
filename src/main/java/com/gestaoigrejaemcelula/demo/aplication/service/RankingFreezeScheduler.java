@@ -16,7 +16,7 @@ public class RankingFreezeScheduler {
     private final RankingFreezeService rankingFreezeService;
     private static final DateTimeFormatter MES_ANO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
-    @Scheduled(cron = "0 55 23 L * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 10 0 1 * *", zone = "America/Sao_Paulo")
     public void finalizarMes() {
         YearMonth mesAnterior = YearMonth.now().minusMonths(1);
         String mesAno = mesAnterior.format(MES_ANO_FORMATTER);

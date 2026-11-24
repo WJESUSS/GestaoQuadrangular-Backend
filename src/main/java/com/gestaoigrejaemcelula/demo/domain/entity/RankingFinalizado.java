@@ -25,9 +25,13 @@ public class RankingFinalizado {
     private String lider;
 
     @Column(name = "presenca_media")
-    private Integer presencaMedia;
+    private Double presencaMedia;
 
     private Integer visitantes;
+
+    @Column(name = "pontos_visitantes")
+    private Integer pontosVisitantes;
+
     private Integer consolidados;
     private Integer batismos;
 
@@ -71,11 +75,14 @@ public class RankingFinalizado {
     public String getLider() { return lider; }
     public void setLider(String lider) { this.lider = lider; }
 
-    public Integer getPresencaMedia() { return presencaMedia; }
-    public void setPresencaMedia(Integer presencaMedia) { this.presencaMedia = presencaMedia; }
+    public Double getPresencaMedia() { return presencaMedia; }
+    public void setPresencaMedia(Double presencaMedia) { this.presencaMedia = presencaMedia; }
 
     public Integer getVisitantes() { return visitantes; }
     public void setVisitantes(Integer visitantes) { this.visitantes = visitantes; }
+
+    public Integer getPontosVisitantes() { return pontosVisitantes; }
+    public void setPontosVisitantes(Integer pontosVisitantes) { this.pontosVisitantes = pontosVisitantes; }
 
     public Integer getConsolidados() { return consolidados; }
     public void setConsolidados(Integer consolidados) { this.consolidados = consolidados; }

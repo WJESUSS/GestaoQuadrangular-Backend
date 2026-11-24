@@ -2,6 +2,7 @@ package com.gestaoigrejaemcelula.demo.web.controller;
 
 import com.gestaoigrejaemcelula.demo.aplication.dto.RankingCelulaDTO;
 import com.gestaoigrejaemcelula.demo.aplication.service.RankingCelulaService;
+import com.gestaoigrejaemcelula.demo.aplication.service.RankingFreezeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,7 @@ import java.util.List;
 public class RankingCelulaController {
 
     private final RankingCelulaService service;
+    private final RankingFreezeService rankingFreezeService;
 
     /**
      * Retorna o ranking de células para um determinado mês.
@@ -42,7 +44,9 @@ public class RankingCelulaController {
             @Pattern(regexp = "\\d{4}-\\d{2}", message = "Formato de mês inválido. Use YYYY-MM")
             String mes) {
 
-        List<RankingCelulaDTO> ranking = service.gerarRanking(mes);
+        List<RankingCelulaDTO> ranking = rankingFreezeService.possuiRankingFinalizado(mes)
+                ? rankingFreezeService.buscarRankingFinalizado(mes)
+                : service.gerarRanking(mes);
 
         if (ranking.isEmpty()) {
             return ResponseEntity.ok(List.of()); // 200 OK com lista vazia é melhor que 204 em muitos casos
